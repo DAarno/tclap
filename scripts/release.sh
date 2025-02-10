@@ -20,7 +20,7 @@ if [ ! -f "$TCLAP_DIR/test_runner.py" ]; then
 fi
 
 FILES="AUTHORS ChangeLog CMakeLists.txt config.h.in COPYING docs examples include INSTALL NEWS README tests \
-      unittests"
+      unittests packaging"
 
 for FIL in $FILES; do
     rsync -r --chmod=ugo+r,go-w --exclude "__*__" "$TCLAP_DIR/$FIL" "$DEST/"
