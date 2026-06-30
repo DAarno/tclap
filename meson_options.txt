@@ -1,0 +1,1 @@
+option('with_meson_tests', type : 'boolean', value : false, description : 'activates test cases when building with Meson')
