@@ -147,6 +147,35 @@ protected:
     bool _handleExceptions;
 
     /**
+     * Optional callback used to localize user-facing strings.
+     */
+    struct MessageTranslator {
+        virtual ~MessageTranslator() {}
+        virtual std::string translate(const std::string &messageId,
+                                      const std::string &fallback) const = 0;
+    };
+
+    template <typename T>
+    struct MessageTranslatorImpl : MessageTranslator {
+        T _translator;
+        MessageTranslatorImpl(const T &translator) : _translator(translator) {}
+        virtual std::string translate(const std::string &messageId,
+                                      const std::string &fallback) const {
+            return _translator(messageId, fallback);
+        }
+    };
+
+    MessageTranslator *_messageTranslator;
+
+    /**
+     * Built-in arguments whose descriptions may need refreshing when the
+     * translator changes.
+     */
+    SwitchArg *_ignoreArg;
+    SwitchArg *_helpArg;
+    SwitchArg *_versionArg;
+
+    /**
      * Throws an exception listing the missing args.
      */
     void missingArgsException(const std::list<ArgGroup *> &missing);
@@ -206,7 +235,7 @@ public:
     /**
      * Deletes any resources allocated by a CmdLine object.
      */
-    virtual ~CmdLine() {}
+    virtual ~CmdLine() { delete _messageTranslator; }
 
     /**
      * Adds an argument to the list of arguments to be parsed.
@@ -309,6 +338,41 @@ public:
      */
     void ignoreUnmatched(const bool ignore);
 
+    /**
+     * Sets an optional message translator callback.
+     */
+    template <typename T>
+    void setMessageTranslator(const T &translator) {
+        delete _messageTranslator;
+        _messageTranslator = new MessageTranslatorImpl<T>(translator);
+        if (_ignoreArg != NULL) {
+            _ignoreArg->setDescription(translateMessage(
+                "ignore_rest_description",
+                "Ignores the rest of the labeled arguments following this flag."));
+        }
+        if (_helpArg != NULL) {
+            _helpArg->setDescription(translateMessage(
+                "help_description",
+                "Displays usage information and exits."));
+        }
+        if (_versionArg != NULL) {
+            _versionArg->setDescription(translateMessage(
+                "version_description",
+                "Displays version information and exits."));
+        }
+    }
+
+    /**
+     * Translates a built-in message.
+     */
+    std::string translateMessage(const std::string &messageId,
+                                 const std::string &fallback) const {
+        if (_messageTranslator != NULL) {
+            return _messageTranslator->translate(messageId, fallback);
+        }
+        return fallback;
+    }
+
     void beginIgnoring() { _ignoring = true; }
     bool ignoreRest() { return _ignoring; }
 };
@@ -332,6 +396,10 @@ inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
       _defaultOutput(),
       _output(&_defaultOutput),
       _handleExceptions(true),
+      _messageTranslator(NULL),
+      _ignoreArg(NULL),
+      _helpArg(NULL),
+      _versionArg(NULL),
       _helpAndVersion(help),
       _ignoreUnmatched(false),
       _ignoring(false) {
@@ -349,8 +417,10 @@ inline void CmdLine::_constructor() {
     v = new IgnoreRestVisitor(*this);
     SwitchArg *ignore = new SwitchArg(
         Arg::flagStartString(), Arg::ignoreNameString(),
-        "Ignores the rest of the labeled arguments following this flag.", false,
-        v);
+        translateMessage("ignore_rest_description",
+                         "Ignores the rest of the labeled arguments following this flag."),
+        false, v);
+    _ignoreArg = ignore;
     _deleteOnExit(ignore);
     _deleteOnExit(v);
     _autoArgs.add(ignore);
@@ -359,13 +429,21 @@ inline void CmdLine::_constructor() {
     if (_helpAndVersion) {
         v = new HelpVisitor(this, &_output);
         SwitchArg *help = new SwitchArg(
-            "h", "help", "Displays usage information and exits.", false, v);
+            "h", "help",
+            translateMessage("help_description",
+                             "Displays usage information and exits."),
+            false, v);
+        _helpArg = help;
         _deleteOnExit(help);
         _deleteOnExit(v);
 
         v = new VersionVisitor(this, &_output);
         SwitchArg *vers = new SwitchArg(
-            "", "version", "Displays version information and exits.", false, v);
+            "", "version",
+            translateMessage("version_description",
+                             "Displays version information and exits."),
+            false, v);
+        _versionArg = vers;
         _deleteOnExit(vers);
         _deleteOnExit(v);
 
@@ -515,7 +593,9 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
         }
 
         if (requiredCount > _numRequired) {
-            throw(CmdLineParseException("Too many arguments!"));
+            throw(CmdLineParseException(
+                translateMessage("too_many_arguments",
+                                 "Too many arguments!")));
         }
     } catch (ArgException &e) {
         // If we're not handling the exceptions, rethrow.
@@ -575,9 +655,11 @@ inline void CmdLine::missingArgsException(
 
     std::string msg;
     if (count > 1)
-        msg = "Required arguments missing: ";
+        msg = translateMessage("required_arguments_missing",
+                               "Required arguments missing: ");
     else
-        msg = "Required argument missing: ";
+        msg = translateMessage("required_argument_missing",
+                               "Required argument missing: ");
 
     msg += missingArgList;
 

@@ -137,6 +137,12 @@ public:
     virtual std::string getMessage() const = 0;
 
     /**
+     * Translates a built-in message using the current translator.
+     */
+    virtual std::string translateMessage(const std::string &messageId,
+                                         const std::string &fallback) const = 0;
+
+    /**
      * Indicates whether or not the help and version switches were created
      * automatically.
      */

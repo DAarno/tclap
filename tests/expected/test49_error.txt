@@ -1,0 +1,8 @@
+TOLKNINGSFEL:
+             Obligatoriskt argument saknas:name
+
+Kort användning:
+   test48  [-hv] [--version] -n <name>
+
+För fullständig ANVÄNDNING och HJÄLP, skriv:
+   test48 --help

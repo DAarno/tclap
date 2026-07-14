@@ -1,0 +1,23 @@
+ANVÄNDNING:
+
+   test48  [-hv] [--version] -n <name>
+
+
+Där:
+
+   -n <name>,  --name <name>
+     (required) Namn att hälsa till
+
+   -v,  --verbose
+     Aktivera verbose-läge
+
+   --,  --ignore_rest
+     Ignorerar resten av de markerade argumenten efter denna flagga.
+
+   --version
+     Visar versionsinformation och avslutar.
+
+   -h,  --help
+     Visar hjälptext och avslutar.
+
+   Exempelprogram

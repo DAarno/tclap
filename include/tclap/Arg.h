@@ -262,6 +262,11 @@ public:
     std::string getDescription() const { return getDescription(_required); }
 
     /**
+     * Updates the argument description.
+     */
+    virtual void setDescription(const std::string &desc) { _description = desc; }
+
+    /**
      * Returns the argument description.
      *
      * @param required if the argument should be treated as

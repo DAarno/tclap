@@ -104,16 +104,24 @@ inline void StdOutput::version(CmdLineInterface &_cmd) {
     std::string xversion = _cmd.getVersion();
 
     std::cout << std::endl
-              << progName << "  version: " << xversion << std::endl
+              << progName << "  "
+              << _cmd.translateMessage("version_label", "version:")
+              << " " << xversion << std::endl
               << std::endl;
 }
 
 inline void StdOutput::usage(CmdLineInterface &_cmd) {
-    std::cout << std::endl << "USAGE: " << std::endl << std::endl;
+    std::cout << std::endl
+              << _cmd.translateMessage("usage_header", "USAGE:")
+              << std::endl
+              << std::endl;
 
     _shortUsage(_cmd, std::cout);
 
-    std::cout << std::endl << std::endl << "Where: " << std::endl << std::endl;
+    std::cout << std::endl << std::endl
+              << _cmd.translateMessage("where_header", "Where:")
+              << std::endl
+              << std::endl;
 
     _longUsage(_cmd, std::cout);
 
@@ -123,17 +131,21 @@ inline void StdOutput::usage(CmdLineInterface &_cmd) {
 inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
     std::string progName = _cmd.getProgramName();
 
-    std::cerr << "PARSE ERROR: " << e.argId() << std::endl
+    std::cerr << _cmd.translateMessage("parse_error_header", "PARSE ERROR:")
+              << " " << e.argId() << std::endl
               << "             " << e.error() << std::endl
               << std::endl;
 
     if (_cmd.hasHelpAndVersion()) {
-        std::cerr << "Brief USAGE: " << std::endl;
+        std::cerr << _cmd.translateMessage("brief_usage_header", "Brief USAGE:")
+                  << std::endl;
 
         _shortUsage(_cmd, std::cerr);
 
         std::cerr << std::endl
-                  << "For complete USAGE and HELP type: " << std::endl
+                  << _cmd.translateMessage("complete_usage_hint",
+                                       "For complete USAGE and HELP type:")
+                  << std::endl
                   << "   " << progName << " " << Arg::nameStartString()
                   << "help" << std::endl
                   << std::endl;
@@ -391,7 +403,13 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
         bool exclusive = visible > 1 && argGroup.isExclusive();
         bool forceRequired = visible == 1 && argGroup.isRequired();
         if (exclusive) {
-            spacePrint(os, argGroup.isRequired() ? "One of:" : "Either of:", 75,
+            spacePrint(os,
+                       argGroup.isRequired()
+                           ? _cmd.translateMessage("one_of_group",
+                                                   "One of:")
+                           : _cmd.translateMessage("either_of_group",
+                                                   "Either of:"),
+                       75,
                        3, 0);
         }
 
