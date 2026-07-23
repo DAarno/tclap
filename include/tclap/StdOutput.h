@@ -112,14 +112,14 @@ inline void StdOutput::version(CmdLineInterface &_cmd) {
 
 inline void StdOutput::usage(CmdLineInterface &_cmd) {
     std::cout << std::endl
-              << _cmd.translateMessage("usage_header", "USAGE:")
+              << _cmd.translateMessage("usage_header", "USAGE: ")
               << std::endl
               << std::endl;
 
     _shortUsage(_cmd, std::cout);
 
     std::cout << std::endl << std::endl
-              << _cmd.translateMessage("where_header", "Where:")
+              << _cmd.translateMessage("where_header", "Where: ")
               << std::endl
               << std::endl;
 
@@ -137,14 +137,14 @@ inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
               << std::endl;
 
     if (_cmd.hasHelpAndVersion()) {
-        std::cerr << _cmd.translateMessage("brief_usage_header", "Brief USAGE:")
+        std::cerr << _cmd.translateMessage("brief_usage_header", "Brief USAGE: ")
                   << std::endl;
 
         _shortUsage(_cmd, std::cerr);
 
         std::cerr << std::endl
                   << _cmd.translateMessage("complete_usage_hint",
-                                       "For complete USAGE and HELP type:")
+                                       "For complete USAGE and HELP type: ")
                   << std::endl
                   << "   " << progName << " " << Arg::nameStartString()
                   << "help" << std::endl

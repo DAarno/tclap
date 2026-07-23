@@ -1,0 +1,56 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tclap-example\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "A small German gettext example"
+msgstr "Ein kleines deutsches gettext-Beispiel"
+
+msgid "The name to greet"
+msgstr "Der zu begrüßende Name"
+
+msgid "NAME"
+msgstr "NAME"
+
+msgid "Ignores the rest of the labeled arguments following this flag."
+msgstr "Ignoriert die übrigen benannten Argumente nach diesem Schalter."
+
+msgid "Displays usage information and exits."
+msgstr "Zeigt die Bedienungsinformationen an und beendet sich."
+
+msgid "Displays version information and exits."
+msgstr "Zeigt die Versionsinformationen an und beendet sich."
+
+msgid "Too many arguments!"
+msgstr "Zu viele Argumente!"
+
+msgid "Required arguments missing: "
+msgstr "Erforderliche Argumente fehlen: "
+
+msgid "Required argument missing: "
+msgstr "Erforderliches Argument fehlt: "
+
+msgid "USAGE:"
+msgstr "AUFRUF:"
+
+msgid "Where:"
+msgstr "Optionen:"
+
+msgid "version:"
+msgstr "Version:"
+
+msgid "PARSE ERROR:"
+msgstr "PARSERFEHLER:"
+
+msgid "Brief USAGE:"
+msgstr "Kurzer AUFRUF:"
+
+msgid "For complete USAGE and HELP type:"
+msgstr "Für den vollständigen AUFRUF und die HILFE geben Sie ein:"
+
+msgid "One of:"
+msgstr "Eines von:"
+
+msgid "Either of:"
+msgstr "Entweder:"
