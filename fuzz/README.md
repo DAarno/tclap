@@ -120,46 +120,22 @@ and has no dependency on this project's CMake to build -- an OSS-Fuzz
 $OUT/fuzz_cmdline $LIB_FUZZING_ENGINE`, one such command per target) without
 depending on this directory's `CMakeLists.txt` at all.
 
-## Known finding: heap-buffer-overflow in `StdOutput::fmtPrintLine`
+## Fixed finding: heap-buffer-overflow in `StdOutput::fmtPrintLine`
 
 Fuzzing `fuzz_stdoutput` immediately surfaced a real memory-safety bug in
 `include/tclap/StdOutput.h`'s word-wrap helper `fmtPrintLine()` (the function
-backing the protected `StdOutput::spacePrint()`), reproduced by
-`fuzz/known_issues/fuzz_stdoutput/spaceprint_multiline`. It's left as a
-known, reproducible finding rather than fixed here, to keep this change
-scoped to the fuzzing framework itself. The reproducer lives under
-`known_issues/` rather than `seeds/fuzz_stdoutput/` specifically so it
-doesn't leave a permanently failing/timed-out case in the default `ctest`
-run -- run it manually to confirm:
-
-```sh
-./build/fuzz/fuzz_stdoutput_regress fuzz/known_issues/fuzz_stdoutput/spaceprint_multiline
-```
-
-Manifestation is inconsistent, which is itself worth knowing: this
-particular input hangs indefinitely under a plain g++/libstdc++ build (that
-hang is what `fuzz_stdoutput_regress` caught, via a CTest timeout, before
-any sanitizer was involved). Under a Clang+ASan `*_fuzzer` build it instead
-reports a clean heap-buffer-overflow and aborts, per below. Three other
-inputs originally in this project's own seed corpus (an earlier
-`spaceprint_normal`, plus what are now `spaceprint_fallback_small_budget`
-and `spaceprint_minimal_budget`) hit the exact same underflow but neither
-hung nor visibly misbehaved under plain g++: the 1-byte out-of-bounds read
-just happened to return a byte that let execution continue. That's the
-standard danger of UB found only by a sanitizer -- it can pass silently on
-one toolchain/libc and hang or crash on another. Those three were
-regenerated with geometry that keeps `maxChars` positive (see the comments
-in the generating script logic: `maxWidth` kept comfortably above
-`indentSpaces`) rather than left in the default corpus as "passing"
-regression tests that were quietly relying on undefined behavior not
-misbehaving.
+backing the protected `StdOutput::spacePrint()`). It's now fixed; this
+section is kept as a record of what fuzzing found and how, since the
+seeds that exercise it (`spaceprint_multiline`,
+`spaceprint_fallback_small_budget`, `spaceprint_minimal_budget`, and
+`spaceprint_multiline_wide_indent`) are permanent regression cases now.
 
 **Root cause:** `maxChars` (`StdOutput.h:458`) is
 `size_t maxChars = std::max(maxWidth - indentSpaces, 0);`, which is `0`
 whenever `indentSpaces >= maxWidth`. When no space/comma/pipe break point is
-found within that (zero) budget, the fallback at `StdOutput.h:482`,
-`to = from + maxChars - 1;`, underflows the unsigned `maxChars` to
-`SIZE_MAX`. The following line, `if (s[to] != ' ')`, then indexes the string
+found within that (zero) budget, the fallback previously at `StdOutput.h:482`,
+`to = from + maxChars - 1;`, underflowed the unsigned `maxChars` to
+`SIZE_MAX`. The following line, `if (s[to] != ' ')`, then indexed the string
 at `data() + SIZE_MAX`, which wraps around to exactly one byte *before* the
 string's heap buffer.
 
@@ -171,16 +147,63 @@ with `maxWidth=20, indentSpaces=30`:
 ... is located 1 bytes before 31-byte region [...]
 ```
 
+Manifestation was inconsistent before the fix, which is itself worth
+knowing: some triggering inputs hung indefinitely under a plain
+g++/libstdc++ build (that hang is what `fuzz_stdoutput_regress` caught
+first, via a CTest timeout, before any sanitizer was involved) while others
+neither hung nor visibly misbehaved -- the 1-byte out-of-bounds read just
+happened to return a byte that let execution continue. That's the standard
+danger of UB found only by a sanitizer: it can pass silently on one
+toolchain/libc and hang or crash on another, which is why a few of this
+project's own early seeds looked like "passing" regression tests while
+quietly relying on undefined behavior not misbehaving.
+
 **Reachability:** every built-in call site (`_shortUsage`/`_longUsage`,
 reached from `usage()`/`failure()`) hardcodes `maxWidth=75` with
-`indentSpaces` between 3 and 8, so this cannot be triggered through the
-normal `CmdLine`/`--help`/parse-error path today. It's reachable only by
-calling the (protected, so subclass-visible) `spacePrint()` directly with
-unusual geometry -- a latent defect rather than one exploitable through
-TCLAP's public API as it stands, but worth fixing given how easy it would be
-for a future call site change or a `CmdLineOutput` subclass to make it
-reachable.
+`indentSpaces` between 3 and 8, so this could never be triggered through the
+normal `CmdLine`/`--help`/parse-error path. It was reachable only by calling
+the (protected, so subclass-visible) `spacePrint()` directly with unusual
+geometry -- a latent defect rather than one exploitable through TCLAP's
+public API, but worth fixing given how easy it would have been for a future
+call site change or a `CmdLineOutput` subclass to make it reachable.
 
-A plausible fix, for whenever this gets picked up: guard the `maxChars == 0`
-case before the subtraction (e.g. break at `from` immediately, or clamp
-`to`), instead of ever computing `from + maxChars - 1` when `maxChars` is 0.
+**The fix:** guard the `maxChars == 0` case before the subtraction, falling
+back to `to = from` (still always a valid, in-bounds index at that point)
+instead of ever computing `from + maxChars - 1` when `maxChars` is 0.
+
+## Known finding: uncaught `std::length_error` from negative `indentSpaces`
+
+Re-fuzzing after the fix above landed found a second, distinct issue in the
+same function, reproduced by
+`fuzz/known_issues/fuzz_stdoutput/spaceprint_negative_indent`. Left as a
+known, reproducible finding rather than fixed, so it lives under
+`known_issues/` rather than `seeds/fuzz_stdoutput/`:
+
+```sh
+./build/fuzz/fuzz_stdoutput_regress fuzz/known_issues/fuzz_stdoutput/spaceprint_negative_indent
+```
+
+**Root cause:** `fmtPrintLine`'s `indentSpaces` and `secondLineOffset`
+parameters are `int` and are never checked for being non-negative.
+`StdOutput.h:459`, `std::string indentString(indentSpaces, ' ');`, passes
+`indentSpaces` into `std::string`'s `(count, ch)` constructor, whose `count`
+parameter is unsigned -- a negative `indentSpaces` (e.g. -18) implicitly
+converts to a huge `size_t`, and the constructor throws `std::length_error`
+("basic_string::_M_create") when asked to allocate a string of that size.
+Nothing in `spacePrint`/`fmtPrintLine` or their callers catches it, so it
+propagates out as an uncaught exception and calls `std::terminate` --
+reproducible even under a plain, non-sanitized g++ build (no ASan needed):
+
+```
+terminate called after throwing an instance of 'std::length_error'
+  what():  basic_string::_M_create
+```
+
+**Reachability:** same caveat as the fixed finding above -- every built-in
+call site passes small positive constants, so this needs a direct
+`spacePrint()` call with a negative `indentSpaces` and isn't reachable
+through TCLAP's public `CmdLine` API today. `maxChars -= secondLineOffset;`
+at `StdOutput.h:500` looks like it may have a related issue (a negative or
+overly large `secondLineOffset` similarly mixing signed/unsigned) that
+wasn't separately confirmed -- worth checking alongside this one rather than
+treating them as fully independent.

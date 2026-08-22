@@ -479,7 +479,11 @@ inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
         if (to == from) {
             // In case there was no good place to break the string,
             // just break it in the middle of a word at line length.
-            to = from + maxChars - 1;
+            // maxChars is unsigned and can be 0 here (when indentSpaces
+            // >= maxWidth), so guard the subtraction: falling back to
+            // "from" instead of underflowing to SIZE_MAX keeps the
+            // s[to] access below in bounds.
+            to = maxChars > 0 ? from + maxChars - 1 : from;
         }
 
         if (s[to] != ' ') {
