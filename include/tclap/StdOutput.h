@@ -455,6 +455,13 @@ namespace {
 inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
                          int indentSpaces, int secondLineOffset) {
     const std::string splitChars(" ,|");
+    // indentSpaces and secondLineOffset end up as counts passed to
+    // std::string's unsigned-count constructor/insert() below; a negative
+    // value would implicitly convert to a huge size_t and the allocation
+    // would throw std::length_error, so clamp both to a sane non-negative
+    // floor up front rather than let a caller's bad geometry crash this.
+    indentSpaces = std::max(indentSpaces, 0);
+    secondLineOffset = std::max(secondLineOffset, 0);
     size_t maxChars = std::max(maxWidth - indentSpaces, 0);
     std::string indentString(indentSpaces, ' ');
     size_t from = 0;
@@ -501,7 +508,9 @@ inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
         if (secondLineOffset != 0) {
             // Adjust offset for following lines
             indentString.insert(indentString.end(), secondLineOffset, ' ');
-            maxChars -= secondLineOffset;
+            // A secondLineOffset larger than the remaining budget would
+            // underflow maxChars (size_t) below; clamp to 0 instead.
+            maxChars -= std::min(maxChars, static_cast<size_t>(secondLineOffset));
             secondLineOffset = 0;
         }
     }

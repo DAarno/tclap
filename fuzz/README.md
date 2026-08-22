@@ -171,27 +171,21 @@ call site change or a `CmdLineOutput` subclass to make it reachable.
 back to `to = from` (still always a valid, in-bounds index at that point)
 instead of ever computing `from + maxChars - 1` when `maxChars` is 0.
 
-## Known finding: uncaught `std::length_error` from negative `indentSpaces`
+## Fixed finding: uncaught `std::length_error` from negative `indentSpaces`
 
-Re-fuzzing after the fix above landed found a second, distinct issue in the
-same function, reproduced by
-`fuzz/known_issues/fuzz_stdoutput/spaceprint_negative_indent`. Left as a
-known, reproducible finding rather than fixed, so it lives under
-`known_issues/` rather than `seeds/fuzz_stdoutput/`:
-
-```sh
-./build/fuzz/fuzz_stdoutput_regress fuzz/known_issues/fuzz_stdoutput/spaceprint_negative_indent
-```
+Re-fuzzing after the first fix above landed found a second, distinct issue
+in the same function, reproduced by `spaceprint_negative_indent`. Now fixed
+too; kept as a record of what fuzzing found.
 
 **Root cause:** `fmtPrintLine`'s `indentSpaces` and `secondLineOffset`
-parameters are `int` and are never checked for being non-negative.
-`StdOutput.h:459`, `std::string indentString(indentSpaces, ' ');`, passes
+parameters are `int` and were never checked for being non-negative.
+`StdOutput.h:459`, `std::string indentString(indentSpaces, ' ');`, passed
 `indentSpaces` into `std::string`'s `(count, ch)` constructor, whose `count`
 parameter is unsigned -- a negative `indentSpaces` (e.g. -18) implicitly
-converts to a huge `size_t`, and the constructor throws `std::length_error`
+converted to a huge `size_t`, and the constructor threw `std::length_error`
 ("basic_string::_M_create") when asked to allocate a string of that size.
-Nothing in `spacePrint`/`fmtPrintLine` or their callers catches it, so it
-propagates out as an uncaught exception and calls `std::terminate` --
+Nothing in `spacePrint`/`fmtPrintLine` or their callers caught it, so it
+propagated out as an uncaught exception and called `std::terminate` --
 reproducible even under a plain, non-sanitized g++ build (no ASan needed):
 
 ```
@@ -199,11 +193,20 @@ terminate called after throwing an instance of 'std::length_error'
   what():  basic_string::_M_create
 ```
 
-**Reachability:** same caveat as the fixed finding above -- every built-in
-call site passes small positive constants, so this needs a direct
-`spacePrint()` call with a negative `indentSpaces` and isn't reachable
-through TCLAP's public `CmdLine` API today. `maxChars -= secondLineOffset;`
-at `StdOutput.h:500` looks like it may have a related issue (a negative or
-overly large `secondLineOffset` similarly mixing signed/unsigned) that
-wasn't separately confirmed -- worth checking alongside this one rather than
-treating them as fully independent.
+The same pattern applied to `secondLineOffset`: it fed the `count` parameter
+of `indentString.insert(indentString.end(), secondLineOffset, ' ')`
+(`StdOutput.h`), with the identical negative-to-huge-`size_t` risk, and
+separately `maxChars -= secondLineOffset;` right after it could underflow
+`maxChars` (a `size_t`) whenever `secondLineOffset` exceeded the remaining
+budget, even for a positive value.
+
+**Reachability:** same caveat as the other finding above -- every built-in
+call site passes small positive constants, so this needed a direct
+`spacePrint()` call with unusual geometry and wasn't reachable through
+TCLAP's public `CmdLine` API.
+
+**The fix:** clamp both `indentSpaces` and `secondLineOffset` to a
+non-negative floor at the top of `fmtPrintLine` (a negative value is treated
+as "no indent/offset", the sane fallback), and clamp the
+`maxChars -= secondLineOffset` subtraction to 0 via
+`std::min(maxChars, secondLineOffset)` instead of ever letting it underflow.
