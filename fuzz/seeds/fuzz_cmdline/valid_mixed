@@ -1,0 +1,8 @@
+-r
+-VVV
+--name=homer
+-x
+foo
+-x
+bar
+positional-value
