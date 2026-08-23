@@ -23,7 +23,8 @@
 #ifndef TCLAP_DEFER_DELETE_H
 #define TCLAP_DEFER_DELETE_H
 
-#include <list>
+#include <memory>
+#include <vector>
 
 namespace TCLAP {
 
@@ -36,36 +37,30 @@ namespace TCLAP {
 class DeferDelete {
     class DeletableBase {
     public:
-        virtual ~DeletableBase() {}
+        virtual ~DeletableBase() = default;
     };
 
     template <typename T>
     class Deletable : public DeletableBase {
     public:
         Deletable(T *o) : _o(o) {}
-        virtual ~Deletable() { delete _o; }
+        ~Deletable() override { delete _o; }
+
+        Deletable(const Deletable<T> &) = delete;
+        Deletable<T> &operator=(const Deletable<T> &) = delete;
 
     private:
-        Deletable(const Deletable<T> &) {}
-        Deletable<T> operator=(const Deletable<T> &) {}
-
         T *_o;
     };
 
-    std::list<DeletableBase *> _toBeDeleted;
+    std::vector<std::unique_ptr<DeletableBase>> _toBeDeleted;
 
 public:
     DeferDelete() : _toBeDeleted() {}
-    ~DeferDelete() {
-        for (std::list<DeletableBase *>::iterator it = _toBeDeleted.begin();
-             it != _toBeDeleted.end(); ++it) {
-            delete *it;
-        }
-    }
 
     template <typename T>
     void operator()(T *toDelete) {
-        _toBeDeleted.push_back(new Deletable<T>(toDelete));
+        _toBeDeleted.push_back(std::make_unique<Deletable<T>>(toDelete));
     }
 };
 
