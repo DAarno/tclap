@@ -54,7 +54,7 @@ public:
     /**
      * Virtual destructor.
      */
-    virtual ~CmdLineOutput() {}
+    virtual ~CmdLineOutput() = default;
 
     /**
      * Generates some sort of output for the USAGE.
@@ -77,25 +77,18 @@ public:
 };
 
 inline bool isInArgGroup(const Arg *arg, const std::list<ArgGroup *> &argSets) {
-    for (std::list<ArgGroup *>::const_iterator it = argSets.begin();
-         it != argSets.end(); ++it) {
-        if (std::find((*it)->begin(), (*it)->end(), arg) != (*it)->end()) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(argSets.begin(), argSets.end(),
+                        [arg](const ArgGroup *group) {
+                            return std::find(group->begin(), group->end(),
+                                              arg) != group->end();
+                        });
 }
 
 inline void removeArgsInArgGroups(std::list<Arg *> &argList,
                                   const std::list<ArgGroup *> &argSets) {
-    for (std::list<Arg *>::iterator it = argList.begin();
-         it != argList.end();) {
-        if (isInArgGroup(*it, argSets)) {
-            it = argList.erase(it);
-        } else {
-            ++it;
-        }
-    }
+    std::erase_if(argList, [&argSets](const Arg *arg) {
+        return isInArgGroup(arg, argSets);
+    });
 }
 
 inline std::string removeSuffix(std::string s, const std::string &suffix) {

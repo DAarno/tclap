@@ -1,12 +1,11 @@
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}")
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
 
-# The fuzz harnesses use a few small C++11-and-up conveniences (auto,
-# range-for) for readability. This only affects how sources in *this*
-# directory are compiled -- the library itself is still exercised at
-# C++98 via tests/examples/unittests, and remains header-only and
-# standard-agnostic.
-set(CMAKE_CXX_STANDARD 17)
+# Match the top-level project standard so these harnesses can include
+# the (now C++20) library headers. This only affects how sources in
+# *this* directory are compiled; the library itself remains
+# header-only and standard-agnostic.
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 enable_testing()
