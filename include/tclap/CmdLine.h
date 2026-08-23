@@ -55,16 +55,16 @@ namespace TCLAP {
 
 class StandaloneArgs : public AnyOf {
 public:
-    StandaloneArgs() {}
+    StandaloneArgs() = default;
 
-    ArgContainer &add(Arg *arg) {
+    ArgContainer &add(Arg *arg) override {
         // std::cerr << "Adding " << arg->getName() << " to StandaloneArgs\n";
-        for (iterator it = begin(); it != end(); it++) {
-            if (*arg == **it) {
-                throw SpecificationException(
-                    "Argument with same flag/name already exists!",
-                    arg->longID());
-            }
+        if (std::any_of(begin(), end(), [arg](const Arg *existing) {
+                return *arg == *existing;
+            })) {
+            throw SpecificationException(
+                "Argument with same flag/name already exists!",
+                arg->longID());
         }
 
         _args.push_back(arg);
@@ -72,7 +72,7 @@ public:
         return *this;
     }
 
-    bool showAsGroup() const { return false; }
+    bool showAsGroup() const override { return false; }
 };
 
 /**
@@ -150,7 +150,7 @@ protected:
      * Optional callback used to localize user-facing strings.
      */
     struct MessageTranslator {
-        virtual ~MessageTranslator() {}
+        virtual ~MessageTranslator() = default;
         virtual std::string translate(const std::string &messageId,
                                       const std::string &fallback) const = 0;
     };
@@ -159,8 +159,8 @@ protected:
     struct MessageTranslatorImpl : MessageTranslator {
         T _translator;
         MessageTranslatorImpl(const T &translator) : _translator(translator) {}
-        virtual std::string translate(const std::string &messageId,
-                                      const std::string &fallback) const {
+        std::string translate(const std::string &messageId,
+                              const std::string &fallback) const override {
             return _translator(messageId, fallback);
         }
     };
@@ -188,13 +188,14 @@ protected:
      */
     bool _emptyCombined(const std::string &s);
 
-private:
+public:
     /**
      * Prevent accidental copying.
      */
-    CmdLine(const CmdLine &rhs);
-    CmdLine &operator=(const CmdLine &rhs);
+    CmdLine(const CmdLine &rhs) = delete;
+    CmdLine &operator=(const CmdLine &rhs) = delete;
 
+private:
     /**
      * Encapsulates the code common to the constructors
      * (which is all of it).
@@ -235,7 +236,7 @@ public:
     /**
      * Deletes any resources allocated by a CmdLine object.
      */
-    virtual ~CmdLine() { delete _messageTranslator; }
+    ~CmdLine() override { delete _messageTranslator; }
 
     /**
      * Adds an argument to the list of arguments to be parsed.
@@ -243,7 +244,7 @@ public:
      * @param a - Argument to be added.
      * @retval A reference to this so that add calls can be chained
      */
-    ArgContainer &add(Arg &a);
+    ArgContainer &add(Arg &a) override;
 
     /**
      * An alternative add.  Functionally identical.
@@ -251,7 +252,7 @@ public:
      * @param a - Argument to be added.
      * @retval A reference to this so that add calls can be chained
      */
-    ArgContainer &add(Arg *a);
+    ArgContainer &add(Arg *a) override;
 
     /**
      * Adds an argument group to the list of arguments to be parsed.
@@ -263,27 +264,27 @@ public:
      * @param args - Argument group to be added.
      * @retval A reference to this so that add calls can be chained
      */
-    ArgContainer &add(ArgGroup &args);
+    ArgContainer &add(ArgGroup &args) override;
 
     // Internal, do not use
-    void addToArgList(Arg *a);
+    void addToArgList(Arg *a) override;
 
     /**
      * \deprecated Use OneOf instead.
      */
-    void xorAdd(Arg &a, Arg &b);
+    void xorAdd(Arg &a, Arg &b) override;
 
     /**
      * \deprecated Use OneOf instead.
      */
-    void xorAdd(const std::vector<Arg *> &xors);
+    void xorAdd(const std::vector<Arg *> &xors) override;
 
     /**
      * Parses the command line.
      * \param argc - Number of arguments.
      * \param argv - Array of arguments.
      */
-    void parse(int argc, const char *const *argv);
+    void parse(int argc, const char *const *argv) override;
 
     /**
      * Parses the command line.
@@ -292,23 +293,23 @@ public:
      */
     void parse(std::vector<std::string> &args);
 
-    void setOutput(CmdLineOutput *co);
+    void setOutput(CmdLineOutput *co) override;
 
-    std::string getVersion() const { return _version; }
+    std::string getVersion() const override { return _version; }
 
-    std::string getProgramName() const { return _progName; }
+    std::string getProgramName() const override { return _progName; }
 
     // TOOD: Get rid of getArgList
-    std::list<Arg *> getArgList() const { return _argList; }
-    std::list<ArgGroup *> getArgGroups() {
+    std::list<Arg *> getArgList() const override { return _argList; }
+    std::list<ArgGroup *> getArgGroups() override {
         std::list<ArgGroup *> groups = _argGroups;
         groups.push_back(&_autoArgs);
         return groups;
     }
 
-    char getDelimiter() const { return _delimiter; }
-    std::string getMessage() const { return _message; }
-    bool hasHelpAndVersion() const { return _helpAndVersion; }
+    char getDelimiter() const override { return _delimiter; }
+    std::string getMessage() const override { return _message; }
+    bool hasHelpAndVersion() const override { return _helpAndVersion; }
 
     /**
      * Disables or enables CmdLine's internal parsing exception handling.
@@ -328,7 +329,7 @@ public:
     /**
      * Allows the CmdLine object to be reused.
      */
-    void reset();
+    void reset() override;
 
     /**
      * Allows unmatched args to be ignored. By default false.
@@ -366,15 +367,15 @@ public:
      * Translates a built-in message.
      */
     std::string translateMessage(const std::string &messageId,
-                                 const std::string &fallback) const {
+                                 const std::string &fallback) const override {
         if (_messageTranslator != nullptr) {
             return _messageTranslator->translate(messageId, fallback);
         }
         return fallback;
     }
 
-    void beginIgnoring() { _ignoring = true; }
-    bool ignoreRest() { return _ignoring; }
+    void beginIgnoring() override { _ignoring = true; }
+    bool ignoreRest() override { return _ignoring; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -415,7 +416,7 @@ inline void CmdLine::_constructor() {
     // add(_autoArgs);
 
     v = new IgnoreRestVisitor(*this);
-    SwitchArg *ignore = new SwitchArg(
+    auto *ignore = new SwitchArg(
         Arg::flagStartString(), Arg::ignoreNameString(),
         translateMessage("ignore_rest_description",
                          "Ignores the rest of the labeled arguments following this flag."),
@@ -428,7 +429,7 @@ inline void CmdLine::_constructor() {
 
     if (_helpAndVersion) {
         v = new HelpVisitor(this, &_output);
-        SwitchArg *help = new SwitchArg(
+        auto *help = new SwitchArg(
             "h", "help",
             translateMessage("help_description",
                              "Displays usage information and exits."),
@@ -438,7 +439,7 @@ inline void CmdLine::_constructor() {
         _deleteOnExit(v);
 
         v = new VersionVisitor(this, &_output);
-        SwitchArg *vers = new SwitchArg(
+        auto *vers = new SwitchArg(
             "", "version",
             translateMessage("version_description",
                              "Displays version information and exits."),
@@ -457,12 +458,11 @@ inline void CmdLine::_constructor() {
 }
 
 inline void CmdLine::xorAdd(const std::vector<Arg *> &args) {
-    OneOf *group = new OneOf(*this);
+    auto *group = new OneOf(*this);
     _deleteOnExit(group);
 
-    for (std::vector<Arg *>::const_iterator it = args.begin(); it != args.end();
-         ++it) {
-        group->add(**it);
+    for (Arg *arg : args) {
+        group->add(*arg);
     }
 }
 
@@ -485,10 +485,11 @@ inline ArgContainer &CmdLine::add(Arg &a) { return add(&a); }
 // TODO: Rename this to something smarter or refactor this logic so
 // it's not needed.
 inline void CmdLine::addToArgList(Arg *a) {
-    for (ArgListIterator it = _argList.begin(); it != _argList.end(); it++)
-        if (*a == *(*it))
-            throw(SpecificationException(
-                "Argument with same flag/name already exists!", a->longID()));
+    if (std::any_of(_argList.begin(), _argList.end(),
+                    [a](const Arg *existing) { return *a == *existing; })) {
+        throw SpecificationException(
+            "Argument with same flag/name already exists!", a->longID());
+    }
 
     a->addToList(_argList);
 
@@ -505,8 +506,7 @@ inline ArgContainer &CmdLine::add(Arg *a) {
 inline void CmdLine::parse(int argc, const char *const *argv) {
     // this step is necessary so that we have easy access to
     // mutable strings.
-    std::vector<std::string> args;
-    for (int i = 0; i < argc; i++) args.push_back(argv[i]);
+    std::vector<std::string> args(argv, argv + argc);
 
     parse(args);
 }
@@ -547,9 +547,8 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
 
         for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
             bool matched = false;
-            for (ArgListIterator it = _argList.begin(); it != _argList.end();
-                 it++) {
-                Arg &arg = **it;
+            for (Arg *argPtr : _argList) {
+                Arg &arg = *argPtr;
                 // We check if the argument was already set (e.g., for
                 // a Multi-Arg) since then we don't want to count it
                 // as required again. This is a hack/workaround to
@@ -580,11 +579,10 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
 
         // Once all arguments have been parsed, check that we don't
         // violate any constraints.
-        for (std::list<ArgGroup *>::iterator it = _argGroups.begin();
-             it != _argGroups.end(); ++it) {
-            bool missingRequired = (*it)->validate();
+        for (ArgGroup *group : _argGroups) {
+            bool missingRequired = group->validate();
             if (missingRequired) {
-                missingArgGroups.push_back(*it);
+                missingArgGroups.push_back(group);
             }
         }
 
@@ -623,12 +621,9 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
 }
 
 inline bool CmdLine::_emptyCombined(const std::string &s) {
-    if (s.length() > 0 && s[0] != Arg::flagStartChar()) return false;
+    if (!s.empty() && s[0] != Arg::flagStartChar()) return false;
 
-    for (int i = 1; static_cast<unsigned int>(i) < s.length(); i++)
-        if (s[i] != Arg::blankChar()) return false;
-
-    return true;
+    return s.find_first_not_of(Arg::blankChar(), 1) == std::string::npos;
 }
 
 inline void CmdLine::missingArgsException(
@@ -636,17 +631,16 @@ inline void CmdLine::missingArgsException(
     int count = 0;
 
     std::string missingArgList;
-    for (ArgListIterator it = _argList.begin(); it != _argList.end(); it++) {
-        if ((*it)->isRequired() && !(*it)->isSet()) {
-            missingArgList += (*it)->getName();
+    for (Arg *arg : _argList) {
+        if (arg->isRequired() && !arg->isSet()) {
+            missingArgList += arg->getName();
             missingArgList += ", ";
             count++;
         }
     }
 
-    for (std::list<ArgGroup *>::const_iterator it = missing.begin();
-         it != missing.end(); it++) {
-        missingArgList += (*it)->getName();
+    for (const ArgGroup *group : missing) {
+        missingArgList += group->getName();
         missingArgList += ", ";
         count++;
     }
@@ -674,8 +668,7 @@ inline void CmdLine::setExceptionHandling(const bool state) {
 
 inline void CmdLine::reset() {
     // TODO: This is no longer correct (or perhaps we don't need "reset")
-    for (ArgListIterator it = _argList.begin(); it != _argList.end(); it++)
-        (*it)->reset();
+    for (Arg *arg : _argList) arg->reset();
 
     _progName.clear();
 }
