@@ -4,8 +4,9 @@ project(TCLAP VERSION 1.4.0 LANGUAGES CXX)
 set("PROJECT_DESCRIPTION" "A header-only templatized C++ command line parser library")
 set("PROJECT_HOMEPAGE_URL" "https://sourceforge.net/projects/tclap/")
 
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions(-DHAVE_TCLAP_CONFIG_H)
 
 enable_testing()
