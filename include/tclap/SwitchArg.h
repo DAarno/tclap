@@ -91,7 +91,7 @@ public:
      * \param args - Mutable list of strings. Passed
      * in from main().
      */
-    virtual bool processArg(int *i, std::vector<std::string> &args);
+    bool processArg(int *i, std::vector<std::string> &args) override;
 
     /**
      * Checks a string to see if any of the chars in the string
@@ -111,7 +111,7 @@ public:
      */
     operator bool() const { return _value; }
 
-    virtual void reset();
+    void reset() override;
 
 private:
     /**
@@ -146,15 +146,13 @@ inline SwitchArg::SwitchArg(const std::string &flag, const std::string &name,
 }
 
 inline bool SwitchArg::lastCombined(std::string &combinedSwitches) {
-    for (unsigned int i = 1; i < combinedSwitches.length(); i++)
-        if (combinedSwitches[i] != Arg::blankChar()) return false;
-
-    return true;
+    return combinedSwitches.find_first_not_of(Arg::blankChar(), 1) ==
+           std::string::npos;
 }
 
 inline bool SwitchArg::combinedSwitchesMatch(std::string &combinedSwitches) {
     // make sure this is actually a combined switch
-    if (combinedSwitches.length() > 0 &&
+    if (!combinedSwitches.empty() &&
         combinedSwitches[0] != Arg::flagStartString()[0])
         return false;
 
@@ -169,9 +167,9 @@ inline bool SwitchArg::combinedSwitchesMatch(std::string &combinedSwitches) {
 
     // ok, we're not specifying a ValueArg, so we know that we have
     // a combined switch list.
-    for (unsigned int i = 1; i < combinedSwitches.length(); i++) {
-        if (_flag.length() > 0 && combinedSwitches[i] == _flag[0] &&
-            _flag[0] != Arg::flagStartString()[0]) {
+    if (!_flag.empty() && _flag[0] != Arg::flagStartString()[0]) {
+        std::string::size_type i = combinedSwitches.find(_flag[0], 1);
+        if (i != std::string::npos) {
             // update the combined switches so this one is no longer
             // present this is necessary so that no unlabeled args are
             // matched later in the processing.
@@ -191,11 +189,7 @@ inline void SwitchArg::commonProcessing() {
         throw(CmdLineParseException("Argument already set!", toString()));
 
     _alreadySet = true;
-
-    if (_value == true)
-        _value = false;
-    else
-        _value = true;
+    _value = !_value;
 
     _checkWithVisitor();
 }
