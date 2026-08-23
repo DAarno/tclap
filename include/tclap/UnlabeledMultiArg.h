@@ -144,12 +144,12 @@ public:
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. Passed from main().
      */
-    virtual bool processArg(int *i, std::vector<std::string> &args);
+    bool processArg(int *i, std::vector<std::string> &args) override;
 
     /**
      * Returns the a short id string.  Used in the usage.
      */
-    virtual std::string shortID(const std::string &) const {
+    std::string shortID(const std::string &) const override {
         return Arg::getName() + " ...";
     }
 
@@ -157,7 +157,7 @@ public:
      * Returns the a long id string.  Used in the usage.
      * \param val - value to be used.
      */
-    virtual std::string longID(const std::string &) const {
+    std::string longID(const std::string &) const override {
         return Arg::getName() + " (accepted multiple times) <" + _typeDesc +
                ">";
     }
@@ -166,15 +166,15 @@ public:
      * Operator ==.
      * \param a - The Arg to be compared to this.
      */
-    virtual bool operator==(const Arg &a) const;
+    bool operator==(const Arg &a) const override;
 
     /**
      * Pushes this to back of list rather than front.
      * \param argList - The list this should be added to.
      */
-    virtual void addToList(std::list<Arg *> &argList) const;
+    void addToList(std::list<Arg *> &argList) const override;
 
-    virtual bool hasLabel() const { return false; }
+    bool hasLabel() const override { return false; }
 };
 
 template <class T>
@@ -246,10 +246,7 @@ bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
 
 template <class T>
 bool UnlabeledMultiArg<T>::operator==(const Arg &a) const {
-    if (_name == a.getName() || _description == a.getDescription())
-        return true;
-    else
-        return false;
+    return _name == a.getName() || _description == a.getDescription();
 }
 
 template <class T>

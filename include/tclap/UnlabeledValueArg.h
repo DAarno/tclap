@@ -167,34 +167,34 @@ public:
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings.
      */
-    virtual bool processArg(int *i, std::vector<std::string> &args);
+    bool processArg(int *i, std::vector<std::string> &args) override;
 
     /**
      * Overrides shortID for specific behavior.
      */
-    virtual std::string shortID(const std::string &) const {
+    std::string shortID(const std::string &) const override {
         return Arg::getName();
     }
 
     /**
      * Overrides longID for specific behavior.
      */
-    virtual std::string longID(const std::string &) const {
+    std::string longID(const std::string &) const override {
         return Arg::getName() + " <" + _typeDesc + ">";
     }
 
     /**
      * Overrides operator== for specific behavior.
      */
-    virtual bool operator==(const Arg &a) const;
+    bool operator==(const Arg &a) const override;
 
     /**
      * Instead of pushing to the front of list, push to the back.
      * \param argList - The list to add this to.
      */
-    virtual void addToList(std::list<Arg *> &argList) const;
+    void addToList(std::list<Arg *> &argList) const override;
 
-    virtual bool hasLabel() const { return false; }
+    bool hasLabel() const override { return false; }
 };
 
 /**
@@ -271,10 +271,7 @@ bool UnlabeledValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
  */
 template <class T>
 bool UnlabeledValueArg<T>::operator==(const Arg &a) const {
-    if (_name == a.getName() || _description == a.getDescription())
-        return true;
-    else
-        return false;
+    return _name == a.getName() || _description == a.getDescription();
 }
 
 template <class T>
