@@ -27,6 +27,7 @@
 #include <tclap/Constraint.h>
 #include <tclap/sstream.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -48,24 +49,24 @@ public:
     /**
      * Virtual destructor.
      */
-    virtual ~ValuesConstraint() {}
+    ~ValuesConstraint() override = default;
 
     /**
      * Returns a description of the Constraint.
      */
-    virtual std::string description() const;
+    std::string description() const override;
 
     /**
      * Returns the short ID for the Constraint.
      */
-    virtual std::string shortID() const;
+    std::string shortID() const override;
 
     /**
      * The method used to verify that the value parsed from the command
      * line meets the constraint.
      * \param value - The value that will be checked.
      */
-    virtual bool check(const T &value) const;
+    bool check(const T &value) const override;
 
 protected:
     /**
@@ -82,23 +83,20 @@ protected:
 template <class T>
 ValuesConstraint<T>::ValuesConstraint(const std::vector<T> &allowed)
     : _allowed(allowed), _typeDesc("") {
-    for (unsigned int i = 0; i < _allowed.size(); i++) {
+    bool first = true;
+    for (const T &value : _allowed) {
         std::ostringstream os;
-        os << _allowed[i];
+        os << value;
 
-        std::string temp(os.str());
-
-        if (i > 0) _typeDesc += "|";
-        _typeDesc += temp;
+        if (!first) _typeDesc += "|";
+        _typeDesc += os.str();
+        first = false;
     }
 }
 
 template <class T>
 bool ValuesConstraint<T>::check(const T &val) const {
-    if (std::find(_allowed.begin(), _allowed.end(), val) == _allowed.end())
-        return false;
-    else
-        return true;
+    return std::find(_allowed.begin(), _allowed.end(), val) != _allowed.end();
 }
 
 template <class T>
