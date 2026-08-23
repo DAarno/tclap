@@ -382,17 +382,17 @@ public:
 /**
  * Typedef of an Arg list iterator.
  */
-typedef std::list<Arg *>::const_iterator ArgListIterator;
+using ArgListIterator = std::list<Arg *>::const_iterator;
 
 /**
  * Typedef of an Arg vector iterator.
  */
-typedef std::vector<Arg *>::const_iterator ArgVectorIterator;
+using ArgVectorIterator = std::vector<Arg *>::const_iterator;
 
 /**
  * Typedef of a Visitor list iterator.
  */
-typedef std::list<Visitor *>::const_iterator VisitorListIterator;
+using VisitorListIterator = std::list<Visitor *>::const_iterator;
 
 /*
  * Extract a value of type T from it's string representation contained

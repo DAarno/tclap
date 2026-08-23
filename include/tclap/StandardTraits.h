@@ -48,7 +48,7 @@ namespace TCLAP {
 // Strings have string like argument traits.
 template <>
 struct ArgTraits<std::string> {
-    typedef StringLike ValueCategory;
+    using ValueCategory = StringLike;
 };
 
 template <typename T>

@@ -34,14 +34,14 @@
 #if defined(TCLAP_HAVE_SSTREAM)
 #include <sstream>
 namespace TCLAP {
-typedef std::istringstream istringstream;
-typedef std::ostringstream ostringstream;
+using istringstream = std::istringstream;
+using ostringstream = std::ostringstream;
 }  // namespace TCLAP
 #elif defined(TCLAP_HAVE_STRSTREAM)
 #include <strstream>
 namespace TCLAP {
-typedef std::istrstream istringstream;
-typedef std::ostrstream ostringstream;
+using istringstream = std::istrstream;
+using ostringstream = std::ostrstream;
 }  // namespace TCLAP
 #else
 #error "Need a stringstream (sstream or strstream) to compile!"

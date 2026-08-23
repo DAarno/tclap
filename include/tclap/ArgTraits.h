@@ -37,7 +37,7 @@ namespace TCLAP {
  * operator>>. This is the default value type.
  */
 struct ValueLike {
-    typedef ValueLike ValueCategory;
+    using ValueCategory = ValueLike;
     virtual ~ValueLike() {}
 };
 
@@ -56,7 +56,7 @@ struct StringLike {
  * to the inherenting class.
  */
 struct StringLikeTrait {
-    typedef StringLike ValueCategory;
+    using ValueCategory = StringLike;
     virtual ~StringLikeTrait() {}
 };
 
@@ -66,7 +66,7 @@ struct StringLikeTrait {
  * to the inherenting class.
  */
 struct ValueLikeTrait {
-    typedef ValueLike ValueCategory;
+    using ValueCategory = ValueLike;
     virtual ~ValueLikeTrait() {}
 };
 
@@ -102,20 +102,21 @@ class ArgTraits {
     static short test(typename C::ValueCategory *);  // NOLINT
     template <typename C>
     static long test(...);                                             // NOLINT
-    static const bool hasTrait = sizeof(test<T>(0)) == sizeof(short);  // NOLINT
+    static const bool hasTrait =
+        sizeof(test<T>(nullptr)) == sizeof(short);  // NOLINT
 
     template <typename C, bool>
     struct DefaultArgTrait {
-        typedef ValueLike ValueCategory;
+        using ValueCategory = ValueLike;
     };
 
     template <typename C>
     struct DefaultArgTrait<C, true> {
-        typedef typename C::ValueCategory ValueCategory;
+        using ValueCategory = typename C::ValueCategory;
     };
 
 public:
-    typedef typename DefaultArgTrait<T, hasTrait>::ValueCategory ValueCategory;
+    using ValueCategory = typename DefaultArgTrait<T, hasTrait>::ValueCategory;
 };
 
 }  // namespace TCLAP

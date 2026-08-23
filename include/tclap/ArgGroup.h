@@ -40,9 +40,9 @@ namespace TCLAP {
  */
 class ArgGroup : public ArgContainer {
 public:
-    typedef std::list<Arg *> Container;
-    typedef Container::iterator iterator;
-    typedef Container::const_iterator const_iterator;
+    using Container = std::list<Arg *>;
+    using iterator = Container::iterator;
+    using const_iterator = Container::const_iterator;
 
     virtual ~ArgGroup() {}
 
