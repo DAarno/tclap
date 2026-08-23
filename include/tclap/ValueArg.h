@@ -185,7 +185,7 @@ public:
      * \param args - Mutable list of strings. Passed
      * in from main().
      */
-    virtual bool processArg(int *i, std::vector<std::string> &args);
+    bool processArg(int *i, std::vector<std::string> &args) override;
 
     /**
      * Returns the value of the argument.
@@ -202,22 +202,21 @@ public:
      * Specialization of shortID.
      * \param val - value to be used.
      */
-    virtual std::string shortID(const std::string &val = "val") const;
+    std::string shortID(const std::string &val = "val") const override;
 
     /**
      * Specialization of longID.
      * \param val - value to be used.
      */
-    virtual std::string longID(const std::string &val = "val") const;
+    std::string longID(const std::string &val = "val") const override;
 
-    virtual void reset();
+    void reset() override;
 
-private:
-  /**
-   * Prevent accidental copying
-   */
-  ValueArg(const ValueArg<T>& rhs);
-  ValueArg& operator=(const ValueArg<T>& rhs);
+    /**
+     * Prevent accidental copying
+     */
+    ValueArg(const ValueArg<T> &rhs) = delete;
+    ValueArg &operator=(const ValueArg<T> &rhs) = delete;
 };
 
 /**
@@ -286,11 +285,11 @@ bool ValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
             throw(CmdLineParseException("Argument already set!", toString()));
         }
 
-        if (Arg::delimiter() != ' ' && value == "")
+        if (Arg::delimiter() != ' ' && value.empty())
             throw(ArgParseException(
                 "Couldn't find delimiter for this argument!", toString()));
 
-        if (value == "") {
+        if (value.empty()) {
             (*i)++;
             if (static_cast<unsigned int>(*i) < args.size())
                 _extractValue(args[*i]);
