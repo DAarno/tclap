@@ -48,21 +48,21 @@ public:
     /**
      * Destructor
      */
-    virtual ~CmdLineInterface() {}
+    ~CmdLineInterface() override = default;
 
     /**
      * Adds an argument. Ownership is not transfered.
      * @param a - Argument to be added.
      * @retval A reference to this so that add calls can be chained
      */
-    virtual ArgContainer &add(Arg &a) = 0;
+    ArgContainer &add(Arg &a) override = 0;
 
     /**
      * Adds an argument. Ownership is not transfered.
      * @param a - Argument to be added.
      * @retval A reference to this so that add calls can be chained
      */
-    virtual ArgContainer &add(Arg *a) = 0;
+    ArgContainer &add(Arg *a) override = 0;
 
     // TODO: Rename this to something smarter or refactor this logic so
     // it's not needed.

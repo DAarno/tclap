@@ -38,7 +38,7 @@ class Arg;
  */
 class ArgContainer {
 public:
-    virtual ~ArgContainer() {}
+    virtual ~ArgContainer() = default;
 
     /**
      * Adds an argument. Ownership is not transfered.

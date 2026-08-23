@@ -62,7 +62,7 @@ public:
      * Silences warnings about Constraint being a base class with virtual
      * functions but without a virtual destructor.
      */
-    virtual ~Constraint() { ; }
+    virtual ~Constraint() = default;
 
     static std::string shortID(const Constraint<T> *constraint) {
         if (!constraint)
