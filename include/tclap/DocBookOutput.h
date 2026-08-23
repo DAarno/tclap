@@ -47,14 +47,14 @@ public:
      * produce alternative behavior.
      * \param c - The CmdLine object the output is generated for.
      */
-    virtual void usage(CmdLineInterface &c);
+    void usage(CmdLineInterface &c) override;
 
     /**
      * Prints the version to stdout. Can be overridden
      * to produce alternative behavior.
      * \param c - The CmdLine object the output is generated for.
      */
-    virtual void version(CmdLineInterface &c);
+    void version(CmdLineInterface &c) override;
 
     /**
      * Prints (to stderr) an error message, short usage
@@ -62,7 +62,7 @@ public:
      * \param c - The CmdLine object the output is generated for.
      * \param e - The ArgException that caused the failure.
      */
-    virtual void failure(CmdLineInterface &c, ArgException &e);
+    void failure(CmdLineInterface &c, ArgException &e) override;
 
     DocBookOutput() : theDelimiter('=') {}
 
@@ -130,21 +130,19 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
 
     std::cout << "<command>" << progName << "</command>\n";
 
-    for (std::list<ArgGroup *>::iterator sit = argSets.begin();
-         sit != argSets.end(); ++sit) {
-        int visible = CountVisibleArgs(**sit);
+    for (ArgGroup *group : argSets) {
+        int visible = CountVisibleArgs(*group);
         if (visible > 1) {
-            std::cout << "<group choice='" << internal::GroupChoice(**sit)
+            std::cout << "<group choice='" << internal::GroupChoice(*group)
                       << "'>\n";
         }
-        for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
-             ++it) {
-            if (!(*it)->visibleInHelp()) {
+        for (Arg *arg : *group) {
+            if (!arg->visibleInHelp()) {
                 continue;
             }
 
-            printShortArg(*it, (*it)->isRequired() ||
-                                   (visible == 1 && (**sit).isRequired()));
+            printShortArg(arg, arg->isRequired() ||
+                                   (visible == 1 && group->isRequired()));
         }
         if (visible > 1) {
             std::cout << "</group>\n";
@@ -166,9 +164,8 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
 
     std::cout << "<variablelist>\n";
 
-    for (std::list<ArgGroup *>::iterator sit = argSets.begin();
-         sit != argSets.end(); ++sit) {
-        printLongArg(**sit);
+    for (ArgGroup *group : argSets) {
+        printLongArg(*group);
     }
 
     std::cout << "</variablelist>\n";
@@ -248,8 +245,8 @@ inline void DocBookOutput::printLongArg(const ArgGroup &group) const {
     const std::string gt = "&gt;";
 
     bool forceRequired = group.isRequired() && CountVisibleArgs(group) == 1;
-    for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it) {
-        Arg &a = **it;
+    for (const Arg *argPtr : group) {
+        const Arg &a = *argPtr;
         if (!a.visibleInHelp()) {
             continue;
         }
