@@ -53,7 +53,7 @@ public:
     /**
      * Destructor.
      */
-    virtual ~ArgException() throw() {}
+    ~ArgException() noexcept override {}
 
     /**
      * Returns the error text.
@@ -73,7 +73,7 @@ public:
     /**
      * Returns the arg id and error text.
      */
-    const char *what() const throw() {
+    const char *what() const noexcept override {
         static std::string ex;
         ex = _argId + " -- " + _errorText;
         return ex.c_str();
