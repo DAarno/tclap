@@ -93,7 +93,7 @@ public:
      * \param args - Mutable list of strings. Passed
      * in from main().
      */
-    virtual bool processArg(int *i, std::vector<std::string> &args);
+    bool processArg(int *i, std::vector<std::string> &args) override;
 
     /**
      * Returns int, the number of times the switch has been set.
@@ -103,14 +103,14 @@ public:
     /**
      * Returns the shortID for this Arg.
      */
-    std::string shortID(const std::string &val) const;
+    std::string shortID(const std::string &val) const override;
 
     /**
      * Returns the longID for this Arg.
      */
-    std::string longID(const std::string &val) const;
+    std::string longID(const std::string &val) const override;
 
-    void reset();
+    void reset() override;
 };
 
 inline MultiSwitchArg::MultiSwitchArg(const std::string &flag,
