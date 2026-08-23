@@ -128,7 +128,7 @@ protected:
     /**
      * A pointer to a visitor object.
      * The visitor allows special handling to occur as soon as the
-     * argument is matched.  This defaults to NULL and should not
+     * argument is matched.  This defaults to nullptr and should not
      * be used unless absolutely necessary.
      */
     Visitor *_visitor;
@@ -162,10 +162,10 @@ protected:
      * \param desc - The description of the argument, used in the usage.
      * \param req - Whether the argument is required.
      * \param valreq - Whether the a value is required for the argument.
-     * \param v - The visitor checked by the argument. Defaults to NULL.
+     * \param v - The visitor checked by the argument. Defaults to nullptr.
      */
     Arg(const std::string &flag, const std::string &name,
-        const std::string &desc, bool req, bool valreq, Visitor *v = NULL);
+        const std::string &desc, bool req, bool valreq, Visitor *v = nullptr);
 
 public:
     /**
@@ -556,7 +556,7 @@ inline std::string Arg::toString() const {
 }
 
 inline void Arg::_checkWithVisitor() const {
-    if (_visitor != NULL) _visitor->visit();
+    if (_visitor != nullptr) _visitor->visit();
 }
 
 /**

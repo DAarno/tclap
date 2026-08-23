@@ -94,7 +94,7 @@ public:
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, const std::string &typeDesc,
-             Visitor *v = NULL);
+             Visitor *v = nullptr);
 
     /**
      * Constructor.
@@ -116,7 +116,7 @@ public:
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, const std::string &typeDesc,
-             ArgContainer &parser, Visitor *v = NULL);
+             ArgContainer &parser, Visitor *v = nullptr);
 
     /**
      * Constructor.
@@ -135,7 +135,7 @@ public:
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, const Constraint<T> *constraint,
-             Visitor *v = NULL);
+             Visitor *v = nullptr);
 
     /**
      * Constructor.
@@ -155,7 +155,7 @@ public:
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, const Constraint<T> *constraint,
-             ArgContainer &parser, Visitor *v = NULL);
+             ArgContainer &parser, Visitor *v = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -216,7 +216,7 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
     : Arg(flag, name, desc, req, true, v),
       _values(std::vector<T>()),
       _typeDesc(typeDesc),
-      _constraint(NULL),
+      _constraint(nullptr),
       _allowMore(false) {
     _acceptsMultipleValues = true;
 }
@@ -229,7 +229,7 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
     : Arg(flag, name, desc, req, true, v),
       _values(std::vector<T>()),
       _typeDesc(typeDesc),
-      _constraint(NULL),
+      _constraint(nullptr),
       _allowMore(false) {
     parser.add(this);
     _acceptsMultipleValues = true;
@@ -328,7 +328,7 @@ void MultiArg<T>::_extractValue(const std::string &val) {
         throw ArgParseException(e.error(), toString());
     }
 
-    if (_constraint != NULL)
+    if (_constraint != nullptr)
         if (!_constraint->check(_values.back()))
             throw(CmdLineParseException(
                 "Value '" + val +

@@ -102,7 +102,7 @@ public:
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
-             const std::string &typeDesc, Visitor *v = NULL);
+             const std::string &typeDesc, Visitor *v = nullptr);
 
     /**
      * Labeled ValueArg constructor.
@@ -128,7 +128,7 @@ public:
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
              const std::string &typeDesc, ArgContainer &parser,
-             Visitor *v = NULL);
+             Visitor *v = nullptr);
 
     /**
      * Labeled ValueArg constructor.
@@ -152,7 +152,7 @@ public:
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
              const Constraint<T> *constraint, ArgContainer &parser,
-             Visitor *v = NULL);
+             Visitor *v = nullptr);
 
     /**
      * Labeled ValueArg constructor.
@@ -174,7 +174,7 @@ public:
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
-             const Constraint<T> *constraint, Visitor *v = NULL);
+             const Constraint<T> *constraint, Visitor *v = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -231,7 +231,7 @@ ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
       _value(val),
       _default(val),
       _typeDesc(typeDesc),
-      _constraint(NULL) {}
+      _constraint(nullptr) {}
 
 template <class T>
 ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
@@ -242,7 +242,7 @@ ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
       _value(val),
       _default(val),
       _typeDesc(typeDesc),
-      _constraint(NULL) {
+      _constraint(nullptr) {
     parser.add(this);
 }
 
@@ -334,7 +334,7 @@ void ValueArg<T>::_extractValue(const std::string &val) {
         throw ArgParseException(e.error(), toString());
     }
 
-    if (_constraint != NULL)
+    if (_constraint != nullptr)
         if (!_constraint->check(_value))
             throw(CmdLineParseException("Value '" + val +
                                             +"' does not meet constraint: " +

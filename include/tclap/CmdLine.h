@@ -345,17 +345,17 @@ public:
     void setMessageTranslator(const T &translator) {
         delete _messageTranslator;
         _messageTranslator = new MessageTranslatorImpl<T>(translator);
-        if (_ignoreArg != NULL) {
+        if (_ignoreArg != nullptr) {
             _ignoreArg->setDescription(translateMessage(
                 "ignore_rest_description",
                 "Ignores the rest of the labeled arguments following this flag."));
         }
-        if (_helpArg != NULL) {
+        if (_helpArg != nullptr) {
             _helpArg->setDescription(translateMessage(
                 "help_description",
                 "Displays usage information and exits."));
         }
-        if (_versionArg != NULL) {
+        if (_versionArg != nullptr) {
             _versionArg->setDescription(translateMessage(
                 "version_description",
                 "Displays version information and exits."));
@@ -367,7 +367,7 @@ public:
      */
     std::string translateMessage(const std::string &messageId,
                                  const std::string &fallback) const {
-        if (_messageTranslator != NULL) {
+        if (_messageTranslator != nullptr) {
             return _messageTranslator->translate(messageId, fallback);
         }
         return fallback;
@@ -396,10 +396,10 @@ inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
       _defaultOutput(),
       _output(&_defaultOutput),
       _handleExceptions(true),
-      _messageTranslator(NULL),
-      _ignoreArg(NULL),
-      _helpArg(NULL),
-      _versionArg(NULL),
+      _messageTranslator(nullptr),
+      _ignoreArg(nullptr),
+      _helpArg(nullptr),
+      _versionArg(nullptr),
       _helpAndVersion(help),
       _ignoreUnmatched(false),
       _ignoring(false) {

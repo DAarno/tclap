@@ -64,7 +64,7 @@ public:
      * use this unless you have a very good reason.
      */
     SwitchArg(const std::string &flag, const std::string &name,
-              const std::string &desc, bool def = false, Visitor *v = NULL);
+              const std::string &desc, bool def = false, Visitor *v = nullptr);
 
     /**
      * SwitchArg constructor.
@@ -81,7 +81,7 @@ public:
      */
     SwitchArg(const std::string &flag, const std::string &name,
               const std::string &desc, ArgContainer &parser, bool def = false,
-              Visitor *v = NULL);
+              Visitor *v = nullptr);
 
     /**
      * Handles the processing of the argument.

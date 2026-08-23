@@ -79,7 +79,7 @@ public:
      */
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const std::string &typeDesc,
-                      bool ignoreable = false, Visitor *v = NULL);
+                      bool ignoreable = false, Visitor *v = nullptr);
 
     /**
      * UnlabeledValueArg constructor.
@@ -107,7 +107,7 @@ public:
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const std::string &typeDesc,
                       CmdLineInterface &parser, bool ignoreable = false,
-                      Visitor *v = NULL);
+                      Visitor *v = nullptr);
 
     /**
      * UnlabeledValueArg constructor.
@@ -131,7 +131,7 @@ public:
      */
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const Constraint<T> *constraint,
-                      bool ignoreable = false, Visitor *v = NULL);
+                      bool ignoreable = false, Visitor *v = nullptr);
 
     /**
      * UnlabeledValueArg constructor.
@@ -157,7 +157,7 @@ public:
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const Constraint<T> *constraint,
                       CmdLineInterface &parser, bool ignoreable = false,
-                      Visitor *v = NULL);
+                      Visitor *v = nullptr);
 
     /**
      * Handles the processing of the argument.

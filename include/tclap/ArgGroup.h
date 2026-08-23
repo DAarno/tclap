@@ -206,12 +206,12 @@ inline ArgContainer &ArgGroup::add(Arg *arg) {
 }
 
 inline bool ExclusiveArgGroup::validate() {
-    Arg *arg = NULL;
+    Arg *arg = nullptr;
     std::string flag;
 
     for (const_iterator it = begin(); it != end(); ++it) {
         if ((*it)->isSet()) {
-            if (arg != NULL && !(*arg == **it)) {
+            if (arg != nullptr && !(*arg == **it)) {
                 // We found a matching argument, but one was
                 // already found previously.
                 throw CmdLineParseException(

@@ -65,7 +65,7 @@ public:
      * use this unless you have a very good reason.
      */
     MultiSwitchArg(const std::string &flag, const std::string &name,
-                   const std::string &desc, int init = 0, Visitor *v = NULL);
+                   const std::string &desc, int init = 0, Visitor *v = nullptr);
 
     /**
      * MultiSwitchArg constructor.
@@ -83,7 +83,7 @@ public:
      */
     MultiSwitchArg(const std::string &flag, const std::string &name,
                    const std::string &desc, ArgContainer &parser, int init = 0,
-                   Visitor *v = NULL);
+                   Visitor *v = nullptr);
 
     /**
      * Handles the processing of the argument.

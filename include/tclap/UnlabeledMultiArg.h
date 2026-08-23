@@ -72,7 +72,7 @@ public:
      */
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const std::string &typeDesc,
-                      bool ignoreable = false, Visitor *v = NULL);
+                      bool ignoreable = false, Visitor *v = nullptr);
     /**
      * Constructor.
      * \param name - The name of the Arg. Note that this is used for
@@ -94,7 +94,7 @@ public:
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const std::string &typeDesc,
                       ArgContainer &parser, bool ignoreable = false,
-                      Visitor *v = NULL);
+                      Visitor *v = nullptr);
 
     /**
      * Constructor.
@@ -113,7 +113,7 @@ public:
      */
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const Constraint<T> *constraint,
-                      bool ignoreable = false, Visitor *v = NULL);
+                      bool ignoreable = false, Visitor *v = nullptr);
 
     /**
      * Constructor.
@@ -134,7 +134,7 @@ public:
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const Constraint<T> *constraint,
                       ArgContainer &parser, bool ignoreable = false,
-                      Visitor *v = NULL);
+                      Visitor *v = nullptr);
 
     /**
      * Handles the processing of the argument.
