@@ -51,14 +51,14 @@ public:
      * produce alternative behavior.
      * \param c - The CmdLine object the output is generated for.
      */
-    virtual void usage(CmdLineInterface &c);
+    void usage(CmdLineInterface &c) override;
 
     /**
      * Prints the version to stdout. Can be overridden
      * to produce alternative behavior.
      * \param c - The CmdLine object the output is generated for.
      */
-    virtual void version(CmdLineInterface &c);
+    void version(CmdLineInterface &c) override;
 
     /**
      * Prints (to stderr) an error message, short usage
@@ -66,7 +66,7 @@ public:
      * \param c - The CmdLine object the output is generated for.
      * \param e - The ArgException that caused the failure.
      */
-    virtual void failure(CmdLineInterface &c, ArgException &e);
+    void failure(CmdLineInterface &c, ArgException &e) override;
 
 protected:
     /**
@@ -245,16 +245,15 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
     std::list<ArgGroup *> exclusiveGroups;
     std::list<ArgGroup *> nonExclusiveGroups;
-    for (std::list<ArgGroup *>::iterator sit = argSets.begin();
-         sit != argSets.end(); ++sit) {
-        if (CountVisibleArgs(**sit) <= 0) {
+    for (ArgGroup *group : argSets) {
+        if (CountVisibleArgs(*group) <= 0) {
             continue;
         }
 
-        if ((*sit)->isExclusive()) {
-            exclusiveGroups.push_back(*sit);
+        if (group->isExclusive()) {
+            exclusiveGroups.push_back(group);
         } else {
-            nonExclusiveGroups.push_back(*sit);
+            nonExclusiveGroups.push_back(group);
         }
     }
 
@@ -262,8 +261,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     // non-exclusive groups as exclusivit doesn't make sense with a
     // single option. This can happen if args are hidden in help for
     // example.
-    for (std::list<ArgGroup *>::iterator it = exclusiveGroups.begin();
-         it != exclusiveGroups.end();) {
+    for (auto it = exclusiveGroups.begin(); it != exclusiveGroups.end();) {
         if (CountVisibleArgs(**it) < 2) {
             nonExclusiveGroups.push_back(*it);
             it = exclusiveGroups.erase(it);
@@ -274,12 +272,10 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
     // First short switches (needs to be special because they are all
     // stuck together).
-    for (std::list<ArgGroup *>::iterator sit = nonExclusiveGroups.begin();
-         sit != nonExclusiveGroups.end(); ++sit) {
-        for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
-             ++it) {
-            if (internal::IsVisibleShortSwitch(**it)) {
-                switches += (*it)->getFlag();
+    for (ArgGroup *group : nonExclusiveGroups) {
+        for (Arg *arg : *group) {
+            if (internal::IsVisibleShortSwitch(*arg)) {
+                switches += arg->getFlag();
             }
         }
 
@@ -290,43 +286,36 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
     // Now do long switches (e.g., --version, but no -v)
     std::vector<Arg *> longSwitches;
-    for (std::list<ArgGroup *>::iterator sit = nonExclusiveGroups.begin();
-         sit != nonExclusiveGroups.end(); ++sit) {
-        for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
-             ++it) {
-            Arg &arg = **it;
-            if (internal::IsVisibleLongSwitch(arg)) {
-                longSwitches.push_back(&arg);
+    for (ArgGroup *group : nonExclusiveGroups) {
+        for (Arg *arg : *group) {
+            if (internal::IsVisibleLongSwitch(*arg)) {
+                longSwitches.push_back(arg);
             }
         }
     }
 
     std::sort(longSwitches.begin(), longSwitches.end(),
               internal::CompareShortID);
-    for (std::vector<Arg *>::const_iterator it = longSwitches.begin();
-         it != longSwitches.end(); ++it) {
-        outp << " [" << (**it).shortID() << ']';
+    for (const Arg *arg : longSwitches) {
+        outp << " [" << arg->shortID() << ']';
     }
 
     // Now do all exclusive groups
-    for (std::list<ArgGroup *>::iterator sit = exclusiveGroups.begin();
-         sit != exclusiveGroups.end(); ++sit) {
-        ArgGroup &argGroup = **sit;
+    for (ArgGroup *group : exclusiveGroups) {
+        ArgGroup &argGroup = *group;
         outp << (argGroup.isRequired() ? " {" : " [");
 
         std::vector<Arg *> args;
-        for (ArgGroup::iterator it = argGroup.begin(); it != argGroup.end();
-             ++it) {
-            if ((**it).visibleInHelp()) {
-                args.push_back(*it);
+        for (Arg *arg : argGroup) {
+            if (arg->visibleInHelp()) {
+                args.push_back(arg);
             }
         }
 
         std::sort(args.begin(), args.end(), internal::CompareShortID);
         std::string sep = "";
-        for (std::vector<Arg *>::const_iterator it = args.begin();
-             it != args.end(); ++it) {
-            outp << sep << (**it).shortID();
+        for (const Arg *arg : args) {
+            outp << sep << arg->shortID();
             sep = "|";
         }
 
@@ -335,49 +324,40 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
     // Next do options, we sort them later by optional first.
     std::vector<std::pair<const Arg *, bool> > options;
-    for (std::list<ArgGroup *>::iterator sit = nonExclusiveGroups.begin();
-         sit != nonExclusiveGroups.end(); ++sit) {
-        for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
-             ++it) {
-            Arg &arg = **it;
-            int visible = CountVisibleArgs(**sit);
-            bool required = arg.isRequired();
-            if (internal::IsVisibleOption(arg)) {
-                if (visible == 1 && (**sit).isRequired()) {
+    for (ArgGroup *group : nonExclusiveGroups) {
+        for (Arg *arg : *group) {
+            int visible = CountVisibleArgs(*group);
+            bool required = arg->isRequired();
+            if (internal::IsVisibleOption(*arg)) {
+                if (visible == 1 && group->isRequired()) {
                     required = true;
                 }
 
-                options.push_back(std::make_pair(&arg, required));
+                options.push_back(std::make_pair(arg, required));
             }
         }
     }
 
     std::sort(options.begin(), options.end(), internal::CompareOptions);
-    for (std::vector<std::pair<const Arg *, bool> >::const_iterator it =
-             options.begin();
-         it != options.end(); ++it) {
-        const Arg &arg = *it->first;
-        bool required = it->second;
+    for (const auto &[argPtr, required] : options) {
+        const Arg &arg = *argPtr;
         outp << (required ? " " : " [");
         outp << arg.shortID();
         outp << (required ? "" : "]");
     }
 
     // Next do argsuments ("unlabled") in order of definition
-    for (std::list<ArgGroup *>::iterator sit = nonExclusiveGroups.begin();
-         sit != nonExclusiveGroups.end(); ++sit) {
-        for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
-             ++it) {
-            Arg &arg = **it;
-            if (arg.getName() == Arg::ignoreNameString()) {
+    for (ArgGroup *group : nonExclusiveGroups) {
+        for (Arg *arg : *group) {
+            if (arg->getName() == Arg::ignoreNameString()) {
                 continue;
             }
 
-            if (arg.isValueRequired() && !arg.hasLabel() &&
-                arg.visibleInHelp()) {
-                outp << (arg.isRequired() ? " " : " [");
-                outp << arg.shortID();
-                outp << (arg.isRequired() ? "" : "]");
+            if (arg->isValueRequired() && !arg->hasLabel() &&
+                arg->visibleInHelp()) {
+                outp << (arg->isRequired() ? " " : " [");
+                outp << arg->shortID();
+                outp << (arg->isRequired() ? "" : "]");
             }
         }
     }
@@ -395,9 +375,8 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
     std::list<ArgGroup *> argSets = _cmd.getArgGroups();
 
     std::list<Arg *> unlabled;
-    for (std::list<ArgGroup *>::iterator sit = argSets.begin();
-         sit != argSets.end(); ++sit) {
-        ArgGroup &argGroup = **sit;
+    for (ArgGroup *group : argSets) {
+        ArgGroup &argGroup = *group;
 
         int visible = CountVisibleArgs(argGroup);
         bool exclusive = visible > 1 && argGroup.isExclusive();
@@ -413,9 +392,8 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
                        3, 0);
         }
 
-        for (ArgGroup::iterator it = argGroup.begin(); it != argGroup.end();
-             ++it) {
-            Arg &arg = **it;
+        for (Arg *argPtr : argGroup) {
+            Arg &arg = *argPtr;
             if (!arg.visibleInHelp()) {
                 continue;
             }
@@ -437,8 +415,8 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
         }
     }
 
-    for (ArgListIterator it = unlabled.begin(); it != unlabled.end(); ++it) {
-        const Arg &arg = **it;
+    for (const Arg *argPtr : unlabled) {
+        const Arg &arg = *argPtr;
         spacePrint(os, arg.longID(), 75, 3, 3);
         spacePrint(os, arg.getDescription(), 75, 5, 0);
         os << '\n';
