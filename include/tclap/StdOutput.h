@@ -333,7 +333,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
                     required = true;
                 }
 
-                options.push_back(std::make_pair(arg, required));
+                options.emplace_back(arg, required);
             }
         }
     }
