@@ -53,7 +53,7 @@ public:
     /**
      * Destructor.
      */
-    ~ArgException() noexcept override {}
+    ~ArgException() noexcept override = default;
 
     /**
      * Returns the error text.
