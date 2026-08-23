@@ -34,12 +34,12 @@ public:
     /**
      * Constructor. Does nothing.
      */
-    Visitor() {}
+    Visitor() = default;
 
     /**
      * Destructor. Does nothing.
      */
-    virtual ~Visitor() {}
+    virtual ~Visitor() = default;
 
     /**
      * This method (to implemented by children) will be

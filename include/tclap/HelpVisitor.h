@@ -34,12 +34,12 @@ namespace TCLAP {
  * object for the specified CmdLine object.
  */
 class HelpVisitor : public Visitor {
-private:
+public:
     /**
      * Prevent accidental copying.
      */
-    HelpVisitor(const HelpVisitor &rhs);
-    HelpVisitor &operator=(const HelpVisitor &rhs);
+    HelpVisitor(const HelpVisitor &rhs) = delete;
+    HelpVisitor &operator=(const HelpVisitor &rhs) = delete;
 
 protected:
     /**
@@ -65,7 +65,7 @@ public:
      * Calls the usage method of the CmdLineOutput for the
      * specified CmdLine.
      */
-    void visit() {
+    void visit() override {
         (*_out)->usage(*_cmd);
         throw ExitException(0);
     }
