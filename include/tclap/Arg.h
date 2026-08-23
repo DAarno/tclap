@@ -51,17 +51,14 @@ namespace TCLAP {
  * anything.
  */
 class Arg {
+public:
+    /**
+     * Prevent accidental copying.
+     */
+    Arg(const Arg &rhs) = delete;
+    Arg &operator=(const Arg &rhs) = delete;
+
 private:
-    /**
-     * Prevent accidental copying.
-     */
-    Arg(const Arg &rhs);
-
-    /**
-     * Prevent accidental copying.
-     */
-    Arg &operator=(const Arg &rhs);
-
     /**
      * The delimiter that separates an argument flag/name from the
      * value.
@@ -171,7 +168,7 @@ public:
     /**
      * Destructor.
      */
-    virtual ~Arg();
+    virtual ~Arg() = default;
 
     /**
      * Adds this to the specified list of Args.
@@ -208,7 +205,7 @@ public:
 #ifndef TCLAP_FLAGSTARTSTRING
 #define TCLAP_FLAGSTARTSTRING "-"
 #endif
-    static const std::string flagStartString() { return TCLAP_FLAGSTARTSTRING; }
+    static std::string flagStartString() { return TCLAP_FLAGSTARTSTRING; }
 
 /**
  * The sting that indicates the beginning of a name.  Defaults to "--", but
@@ -217,12 +214,12 @@ public:
 #ifndef TCLAP_NAMESTARTSTRING
 #define TCLAP_NAMESTARTSTRING "--"
 #endif
-    static const std::string nameStartString() { return TCLAP_NAMESTARTSTRING; }
+    static std::string nameStartString() { return TCLAP_NAMESTARTSTRING; }
 
     /**
      * The name used to identify the ignore rest argument.
      */
-    static const std::string ignoreNameString() { return "ignore_rest"; }
+    static std::string ignoreNameString() { return "ignore_rest"; }
 
     /**
      * Sets the delimiter for all arguments.
@@ -485,12 +482,10 @@ inline Arg::Arg(const std::string &flag, const std::string &name,
                                      Arg::toString()));
 }
 
-inline Arg::~Arg() {}
-
 inline std::string Arg::shortID(const std::string &valueId) const {
     std::string id = "";
 
-    if (_flag != "")
+    if (!_flag.empty())
         id = Arg::flagStartString() + _flag;
     else
         id = Arg::nameStartString() + _name;
@@ -503,7 +498,7 @@ inline std::string Arg::shortID(const std::string &valueId) const {
 inline std::string Arg::longID(const std::string &valueId) const {
     std::string id = "";
 
-    if (_flag != "") {
+    if (!_flag.empty()) {
         id += Arg::flagStartString() + _flag;
 
         if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
@@ -519,10 +514,7 @@ inline std::string Arg::longID(const std::string &valueId) const {
 }
 
 inline bool Arg::operator==(const Arg &a) const {
-    if ((_flag != "" && _flag == a._flag) || _name == a._name)
-        return true;
-    else
-        return false;
+    return (!_flag.empty() && _flag == a._flag) || _name == a._name;
 }
 
 inline const std::string &Arg::getFlag() const { return _flag; }
@@ -538,17 +530,14 @@ inline bool Arg::isSet() const { return _alreadySet; }
 inline bool Arg::isIgnoreable() const { return _ignoreable; }
 
 inline bool Arg::argMatches(const std::string &argFlag) const {
-    if ((argFlag == Arg::flagStartString() + _flag && _flag != "") ||
-        argFlag == Arg::nameStartString() + _name)
-        return true;
-    else
-        return false;
+    return (argFlag == Arg::flagStartString() + _flag && !_flag.empty()) ||
+           argFlag == Arg::nameStartString() + _name;
 }
 
 inline std::string Arg::toString() const {
     std::string s = "";
 
-    if (_flag != "") s += Arg::flagStartString() + _flag + " ";
+    if (!_flag.empty()) s += Arg::flagStartString() + _flag + " ";
 
     s += "(" + Arg::nameStartString() + _name + ")";
 
@@ -563,14 +552,9 @@ inline void Arg::_checkWithVisitor() const {
  * Implementation of trimFlag.
  */
 inline void Arg::trimFlag(std::string &flag, std::string &value) const {
-    int stop = 0;
-    for (int i = 0; static_cast<unsigned int>(i) < flag.length(); i++)
-        if (flag[i] == Arg::delimiter()) {
-            stop = i;
-            break;
-        }
+    std::string::size_type stop = flag.find(Arg::delimiter());
 
-    if (stop > 1) {
+    if (stop != std::string::npos && stop > 1) {
         value = flag.substr(stop + 1);
         flag = flag.substr(0, stop);
     }
@@ -580,10 +564,7 @@ inline void Arg::trimFlag(std::string &flag, std::string &value) const {
  * Implementation of _hasBlanks.
  */
 inline bool Arg::_hasBlanks(const std::string &s) const {
-    for (int i = 1; static_cast<unsigned int>(i) < s.length(); i++)
-        if (s[i] == Arg::blankChar()) return true;
-
-    return false;
+    return s.find(Arg::blankChar(), 1) != std::string::npos;
 }
 
 /**
