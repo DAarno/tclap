@@ -165,7 +165,7 @@ public:
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. Passed from main().
      */
-    virtual bool processArg(int *i, std::vector<std::string> &args);
+    bool processArg(int *i, std::vector<std::string> &args) override;
 
     /**
      * Returns a vector of type T containing the values parsed from
@@ -189,24 +189,23 @@ public:
      * Returns the a short id string.  Used in the usage.
      * \param val - value to be used.
      */
-    virtual std::string shortID(const std::string &val = "val") const;
+    std::string shortID(const std::string &val = "val") const override;
 
     /**
      * Returns the a long id string.  Used in the usage.
      * \param val - value to be used.
      */
-    virtual std::string longID(const std::string &val = "val") const;
+    std::string longID(const std::string &val = "val") const override;
 
-    virtual bool allowMore();
+    bool allowMore() override;
 
-    virtual void reset();
+    void reset() override;
 
-private:
-	/**
-	 * Prevent accidental copying
-	 */
-	MultiArg(const MultiArg<T>& rhs);
-	MultiArg& operator=(const MultiArg<T>& rhs);
+    /**
+     * Prevent accidental copying
+     */
+    MultiArg(const MultiArg<T> &rhs) = delete;
+    MultiArg &operator=(const MultiArg<T> &rhs) = delete;
 };
 
 template <class T>
@@ -214,7 +213,7 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
                       const std::string &typeDesc, Visitor *v)
     : Arg(flag, name, desc, req, true, v),
-      _values(std::vector<T>()),
+      _values(),
       _typeDesc(typeDesc),
       _constraint(nullptr),
       _allowMore(false) {
@@ -227,7 +226,7 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &typeDesc, ArgContainer &parser,
                       Visitor *v)
     : Arg(flag, name, desc, req, true, v),
-      _values(std::vector<T>()),
+      _values(),
       _typeDesc(typeDesc),
       _constraint(nullptr),
       _allowMore(false) {
@@ -243,7 +242,7 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
                       const Constraint<T> *constraint, Visitor *v)
     : Arg(flag, name, desc, req, true, v),
-      _values(std::vector<T>()),
+      _values(),
       _typeDesc(Constraint<T>::shortID(constraint)),
       _constraint(constraint),
       _allowMore(false) {
@@ -256,7 +255,7 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const Constraint<T> *constraint, ArgContainer &parser,
                       Visitor *v)
     : Arg(flag, name, desc, req, true, v),
-      _values(std::vector<T>()),
+      _values(),
       _typeDesc(Constraint<T>::shortID(constraint)),
       _constraint(constraint),
       _allowMore(false) {
@@ -274,12 +273,12 @@ bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
     trimFlag(flag, value);
 
     if (argMatches(flag)) {
-        if (Arg::delimiter() != ' ' && value == "")
+        if (Arg::delimiter() != ' ' && value.empty())
             throw(ArgParseException(
                 "Couldn't find delimiter for this argument!", toString()));
 
         // always take the first one, regardless of start string
-        if (value == "") {
+        if (value.empty()) {
             (*i)++;
             if (static_cast<unsigned int>(*i) < args.size())
                 _extractValue(args[*i]);
