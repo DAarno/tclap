@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <format>
 #include <iostream>
 #include <list>
 #include <string>
@@ -100,55 +101,45 @@ protected:
 };
 
 inline void StdOutput::version(CmdLineInterface &_cmd) {
-    std::string progName = _cmd.getProgramName();
-    std::string xversion = _cmd.getVersion();
-
-    std::cout << std::endl
-              << progName << "  "
-              << _cmd.translateMessage("version_label", "version:")
-              << " " << xversion << std::endl
-              << std::endl;
+    std::cout << std::format("\n{}  {} {}\n\n", _cmd.getProgramName(),
+                              _cmd.translateMessage("version_label", "version:"),
+                              _cmd.getVersion())
+              << std::flush;
 }
 
 inline void StdOutput::usage(CmdLineInterface &_cmd) {
-    std::cout << std::endl
-              << _cmd.translateMessage("usage_header", "USAGE: ")
-              << std::endl
-              << std::endl;
+    std::cout << std::format(
+        "\n{}\n\n", _cmd.translateMessage("usage_header", "USAGE: "));
 
     _shortUsage(_cmd, std::cout);
 
-    std::cout << std::endl << std::endl
-              << _cmd.translateMessage("where_header", "Where: ")
-              << std::endl
-              << std::endl;
+    std::cout << std::format(
+        "\n\n{}\n\n", _cmd.translateMessage("where_header", "Where: "));
 
     _longUsage(_cmd, std::cout);
 
-    std::cout << std::endl;
+    std::cout << '\n' << std::flush;
 }
 
 inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
-    std::string progName = _cmd.getProgramName();
-
-    std::cerr << _cmd.translateMessage("parse_error_header", "PARSE ERROR:")
-              << " " << e.argId() << std::endl
-              << "             " << e.error() << std::endl
-              << std::endl;
+    std::cerr << std::format(
+        "{} {}\n             {}\n\n",
+        _cmd.translateMessage("parse_error_header", "PARSE ERROR:"), e.argId(),
+        e.error());
 
     if (_cmd.hasHelpAndVersion()) {
-        std::cerr << _cmd.translateMessage("brief_usage_header", "Brief USAGE: ")
-                  << std::endl;
+        std::cerr << std::format(
+            "{}\n", _cmd.translateMessage("brief_usage_header", "Brief USAGE: "));
 
         _shortUsage(_cmd, std::cerr);
 
-        std::cerr << std::endl
-                  << _cmd.translateMessage("complete_usage_hint",
-                                       "For complete USAGE and HELP type: ")
-                  << std::endl
-                  << "   " << progName << " " << Arg::nameStartString()
-                  << "help" << std::endl
-                  << std::endl;
+        std::cerr << std::format(
+                          "\n{}\n   {} {}help\n\n",
+                          _cmd.translateMessage(
+                              "complete_usage_hint",
+                              "For complete USAGE and HELP type: "),
+                          _cmd.getProgramName(), Arg::nameStartString())
+                  << std::flush;
     } else {
         usage(_cmd);
     }
