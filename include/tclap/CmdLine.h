@@ -72,7 +72,7 @@ public:
         return *this;
     }
 
-    bool showAsGroup() const override { return false; }
+    [[nodiscard]] bool showAsGroup() const override { return false; }
 };
 
 /**
@@ -151,16 +151,17 @@ protected:
      */
     struct MessageTranslator {
         virtual ~MessageTranslator() = default;
-        virtual std::string translate(const std::string &messageId,
-                                      const std::string &fallback) const = 0;
+        [[nodiscard]] virtual std::string translate(
+            const std::string &messageId, const std::string &fallback) const = 0;
     };
 
     template <typename T>
     struct MessageTranslatorImpl : MessageTranslator {
         T _translator;
         MessageTranslatorImpl(const T &translator) : _translator(translator) {}
-        std::string translate(const std::string &messageId,
-                              const std::string &fallback) const override {
+        [[nodiscard]] std::string translate(
+            const std::string &messageId,
+            const std::string &fallback) const override {
             return _translator(messageId, fallback);
         }
     };
@@ -295,21 +296,27 @@ public:
 
     void setOutput(CmdLineOutput *co) override;
 
-    std::string getVersion() const override { return _version; }
+    [[nodiscard]] std::string getVersion() const override { return _version; }
 
-    std::string getProgramName() const override { return _progName; }
+    [[nodiscard]] std::string getProgramName() const override {
+        return _progName;
+    }
 
     // TOOD: Get rid of getArgList
-    std::list<Arg *> getArgList() const override { return _argList; }
+    [[nodiscard]] std::list<Arg *> getArgList() const override {
+        return _argList;
+    }
     std::list<ArgGroup *> getArgGroups() override {
         std::list<ArgGroup *> groups = _argGroups;
         groups.push_back(&_autoArgs);
         return groups;
     }
 
-    char getDelimiter() const override { return _delimiter; }
-    std::string getMessage() const override { return _message; }
-    bool hasHelpAndVersion() const override { return _helpAndVersion; }
+    [[nodiscard]] char getDelimiter() const override { return _delimiter; }
+    [[nodiscard]] std::string getMessage() const override { return _message; }
+    [[nodiscard]] bool hasHelpAndVersion() const override {
+        return _helpAndVersion;
+    }
 
     /**
      * Disables or enables CmdLine's internal parsing exception handling.
@@ -324,7 +331,9 @@ public:
      * @retval true Parsing exceptions are handled internally.
      * @retval false Parsing exceptions are propagated to the caller.
      */
-    bool hasExceptionHandling() const { return _handleExceptions; }
+    [[nodiscard]] bool hasExceptionHandling() const {
+        return _handleExceptions;
+    }
 
     /**
      * Allows the CmdLine object to be reused.
@@ -366,8 +375,9 @@ public:
     /**
      * Translates a built-in message.
      */
-    std::string translateMessage(const std::string &messageId,
-                                 const std::string &fallback) const override {
+    [[nodiscard]] std::string translateMessage(
+        const std::string &messageId,
+        const std::string &fallback) const override {
         if (_messageTranslator != nullptr) {
             return _messageTranslator->translate(messageId, fallback);
         }

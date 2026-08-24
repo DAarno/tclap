@@ -189,13 +189,15 @@ public:
      * Returns the a short id string.  Used in the usage.
      * \param val - value to be used.
      */
-    std::string shortID(const std::string &val = "val") const override;
+    [[nodiscard]] std::string shortID(
+        const std::string &val = "val") const override;
 
     /**
      * Returns the a long id string.  Used in the usage.
      * \param val - value to be used.
      */
-    std::string longID(const std::string &val = "val") const override;
+    [[nodiscard]] std::string longID(
+        const std::string &val = "val") const override;
 
     bool allowMore() override;
 

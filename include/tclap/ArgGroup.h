@@ -69,7 +69,7 @@ public:
      *
      * @internal
      */
-    virtual bool isRequired() const = 0;
+    [[nodiscard]] virtual bool isRequired() const = 0;
 
     /**
      * Returns true if this argument group is exclusive.
@@ -78,7 +78,7 @@ public:
      * Being exclusive means there is a constraint so that some
      * arguments cannot be selected at the same time.
      */
-    virtual bool isExclusive() const = 0;
+    [[nodiscard]] virtual bool isExclusive() const = 0;
 
     /**
      * Used by the parser to connect itself to this arg group.
@@ -102,15 +102,15 @@ public:
     /**
      * If arguments in this group should show up as grouped in help.
      */
-    virtual bool showAsGroup() const { return true; }
+    [[nodiscard]] virtual bool showAsGroup() const { return true; }
 
     /// Returns the argument group's name.
-    const std::string getName() const;
+    [[nodiscard]] const std::string getName() const;
 
     iterator begin() { return _args.begin(); }
     iterator end() { return _args.end(); }
-    const_iterator begin() const { return _args.begin(); }
-    const_iterator end() const { return _args.end(); }
+    [[nodiscard]] const_iterator begin() const { return _args.begin(); }
+    [[nodiscard]] const_iterator end() const { return _args.end(); }
 
 protected:
     // No direct instantiation
@@ -133,7 +133,7 @@ protected:
 class ExclusiveArgGroup : public ArgGroup {
 public:
     bool validate() override;
-    bool isExclusive() const override { return true; }
+    [[nodiscard]] bool isExclusive() const override { return true; }
     ArgContainer &add(Arg &arg) override { return add(&arg); }
     ArgContainer &add(Arg *arg) override {
         if (arg->isRequired()) {
@@ -159,7 +159,7 @@ public:
     EitherOf() = default;
     explicit EitherOf(CmdLineInterface &parser) : ExclusiveArgGroup(parser) {}
 
-    bool isRequired() const override { return false; }
+    [[nodiscard]] bool isRequired() const override { return false; }
 };
 
 /**
@@ -171,7 +171,7 @@ public:
     OneOf() = default;
     explicit OneOf(CmdLineInterface &parser) : ExclusiveArgGroup(parser) {}
 
-    bool isRequired() const override { return true; }
+    [[nodiscard]] bool isRequired() const override { return true; }
 };
 
 /**
@@ -186,8 +186,8 @@ public:
     explicit AnyOf(CmdLineInterface &parser) { parser.add(*this); }
 
     bool validate() override { return false; /* All good */ }
-    bool isExclusive() const override { return false; }
-    bool isRequired() const override { return false; }
+    [[nodiscard]] bool isExclusive() const override { return false; }
+    [[nodiscard]] bool isRequired() const override { return false; }
 };
 
 inline ArgContainer &ArgGroup::add(Arg *arg) {

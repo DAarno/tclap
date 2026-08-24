@@ -102,7 +102,7 @@ public:
     /**
      * Returns bool, whether or not the switch has been set.
      */
-    bool getValue() const { return _value; }
+    [[nodiscard]] bool getValue() const { return _value; }
 
     /**
      * A SwitchArg can be used as a boolean, indicating

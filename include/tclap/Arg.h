@@ -246,17 +246,19 @@ public:
     /**
      * Returns the argument flag.
      */
-    const std::string &getFlag() const;
+    [[nodiscard]] const std::string &getFlag() const;
 
     /**
      * Returns the argument name.
      */
-    const std::string &getName() const;
+    [[nodiscard]] const std::string &getName() const;
 
     /**
      * Returns the argument description.
      */
-    std::string getDescription() const { return getDescription(_required); }
+    [[nodiscard]] std::string getDescription() const {
+        return getDescription(_required);
+    }
 
     /**
      * Updates the argument description.
@@ -269,35 +271,35 @@ public:
      * @param required if the argument should be treated as
      * required when described.
      */
-    std::string getDescription(bool required) const {
+    [[nodiscard]] std::string getDescription(bool required) const {
         return (required ? "(" + _requireLabel + ") " : "") + _description;
     }
 
     /**
      * Indicates whether the argument is required.
      */
-    virtual bool isRequired() const;
+    [[nodiscard]] virtual bool isRequired() const;
 
     /**
      * Indicates whether a value must be specified for argument.
      */
-    bool isValueRequired() const;
+    [[nodiscard]] bool isValueRequired() const;
 
     /**
      * Indicates whether the argument has already been set.  Only true
      * if the arg has been matched on the command line.
      */
-    bool isSet() const;
+    [[nodiscard]] bool isSet() const;
 
     /**
      * Returns the value specified to set this flag (like -a or --all).
      */
-    const std::string &setBy() const { return _setBy; }
+    [[nodiscard]] const std::string &setBy() const { return _setBy; }
 
     /**
      * Indicates whether the argument can be ignored, if desired.
      */
-    bool isIgnoreable() const;
+    [[nodiscard]] bool isIgnoreable() const;
 
     /**
      * A method that tests whether a string matches this argument.
@@ -307,25 +309,27 @@ public:
      * \param s - The string to be compared to the flag/name to determine
      * whether the arg matches.
      */
-    virtual bool argMatches(const std::string &s) const;
+    [[nodiscard]] virtual bool argMatches(const std::string &s) const;
 
     /**
      * Returns a simple string representation of the argument.
      * Primarily for debugging.
      */
-    virtual std::string toString() const;
+    [[nodiscard]] virtual std::string toString() const;
 
     /**
      * Returns a short ID for the usage.
      * \param valueId - The value used in the id.
      */
-    virtual std::string shortID(const std::string &valueId = "val") const;
+    [[nodiscard]] virtual std::string shortID(
+        const std::string &valueId = "val") const;
 
     /**
      * Returns a long ID for the usage.
      * \param valueId - The value used in the id.
      */
-    virtual std::string longID(const std::string &valueId = "val") const;
+    [[nodiscard]] virtual std::string longID(
+        const std::string &valueId = "val") const;
 
     /**
      * Trims a value off of the flag.
@@ -342,7 +346,7 @@ public:
      * false.
      * \param s - string to be checked.
      */
-    bool _hasBlanks(const std::string &s) const;
+    [[nodiscard]] bool _hasBlanks(const std::string &s) const;
 
     /**
      * Used for MultiArgs to determine whether args can still be
@@ -371,9 +375,9 @@ public:
     /**
      * Returns true if this Arg is visible in the help output.
      */
-    virtual bool visibleInHelp() const { return _visibleInHelp; }
+    [[nodiscard]] virtual bool visibleInHelp() const { return _visibleInHelp; }
 
-    virtual bool hasLabel() const { return true; }
+    [[nodiscard]] virtual bool hasLabel() const { return true; }
 };
 
 /**

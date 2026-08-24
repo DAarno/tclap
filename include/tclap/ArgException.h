@@ -58,12 +58,12 @@ public:
     /**
      * Returns the error text.
      */
-    std::string error() const { return (_errorText); }
+    [[nodiscard]] std::string error() const { return (_errorText); }
 
     /**
      * Returns the argument id.
      */
-    std::string argId() const {
+    [[nodiscard]] std::string argId() const {
         if (_argId == "undefined")
             return " ";
         else
@@ -73,7 +73,7 @@ public:
     /**
      * Returns the arg id and error text.
      */
-    const char *what() const noexcept override {
+    [[nodiscard]] const char *what() const noexcept override {
         static std::string ex;
         ex = _argId + " -- " + _errorText;
         return ex.c_str();
@@ -83,7 +83,7 @@ public:
      * Returns the type of the exception.  Used to explain and distinguish
      * between different child exceptions.
      */
-    std::string typeDescription() const { return _typeDescription; }
+    [[nodiscard]] std::string typeDescription() const { return _typeDescription; }
 
 private:
     /**
@@ -179,7 +179,7 @@ class ExitException {
 public:
     explicit ExitException(int estat) : _estat(estat) {}
 
-    int getExitStatus() const { return _estat; }
+    [[nodiscard]] int getExitStatus() const { return _estat; }
 
 private:
     int _estat;

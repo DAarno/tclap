@@ -172,14 +172,14 @@ public:
     /**
      * Overrides shortID for specific behavior.
      */
-    std::string shortID(const std::string &) const override {
+    [[nodiscard]] std::string shortID(const std::string &) const override {
         return Arg::getName();
     }
 
     /**
      * Overrides longID for specific behavior.
      */
-    std::string longID(const std::string &) const override {
+    [[nodiscard]] std::string longID(const std::string &) const override {
         return Arg::getName() + " <" + _typeDesc + ">";
     }
 
@@ -194,7 +194,7 @@ public:
      */
     void addToList(std::list<Arg *> &argList) const override;
 
-    bool hasLabel() const override { return false; }
+    [[nodiscard]] bool hasLabel() const override { return false; }
 };
 
 /**

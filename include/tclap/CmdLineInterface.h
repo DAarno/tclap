@@ -113,40 +113,41 @@ public:
     /**
      * Returns the version string.
      */
-    virtual std::string getVersion() const = 0;
+    [[nodiscard]] virtual std::string getVersion() const = 0;
 
     /**
      * Returns the program name string.
      */
-    virtual std::string getProgramName() const = 0;
+    [[nodiscard]] virtual std::string getProgramName() const = 0;
 
     /**
      * Returns the list of ArgGroups.
      */
     virtual std::list<ArgGroup *> getArgGroups() = 0;
-    virtual std::list<Arg *> getArgList() const = 0;  // TODO: get rid of this
+    [[nodiscard]] virtual std::list<Arg *> getArgList()
+        const = 0;  // TODO: get rid of this
 
     /**
      * Returns the delimiter string.
      */
-    virtual char getDelimiter() const = 0;
+    [[nodiscard]] virtual char getDelimiter() const = 0;
 
     /**
      * Returns the message string.
      */
-    virtual std::string getMessage() const = 0;
+    [[nodiscard]] virtual std::string getMessage() const = 0;
 
     /**
      * Translates a built-in message using the current translator.
      */
-    virtual std::string translateMessage(const std::string &messageId,
-                                         const std::string &fallback) const = 0;
+    [[nodiscard]] virtual std::string translateMessage(
+        const std::string &messageId, const std::string &fallback) const = 0;
 
     /**
      * Indicates whether or not the help and version switches were created
      * automatically.
      */
-    virtual bool hasHelpAndVersion() const = 0;
+    [[nodiscard]] virtual bool hasHelpAndVersion() const = 0;
 
     /**
      * Resets the instance as if it had just been constructed so that the

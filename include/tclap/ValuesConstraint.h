@@ -54,12 +54,12 @@ public:
     /**
      * Returns a description of the Constraint.
      */
-    std::string description() const override;
+    [[nodiscard]] std::string description() const override;
 
     /**
      * Returns the short ID for the Constraint.
      */
-    std::string shortID() const override;
+    [[nodiscard]] std::string shortID() const override;
 
     /**
      * The method used to verify that the value parsed from the command

@@ -202,13 +202,15 @@ public:
      * Specialization of shortID.
      * \param val - value to be used.
      */
-    std::string shortID(const std::string &val = "val") const override;
+    [[nodiscard]] std::string shortID(
+        const std::string &val = "val") const override;
 
     /**
      * Specialization of longID.
      * \param val - value to be used.
      */
-    std::string longID(const std::string &val = "val") const override;
+    [[nodiscard]] std::string longID(
+        const std::string &val = "val") const override;
 
     void reset() override;
 

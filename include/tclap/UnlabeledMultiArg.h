@@ -149,7 +149,7 @@ public:
     /**
      * Returns the a short id string.  Used in the usage.
      */
-    std::string shortID(const std::string &) const override {
+    [[nodiscard]] std::string shortID(const std::string &) const override {
         return Arg::getName() + " ...";
     }
 
@@ -157,7 +157,7 @@ public:
      * Returns the a long id string.  Used in the usage.
      * \param val - value to be used.
      */
-    std::string longID(const std::string &) const override {
+    [[nodiscard]] std::string longID(const std::string &) const override {
         return Arg::getName() + " (accepted multiple times) <" + _typeDesc +
                ">";
     }
@@ -174,7 +174,7 @@ public:
      */
     void addToList(std::list<Arg *> &argList) const override;
 
-    bool hasLabel() const override { return false; }
+    [[nodiscard]] bool hasLabel() const override { return false; }
 };
 
 template <class T>
