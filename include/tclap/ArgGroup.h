@@ -191,7 +191,7 @@ public:
 };
 
 inline ArgContainer &ArgGroup::add(Arg *arg) {
-    if (std::any_of(begin(), end(), [arg](const Arg *existing) {
+    if (std::ranges::any_of(*this, [arg](const Arg *existing) {
             return *arg == *existing;
         })) {
         throw SpecificationException(
@@ -242,8 +242,8 @@ inline const std::string ArgGroup::getName() const {
 
 /// @internal
 inline int CountVisibleArgs(const ArgGroup &g) {
-    return static_cast<int>(std::count_if(
-        g.begin(), g.end(), [](const Arg *arg) { return arg->visibleInHelp(); }));
+    return static_cast<int>(std::ranges::count_if(
+        g, [](const Arg *arg) { return arg->visibleInHelp(); }));
 }
 
 }  // namespace TCLAP

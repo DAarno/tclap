@@ -60,7 +60,7 @@ public:
 
     ArgContainer &add(Arg *arg) override {
         // std::cerr << "Adding " << arg->getName() << " to StandaloneArgs\n";
-        if (std::any_of(begin(), end(), [arg](const Arg *existing) {
+        if (std::ranges::any_of(*this, [arg](const Arg *existing) {
                 return *arg == *existing;
             })) {
             throw SpecificationException(
@@ -495,8 +495,8 @@ inline ArgContainer &CmdLine::add(Arg &a) { return add(&a); }
 // TODO: Rename this to something smarter or refactor this logic so
 // it's not needed.
 inline void CmdLine::addToArgList(Arg *a) {
-    if (std::any_of(_argList.begin(), _argList.end(),
-                    [a](const Arg *existing) { return *a == *existing; })) {
+    if (std::ranges::any_of(
+            _argList, [a](const Arg *existing) { return *a == *existing; })) {
         throw SpecificationException(
             "Argument with same flag/name already exists!", a->longID());
     }

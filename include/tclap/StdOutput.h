@@ -279,7 +279,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
             }
         }
 
-        std::sort(switches.begin(), switches.end(), cmpSwitch);
+        std::ranges::sort(switches, cmpSwitch);
     }
 
     outp << " [" << switches << ']';
@@ -294,8 +294,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
         }
     }
 
-    std::sort(longSwitches.begin(), longSwitches.end(),
-              internal::CompareShortID);
+    std::ranges::sort(longSwitches, internal::CompareShortID);
     for (const Arg *arg : longSwitches) {
         outp << " [" << arg->shortID() << ']';
     }
@@ -312,7 +311,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
             }
         }
 
-        std::sort(args.begin(), args.end(), internal::CompareShortID);
+        std::ranges::sort(args, internal::CompareShortID);
         std::string sep = "";
         for (const Arg *arg : args) {
             outp << sep << arg->shortID();
@@ -338,7 +337,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
         }
     }
 
-    std::sort(options.begin(), options.end(), internal::CompareOptions);
+    std::ranges::sort(options, internal::CompareOptions);
     for (const auto &[argPtr, required] : options) {
         const Arg &arg = *argPtr;
         outp << (required ? " " : " [");

@@ -77,11 +77,9 @@ public:
 };
 
 inline bool isInArgGroup(const Arg *arg, const std::list<ArgGroup *> &argSets) {
-    return std::any_of(argSets.begin(), argSets.end(),
-                        [arg](const ArgGroup *group) {
-                            return std::find(group->begin(), group->end(),
-                                              arg) != group->end();
-                        });
+    return std::ranges::any_of(argSets, [arg](const ArgGroup *group) {
+        return std::ranges::find(*group, arg) != group->end();
+    });
 }
 
 inline void removeArgsInArgGroups(std::list<Arg *> &argList,

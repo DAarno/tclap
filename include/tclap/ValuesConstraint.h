@@ -96,7 +96,7 @@ ValuesConstraint<T>::ValuesConstraint(const std::vector<T> &allowed)
 
 template <class T>
 bool ValuesConstraint<T>::check(const T &val) const {
-    return std::find(_allowed.begin(), _allowed.end(), val) != _allowed.end();
+    return std::ranges::find(_allowed, val) != _allowed.end();
 }
 
 template <class T>
