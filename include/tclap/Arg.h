@@ -36,6 +36,7 @@
 #include <tclap/Visitor.h>
 #include <tclap/sstream.h>
 
+#include <concepts>
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
@@ -395,6 +396,26 @@ using ArgVectorIterator = std::vector<Arg *>::const_iterator;
  * Typedef of a Visitor list iterator.
  */
 using VisitorListIterator = std::list<Visitor *>::const_iterator;
+
+namespace detail {
+// Satisfied iff T can be read from a TCLAP::istringstream via operator>>
+// (the mechanism ExtractValue's ValueLike overload, below, actually uses).
+template <typename T>
+concept StreamExtractable = requires(istringstream &is, T &val) { is >> val; };
+
+// Satisfied iff T is usable as a ValueArg/MultiArg value type: either it can
+// be read with operator>> (the ValueLike path) or it has explicitly opted
+// into the StringLike path (via an ArgTraits<T> specialization or by
+// inheriting StringLikeTrait), in which case it's expected to provide its
+// own SetString/operator=(const std::string&) - that half can't usefully be
+// concept-checked here since the unconstrained default SetString template
+// always matches syntactically regardless of whether its body would
+// actually compile for T.
+template <typename T>
+concept ValidArgValueType =
+    StreamExtractable<T> ||
+    std::same_as<typename ArgTraits<T>::ValueCategory, StringLike>;
+}  // namespace detail
 
 /*
  * Extract a value of type T from it's string representation contained

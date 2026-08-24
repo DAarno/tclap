@@ -28,10 +28,19 @@
 #include <tclap/sstream.h>
 
 #include <algorithm>
+#include <ostream>
 #include <string>
 #include <vector>
 
 namespace TCLAP {
+
+namespace detail {
+// Satisfied iff T can be written to an ostream via operator<< (what the
+// ValuesConstraint constructor, below, uses to build its description).
+template <typename T>
+concept OStreamInsertable =
+    requires(std::ostream &os, const T &val) { os << val; };
+}  // namespace detail
 
 /**
  * A Constraint that constrains the Arg to only those values specified
@@ -44,7 +53,8 @@ public:
      * Constructor.
      * \param allowed - vector of allowed values.
      */
-    explicit ValuesConstraint(const std::vector<T> &allowed);
+    explicit ValuesConstraint(const std::vector<T> &allowed)
+        requires detail::OStreamInsertable<T>;
 
     /**
      * Virtual destructor.
@@ -82,6 +92,7 @@ protected:
 
 template <class T>
 ValuesConstraint<T>::ValuesConstraint(const std::vector<T> &allowed)
+    requires detail::OStreamInsertable<T>
     : _allowed(allowed), _typeDesc("") {
     bool first = true;
     for (const T &value : _allowed) {

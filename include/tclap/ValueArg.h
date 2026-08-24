@@ -78,7 +78,8 @@ protected:
      * is thrown.
      * \param val - value to be parsed.
      */
-    void _extractValue(const std::string &val);
+    void _extractValue(const std::string &val)
+        requires detail::ValidArgValueType<T>;
 
 public:
     /**
@@ -329,7 +330,9 @@ std::string ValueArg<T>::longID(const std::string &) const {
 }
 
 template <class T>
-void ValueArg<T>::_extractValue(const std::string &val) {
+void ValueArg<T>::_extractValue(const std::string &val)
+    requires detail::ValidArgValueType<T>
+{
     try {
         ExtractValue(_value, val, typename ArgTraits<T>::ValueCategory());
     } catch (ArgParseException &e) {

@@ -28,6 +28,7 @@
 #include <tclap/Arg.h>
 #include <tclap/Constraint.h>
 
+#include <concepts>
 #include <string>
 #include <utility>
 #include <vector>
@@ -67,7 +68,8 @@ protected:
      * is thrown.
      * \param val - The string to be read.
      */
-    void _extractValue(const std::string &val);
+    void _extractValue(const std::string &val)
+        requires detail::ValidArgValueType<T> && std::default_initializable<T>;
 
     /**
      * Used by MultiArg to decide whether to keep parsing for this
@@ -321,7 +323,9 @@ std::string MultiArg<T>::longID(const std::string &val) const {
 }
 
 template <class T>
-void MultiArg<T>::_extractValue(const std::string &val) {
+void MultiArg<T>::_extractValue(const std::string &val)
+    requires detail::ValidArgValueType<T> && std::default_initializable<T>
+{
     try {
         T tmp;
         ExtractValue(tmp, val, typename ArgTraits<T>::ValueCategory());
