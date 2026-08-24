@@ -41,6 +41,7 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace TCLAP {
@@ -161,8 +162,8 @@ protected:
      * \param valreq - Whether the a value is required for the argument.
      * \param v - The visitor checked by the argument. Defaults to nullptr.
      */
-    Arg(const std::string &flag, const std::string &name,
-        const std::string &desc, bool req, bool valreq, Visitor *v = nullptr);
+    Arg(std::string flag, std::string name, std::string desc, bool req,
+        bool valreq, Visitor *v = nullptr);
 
 public:
     /**
@@ -449,11 +450,11 @@ void ExtractValue(T &destVal, const std::string &strVal, StringLike sl) {
 // BEGIN Arg.cpp
 //////////////////////////////////////////////////////////////////////
 
-inline Arg::Arg(const std::string &flag, const std::string &name,
-                const std::string &desc, bool req, bool valreq, Visitor *v)
-    : _flag(flag),
-      _name(name),
-      _description(desc),
+inline Arg::Arg(std::string flag, std::string name, std::string desc,
+                bool req, bool valreq, Visitor *v)
+    : _flag(std::move(flag)),
+      _name(std::move(name)),
+      _description(std::move(desc)),
       _required(req),
       _requireLabel("required"),
       _valueRequired(valreq),

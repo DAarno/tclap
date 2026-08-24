@@ -26,6 +26,7 @@
 
 #include <exception>
 #include <string>
+#include <utility>
 
 namespace TCLAP {
 
@@ -42,13 +43,13 @@ public:
      * \param td - Text describing the type of ArgException it is.
      * of the exception.
      */
-    ArgException(const std::string &text = "undefined exception",
-                 const std::string &id = "undefined",
-                 const std::string &td = "Generic ArgException")
+    ArgException(std::string text = "undefined exception",
+                 std::string id = "undefined",
+                 std::string td = "Generic ArgException")
         : std::exception(),
-          _errorText(text),
-          _argId(id),
-          _typeDescription(td) {}
+          _errorText(std::move(text)),
+          _argId(std::move(id)),
+          _typeDescription(std::move(td)) {}
 
     /**
      * Destructor.

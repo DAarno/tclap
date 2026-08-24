@@ -29,6 +29,7 @@
 #include <tclap/Constraint.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace TCLAP {
@@ -102,7 +103,7 @@ public:
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
-             const std::string &typeDesc, Visitor *v = nullptr);
+             std::string typeDesc, Visitor *v = nullptr);
 
     /**
      * Labeled ValueArg constructor.
@@ -127,7 +128,7 @@ public:
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
-             const std::string &typeDesc, ArgContainer &parser,
+             std::string typeDesc, ArgContainer &parser,
              Visitor *v = nullptr);
 
     /**
@@ -227,22 +228,22 @@ public:
 template <class T>
 ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req, T val,
-                      const std::string &typeDesc, Visitor *v)
+                      std::string typeDesc, Visitor *v)
     : Arg(flag, name, desc, req, true, v),
       _value(val),
       _default(val),
-      _typeDesc(typeDesc),
+      _typeDesc(std::move(typeDesc)),
       _constraint(nullptr) {}
 
 template <class T>
 ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req, T val,
-                      const std::string &typeDesc, ArgContainer &parser,
+                      std::string typeDesc, ArgContainer &parser,
                       Visitor *v)
     : Arg(flag, name, desc, req, true, v),
       _value(val),
       _default(val),
-      _typeDesc(typeDesc),
+      _typeDesc(std::move(typeDesc)),
       _constraint(nullptr) {
     parser.add(this);
 }

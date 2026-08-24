@@ -49,6 +49,7 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace TCLAP {
@@ -231,8 +232,8 @@ public:
      * \param helpAndVersion - Whether or not to create the Help and
      * Version switches. Defaults to true.
      */
-    CmdLine(const std::string &message, const char delimiter = ' ',
-            const std::string &version = "none", bool helpAndVersion = true);
+    CmdLine(std::string message, const char delimiter = ' ',
+            std::string version = "none", bool helpAndVersion = true);
 
     /**
      * Deletes any resources allocated by a CmdLine object.
@@ -392,15 +393,14 @@ public:
 // Begin CmdLine.cpp
 ///////////////////////////////////////////////////////////////////////////////
 
-inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
-                        bool help)
+inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
     : _argList(),
       _standaloneArgs(),
       _autoArgs(),
       _argGroups(),
       _progName("not_set_yet"),
-      _message(m),
-      _version(v),
+      _message(std::move(m)),
+      _version(std::move(v)),
       _numRequired(0),
       _delimiter(delim),
       _deleteOnExit(),

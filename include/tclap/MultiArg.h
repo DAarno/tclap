@@ -29,6 +29,7 @@
 #include <tclap/Constraint.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace TCLAP {
@@ -93,7 +94,7 @@ public:
      * use this unless you have a very good reason.
      */
     MultiArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, const std::string &typeDesc,
+             const std::string &desc, bool req, std::string typeDesc,
              Visitor *v = nullptr);
 
     /**
@@ -115,7 +116,7 @@ public:
      * use this unless you have a very good reason.
      */
     MultiArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, const std::string &typeDesc,
+             const std::string &desc, bool req, std::string typeDesc,
              ArgContainer &parser, Visitor *v = nullptr);
 
     /**
@@ -213,10 +214,10 @@ public:
 template <class T>
 MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
-                      const std::string &typeDesc, Visitor *v)
+                      std::string typeDesc, Visitor *v)
     : Arg(flag, name, desc, req, true, v),
       _values(),
-      _typeDesc(typeDesc),
+      _typeDesc(std::move(typeDesc)),
       _constraint(nullptr),
       _allowMore(false) {
     _acceptsMultipleValues = true;
@@ -225,11 +226,11 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
 template <class T>
 MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
-                      const std::string &typeDesc, ArgContainer &parser,
+                      std::string typeDesc, ArgContainer &parser,
                       Visitor *v)
     : Arg(flag, name, desc, req, true, v),
       _values(),
-      _typeDesc(typeDesc),
+      _typeDesc(std::move(typeDesc)),
       _constraint(nullptr),
       _allowMore(false) {
     parser.add(this);
