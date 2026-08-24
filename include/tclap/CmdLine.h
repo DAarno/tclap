@@ -48,6 +48,7 @@
 #include <iomanip>
 #include <iostream>
 #include <list>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -167,7 +168,7 @@ protected:
         }
     };
 
-    MessageTranslator *_messageTranslator;
+    std::unique_ptr<MessageTranslator> _messageTranslator;
 
     /**
      * Built-in arguments whose descriptions may need refreshing when the
@@ -238,7 +239,7 @@ public:
     /**
      * Deletes any resources allocated by a CmdLine object.
      */
-    ~CmdLine() override { delete _messageTranslator; }
+    ~CmdLine() override = default;
 
     /**
      * Adds an argument to the list of arguments to be parsed.
@@ -354,8 +355,7 @@ public:
      */
     template <typename T>
     void setMessageTranslator(const T &translator) {
-        delete _messageTranslator;
-        _messageTranslator = new MessageTranslatorImpl<T>(translator);
+        _messageTranslator = std::make_unique<MessageTranslatorImpl<T>>(translator);
         if (_ignoreArg != nullptr) {
             _ignoreArg->setDescription(translateMessage(
                 "ignore_rest_description",
