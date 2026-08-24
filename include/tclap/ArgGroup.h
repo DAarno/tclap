@@ -107,10 +107,10 @@ public:
     /// Returns the argument group's name.
     [[nodiscard]] const std::string getName() const;
 
-    iterator begin() { return _args.begin(); }
-    iterator end() { return _args.end(); }
-    [[nodiscard]] const_iterator begin() const { return _args.begin(); }
-    [[nodiscard]] const_iterator end() const { return _args.end(); }
+    iterator begin() noexcept { return _args.begin(); }
+    iterator end() noexcept { return _args.end(); }
+    [[nodiscard]] const_iterator begin() const noexcept { return _args.begin(); }
+    [[nodiscard]] const_iterator end() const noexcept { return _args.end(); }
 
 protected:
     // No direct instantiation

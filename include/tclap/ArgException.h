@@ -180,7 +180,7 @@ class ExitException {
 public:
     explicit ExitException(int estat) : _estat(estat) {}
 
-    [[nodiscard]] int getExitStatus() const { return _estat; }
+    [[nodiscard]] int getExitStatus() const noexcept { return _estat; }
 
 private:
     int _estat;

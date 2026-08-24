@@ -98,7 +98,7 @@ public:
     /**
      * Returns int, the number of times the switch has been set.
      */
-    [[nodiscard]] int getValue() const { return _value; }
+    [[nodiscard]] int getValue() const noexcept { return _value; }
 
     /**
      * Returns the shortID for this Arg.

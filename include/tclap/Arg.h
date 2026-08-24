@@ -187,7 +187,7 @@ public:
      * The char used as a place holder when SwitchArgs are combined.
      * Currently set to the bell char (ASCII 7).
      */
-    static char blankChar() { return '\a'; }
+    static constexpr char blankChar() noexcept { return '\a'; }
 
 /**
  * The char that indicates the beginning of a flag.  Defaults to '-', but
@@ -196,7 +196,7 @@ public:
 #ifndef TCLAP_FLAGSTARTCHAR
 #define TCLAP_FLAGSTARTCHAR '-'
 #endif
-    static char flagStartChar() { return TCLAP_FLAGSTARTCHAR; }
+    static constexpr char flagStartChar() noexcept { return TCLAP_FLAGSTARTCHAR; }
 
 /**
  * The sting that indicates the beginning of a flag.  Defaults to "-", but
@@ -247,12 +247,12 @@ public:
     /**
      * Returns the argument flag.
      */
-    [[nodiscard]] const std::string &getFlag() const;
+    [[nodiscard]] const std::string &getFlag() const noexcept;
 
     /**
      * Returns the argument name.
      */
-    [[nodiscard]] const std::string &getName() const;
+    [[nodiscard]] const std::string &getName() const noexcept;
 
     /**
      * Returns the argument description.
@@ -284,23 +284,23 @@ public:
     /**
      * Indicates whether a value must be specified for argument.
      */
-    [[nodiscard]] bool isValueRequired() const;
+    [[nodiscard]] bool isValueRequired() const noexcept;
 
     /**
      * Indicates whether the argument has already been set.  Only true
      * if the arg has been matched on the command line.
      */
-    [[nodiscard]] bool isSet() const;
+    [[nodiscard]] bool isSet() const noexcept;
 
     /**
      * Returns the value specified to set this flag (like -a or --all).
      */
-    [[nodiscard]] const std::string &setBy() const { return _setBy; }
+    [[nodiscard]] const std::string &setBy() const noexcept { return _setBy; }
 
     /**
      * Indicates whether the argument can be ignored, if desired.
      */
-    [[nodiscard]] bool isIgnoreable() const;
+    [[nodiscard]] bool isIgnoreable() const noexcept;
 
     /**
      * A method that tests whether a string matches this argument.
@@ -522,17 +522,17 @@ inline bool Arg::operator==(const Arg &a) const {
     return (!_flag.empty() && _flag == a._flag) || _name == a._name;
 }
 
-inline const std::string &Arg::getFlag() const { return _flag; }
+inline const std::string &Arg::getFlag() const noexcept { return _flag; }
 
-inline const std::string &Arg::getName() const { return _name; }
+inline const std::string &Arg::getName() const noexcept { return _name; }
 
 inline bool Arg::isRequired() const { return _required; }
 
-inline bool Arg::isValueRequired() const { return _valueRequired; }
+inline bool Arg::isValueRequired() const noexcept { return _valueRequired; }
 
-inline bool Arg::isSet() const { return _alreadySet; }
+inline bool Arg::isSet() const noexcept { return _alreadySet; }
 
-inline bool Arg::isIgnoreable() const { return _ignoreable; }
+inline bool Arg::isIgnoreable() const noexcept { return _ignoreable; }
 
 inline bool Arg::argMatches(const std::string &argFlag) const {
     return (argFlag == Arg::flagStartString() + _flag && !_flag.empty()) ||

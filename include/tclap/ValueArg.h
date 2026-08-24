@@ -191,13 +191,13 @@ public:
     /**
      * Returns the value of the argument.
      */
-    const T &getValue() const { return _value; }
+    const T &getValue() const noexcept { return _value; }
 
     /**
      * A ValueArg can be used as as its value type (T) This is the
      * same as calling getValue()
      */
-    operator const T &() const { return getValue(); }
+    operator const T &() const noexcept { return getValue(); }
 
     /**
      * Specialization of shortID.

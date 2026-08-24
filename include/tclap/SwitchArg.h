@@ -102,14 +102,14 @@ public:
     /**
      * Returns bool, whether or not the switch has been set.
      */
-    [[nodiscard]] bool getValue() const { return _value; }
+    [[nodiscard]] bool getValue() const noexcept { return _value; }
 
     /**
      * A SwitchArg can be used as a boolean, indicating
      * whether or not the switch has been set. This is the
      * same as calling getValue()
      */
-    operator bool() const { return _value; }
+    operator bool() const noexcept { return _value; }
 
     void reset() override;
 

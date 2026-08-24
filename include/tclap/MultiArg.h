@@ -172,19 +172,19 @@ public:
      * Returns a vector of type T containing the values parsed from
      * the command line.
      */
-    const std::vector<T> &getValue() const { return _values; }
+    const std::vector<T> &getValue() const noexcept { return _values; }
 
     /**
      * Returns an iterator over the values parsed from the command
      * line.
      */
-    const_iterator begin() const { return _values.begin(); }
+    const_iterator begin() const noexcept { return _values.begin(); }
 
     /**
      * Returns the end of the values parsed from the command
      * line.
      */
-    const_iterator end() const { return _values.end(); }
+    const_iterator end() const noexcept { return _values.end(); }
 
     /**
      * Returns the a short id string.  Used in the usage.
