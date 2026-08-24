@@ -70,6 +70,12 @@ struct ValueLikeTrait {
     virtual ~ValueLikeTrait() = default;
 };
 
+namespace detail {
+// Satisfied iff C has a nested C::ValueCategory type.
+template <typename C>
+concept HasValueCategory = requires { typename C::ValueCategory; };
+}  // namespace detail
+
 /**
  * Arg traits are used to get compile type specialization when parsing
  * argument values. Using an ArgTraits you can specify the way that
@@ -80,7 +86,7 @@ struct ValueLikeTrait {
  */
 template <typename T>
 class ArgTraits {
-    // This is a bit silly, but what we want to do is:
+    // What we want to do is:
     // 1) If there exists a specialization of ArgTraits for type X,
     // use it.
     //
@@ -89,23 +95,7 @@ class ArgTraits {
     //
     // 3) If neither (1) nor (2) defines the trait, use the default
     // which is ValueLike.
-
-    // This is the "how":
-    //
-    // test<T>(0) (where 0 is the NULL ptr) will match
-    // test(typename C::ValueCategory*) iff type T has the
-    // corresponding typedef. If it does not test(...) will be
-    // matched. This allows us to determine if T::ValueCategory
-    // exists by checking the sizeof for the test function (return
-    // value must have different sizeof).
-    template <typename C>
-    static short test(typename C::ValueCategory *);  // NOLINT
-    template <typename C>
-    static long test(...);                                             // NOLINT
-    static const bool hasTrait =
-        sizeof(test<T>(nullptr)) == sizeof(short);  // NOLINT
-
-    template <typename C, bool>
+    template <typename C, bool = detail::HasValueCategory<C>>
     struct DefaultArgTrait {
         using ValueCategory = ValueLike;
     };
@@ -116,7 +106,7 @@ class ArgTraits {
     };
 
 public:
-    using ValueCategory = typename DefaultArgTrait<T, hasTrait>::ValueCategory;
+    using ValueCategory = typename DefaultArgTrait<T>::ValueCategory;
 };
 
 }  // namespace TCLAP
