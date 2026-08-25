@@ -7,7 +7,7 @@ set(msvc_cxx "$<CXX_COMPILER_ID:MSVC>")
 function(default_opts target)
 target_compile_options(${target} PRIVATE
     "$<${gcc_like_cxx}:$<BUILD_INTERFACE:-Wall;-Wextra;-Weffc++>>"
-    "$<${msvc_cxx}:$<BUILD_INTERFACE:-W3>>"
+    "$<${msvc_cxx}:$<BUILD_INTERFACE:-W3;/utf-8>>"
 )
 endfunction()
 
