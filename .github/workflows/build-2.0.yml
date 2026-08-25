@@ -1,0 +1,27 @@
+name: Build 2.0
+
+on:
+  push:
+    branches: [ "2.0" ]
+
+jobs:
+  build:
+    name: ${{ matrix.compiler }} on ubuntu-latest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [ g++, clang++ ]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DBUILD_DOC=OFF -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} .
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
