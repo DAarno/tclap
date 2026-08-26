@@ -43,8 +43,12 @@ int main() {
                                            "int");
     UnlabeledValueArg<int> different("other", "different description", true,
                                      0, "int");
+    // Compared through the Arg& base, matching how CmdLine/ArgGroup always
+    // invoke this operator; comparing two same-typed derived objects
+    // directly would make C++20's reversed-candidate rule ambiguous.
+    const Arg &argA = a;
 
-    cout << "same name only:        " << (a == sameName) << endl;
-    cout << "same description only: " << (a == sameDescription) << endl;
-    cout << "neither matches:       " << (a == different) << endl;
+    cout << "same name only:        " << (argA == sameName) << endl;
+    cout << "same description only: " << (argA == sameDescription) << endl;
+    cout << "neither matches:       " << (argA == different) << endl;
 }
