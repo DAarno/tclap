@@ -104,13 +104,17 @@ void TestUnlabeledValueArgEquality(Testing &t) {
                                            "int");
     UnlabeledValueArg<int> different("other", "different description", true,
                                      0, "int");
+    // Compared through the Arg& base, matching how CmdLine/ArgGroup always
+    // invoke this operator; comparing two same-typed derived objects
+    // directly would make C++20's reversed-candidate rule ambiguous.
+    const Arg &argA = a;
 
-    if (!(a == sameName))
+    if (!(argA == sameName))
         ERROR(t, "UnlabeledValueArg: operator== should match on name alone");
-    if (!(a == sameDescription))
+    if (!(argA == sameDescription))
         ERROR(t, "UnlabeledValueArg: operator== should match on "
                  "description alone");
-    if (a == different)
+    if (argA == different)
         ERROR(t, "UnlabeledValueArg: operator== should not match distinct "
                  "name and description");
 
@@ -125,10 +129,11 @@ void TestUnlabeledMultiArgEquality(Testing &t) {
                                             "string");
     UnlabeledMultiArg<std::string> different("other", "different", true,
                                              "string");
+    const Arg &argA = a;
 
-    if (!(a == sameName))
+    if (!(argA == sameName))
         ERROR(t, "UnlabeledMultiArg: operator== should match on name alone");
-    if (a == different)
+    if (argA == different)
         ERROR(t, "UnlabeledMultiArg: operator== should not match distinct "
                  "name and description");
 
