@@ -236,6 +236,30 @@ void TestMultiSwitchArgIDs(Testing &t) {
                      << verbose.longID("val"));
 }
 
+void TestMultiSwitchArgReset(Testing &t) {
+    try {
+        CmdLine cmd("test", ' ', "1.0", false);
+        MultiSwitchArg verbose("v", "verbose", "be verbose, repeatedly");
+        cmd.add(verbose);
+        cmd.setExceptionHandling(false);
+
+        const char *argv[] = {"prog", "-v", "-v"};
+        std::vector<std::string> args = MakeArgs(argv);
+        cmd.parse(args);
+
+        verbose.reset();
+
+        if (verbose.isSet())
+            ERROR(t, "MultiSwitchArg: reset() did not clear isSet()");
+        if (verbose.getValue() != 0)
+            ERROR(t, "MultiSwitchArg: reset() did not restore the default "
+                     "count, got "
+                         << verbose.getValue());
+    } catch (ArgException &e) {
+        ERROR(t, "MultiSwitchArg: unexpected exception: " << e.error());
+    }
+}
+
 int main() {
     Testing t;
     TestSwitchArgDefault(t);
@@ -248,5 +272,6 @@ int main() {
     TestMultiSwitchArgCombined(t);
     TestMultiSwitchArgDefault(t);
     TestMultiSwitchArgIDs(t);
+    TestMultiSwitchArgReset(t);
     return t.errorCount();
 }
