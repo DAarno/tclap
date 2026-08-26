@@ -1,0 +1,50 @@
+// -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
+
+/******************************************************************************
+ *
+ *  file:  test117.cpp
+ *
+ *  Copyright (c) 2026, Google LLC
+ *  All rights reserved.
+ *
+ *  See the file COPYING in the top directory of this distribution for
+ *  more information.
+ *
+ *  THE SOFTWARE IS PROVIDED _AS IS_, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ *  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ *  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ *  DEALINGS IN THE SOFTWARE.
+ *
+ *****************************************************************************/
+
+// Regression test for UnlabeledValueArg::operator==: it used to compare
+// this object's raw (unformatted) description against the other
+// object's formatted getDescription(), which prepends "(required) "
+// for required args -- so the description half of the "match by name
+// OR description" check silently never fired between two required
+// args. Both arguments here are required, so this only demonstrates
+// the fix if the description comparison actually uses the same
+// formatting on both sides.
+
+#include "tclap/CmdLine.h"
+#include <iostream>
+
+using namespace TCLAP;
+using namespace std;
+
+int main() {
+    UnlabeledValueArg<int> a("count", "a count", true, 0, "int");
+    UnlabeledValueArg<int> sameName("count", "different description", true, 0,
+                                    "int");
+    UnlabeledValueArg<int> sameDescription("other", "a count", true, 0,
+                                           "int");
+    UnlabeledValueArg<int> different("other", "different description", true,
+                                     0, "int");
+
+    cout << "same name only:        " << (a == sameName) << endl;
+    cout << "same description only: " << (a == sameDescription) << endl;
+    cout << "neither matches:       " << (a == different) << endl;
+}

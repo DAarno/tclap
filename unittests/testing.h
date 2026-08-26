@@ -23,14 +23,29 @@
 #ifndef __TESTING_H__
 #define __TESTING_H__
 
+#include <cstddef>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #define ERROR(t, w) \
     {               \
         t << w;     \
         t.error();  \
     }
+
+// Builds an argv-style vector<string> (including the program name in
+// element 0, as CmdLine::parse expects) from a plain array of C
+// strings, e.g.:
+//   const char *argv[] = {"prog", "-n", "42"};
+//   std::vector<std::string> args = MakeArgs(argv);
+template <typename T, std::size_t N>
+std::vector<std::string> MakeArgs(T (&argv)[N]) {
+    std::vector<std::string> args;
+    for (std::size_t i = 0; i < N; i++) args.push_back(argv[i]);
+    return args;
+}
 
 class Testing {
 public:

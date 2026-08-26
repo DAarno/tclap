@@ -167,6 +167,7 @@ inline std::string MultiSwitchArg::longID(const std::string &val) const {
 }
 
 inline void MultiSwitchArg::reset() {
+    Arg::reset();
     MultiSwitchArg::_value = MultiSwitchArg::_default;
 }
 
