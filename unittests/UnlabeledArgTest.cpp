@@ -100,11 +100,16 @@ void TestUnlabeledValueArgEquality(Testing &t) {
     UnlabeledValueArg<int> a("count", "a count", true, 0, "int");
     UnlabeledValueArg<int> sameName("count", "different description", true, 0,
                                     "int");
+    UnlabeledValueArg<int> sameDescription("other", "a count", true, 0,
+                                           "int");
     UnlabeledValueArg<int> different("other", "different description", true,
                                      0, "int");
 
     if (!(a == sameName))
         ERROR(t, "UnlabeledValueArg: operator== should match on name alone");
+    if (!(a == sameDescription))
+        ERROR(t, "UnlabeledValueArg: operator== should match on "
+                 "description alone");
     if (a == different)
         ERROR(t, "UnlabeledValueArg: operator== should not match distinct "
                  "name and description");
