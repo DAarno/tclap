@@ -1,0 +1,2 @@
+before reset: isSet=1 value=2
+after reset:  isSet=0 value=0
