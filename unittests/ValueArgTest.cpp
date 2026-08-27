@@ -107,9 +107,9 @@ void TestValueArgEqualsDelimiter(Testing &t) {
         ERROR(t, "ValueArg: unexpected exception: " << e.error());
     }
 
-    // Restore the default delimiter: it is a global, shared by every
-    // Arg in the process.
-    Arg::setDelimiter(' ');
+    // No global delimiter to restore: each CmdLine (and every Arg
+    // registered with it) has its own independent Dialect now, so this
+    // CmdLine's '=' delimiter never affected any other CmdLine.
 }
 
 void TestValueArgStringLike(Testing &t) {

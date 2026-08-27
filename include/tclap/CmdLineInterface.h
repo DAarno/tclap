@@ -26,6 +26,7 @@
 #define TCLAP_CMD_LINE_INTERFACE_H
 
 #include <tclap/ArgContainer.h>
+#include <tclap/Dialect.h>
 
 #include <algorithm>
 #include <iostream>
@@ -131,6 +132,12 @@ public:
      * Returns the delimiter string.
      */
     [[nodiscard]] virtual char getDelimiter() const = 0;
+
+    /**
+     * Returns the Dialect (delimiter, flag/name prefixes) this CmdLine
+     * uses. Every Arg registered with this CmdLine shares this Dialect.
+     */
+    [[nodiscard]] virtual const Dialect &getDialect() const = 0;
 
     /**
      * Returns the message string.

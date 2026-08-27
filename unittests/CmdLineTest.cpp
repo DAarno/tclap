@@ -295,6 +295,54 @@ void TestMessageTranslatorRefreshesHelpAndVersion(Testing &t) {
                  "getArgList()");
 }
 
+void TestIndependentCmdLinesDoNotShareDialect(Testing &t) {
+    // Before the Dialect redesign, the delimiter was a single
+    // process-wide static shared by every Arg regardless of which
+    // CmdLine it belonged to: constructing a second CmdLine with a
+    // different delimiter would retroactively change the delimiter for
+    // Args already registered with a first, still-live CmdLine. Verify
+    // two independently constructed, interleaved CmdLines each keep
+    // their own delimiter.
+    try {
+        CmdLine spaceCmd("space-delimited", ' ', "1.0", false);
+        ValueArg<int> spaceArg("n", "num", "a number", false, 0, "int");
+        spaceCmd.add(spaceArg);
+        spaceCmd.setExceptionHandling(false);
+
+        CmdLine equalsCmd("equals-delimited", '=', "1.0", false);
+        ValueArg<int> equalsArg("n", "num", "a number", false, 0, "int");
+        equalsCmd.add(equalsArg);
+        equalsCmd.setExceptionHandling(false);
+
+        // spaceCmd's Arg must still use ' ', even though equalsCmd
+        // (using '=') was constructed afterward.
+        const char *spaceArgv[] = {"prog", "-n", "7"};
+        std::vector<std::string> spaceArgs = MakeArgs(spaceArgv);
+        spaceCmd.parse(spaceArgs);
+        if (spaceArg.getValue() != 7)
+            ERROR(t, "CmdLine: expected space-delimited arg to parse "
+                     "\"-n 7\", got "
+                         << spaceArg.getValue());
+
+        const char *equalsArgv[] = {"prog", "-n=9"};
+        std::vector<std::string> equalsArgs = MakeArgs(equalsArgv);
+        equalsCmd.parse(equalsArgs);
+        if (equalsArg.getValue() != 9)
+            ERROR(t, "CmdLine: expected '='-delimited arg to parse "
+                     "\"-n=9\", got "
+                         << equalsArg.getValue());
+
+        if (spaceCmd.getDialect().delimiter != ' ')
+            ERROR(t, "CmdLine: spaceCmd's Dialect delimiter changed after "
+                     "constructing equalsCmd");
+        if (equalsCmd.getDialect().delimiter != '=')
+            ERROR(t, "CmdLine: unexpected equalsCmd Dialect delimiter: "
+                         << equalsCmd.getDialect().delimiter);
+    } catch (ArgException &e) {
+        ERROR(t, "CmdLine: unexpected exception: " << e.error());
+    }
+}
+
 int main() {
     Testing t;
     TestUnmatchedArgThrows(t);
@@ -308,5 +356,6 @@ int main() {
     TestDuplicateArgThrows(t);
     TestMessageTranslator(t);
     TestMessageTranslatorRefreshesHelpAndVersion(t);
+    TestIndependentCmdLinesDoNotShareDialect(t);
     return t.errorCount();
 }

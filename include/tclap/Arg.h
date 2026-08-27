@@ -32,6 +32,7 @@
 #include <tclap/ArgException.h>
 #include <tclap/ArgTraits.h>
 #include <tclap/CmdLineInterface.h>
+#include <tclap/Dialect.h>
 #include <tclap/StandardTraits.h>
 #include <tclap/Visitor.h>
 
@@ -59,16 +60,6 @@ public:
      */
     Arg(const Arg &rhs) = delete;
     Arg &operator=(const Arg &rhs) = delete;
-
-private:
-    /**
-     * The delimiter that separates an argument flag/name from the
-     * value.
-     */
-    static char &delimiterRef() {
-        static char delim = ' ';
-        return delim;
-    }
 
 protected:
     /**
@@ -146,6 +137,15 @@ protected:
     bool _visibleInHelp;
 
     /**
+     * The Dialect (delimiter, flag/name prefixes) this Arg uses. Bound
+     * once, by CmdLine::addToArgList(), when this Arg is registered with
+     * a CmdLine (directly or through an ArgGroup); nullptr, and treated
+     * as the default Dialect{}, until then. Non-owning: the pointed-to
+     * Dialect is owned by the CmdLine this Arg is registered with.
+     */
+    const Dialect *_dialect;
+
+    /**
      * Performs the special handling described by the Visitor.
      */
     void _checkWithVisitor() const;
@@ -179,10 +179,20 @@ public:
     virtual void addToList(std::list<Arg *> &argList) const;
 
     /**
-     * The delimiter that separates an argument flag/name from the
-     * value.
+     * Binds this Arg to the Dialect (delimiter and flag/name prefix
+     * conventions) of the CmdLine it is being registered with.
+     * @internal Called by CmdLine::addToArgList(); not for direct use.
      */
-    static char delimiter() { return delimiterRef(); }
+    void _setDialect(const Dialect *dialect) noexcept { _dialect = dialect; }
+
+    /**
+     * The delimiter that separates an argument flag/name from the
+     * value. Reflects this Arg's bound Dialect (see _setDialect()); an
+     * Arg not yet registered with any CmdLine reports the default ' '.
+     */
+    [[nodiscard]] char delimiter() const noexcept {
+        return _dialect != nullptr ? _dialect->delimiter : ' ';
+    }
 
     /**
      * The char used as a place holder when SwitchArgs are combined.
@@ -222,12 +232,6 @@ public:
      * The name used to identify the ignore rest argument.
      */
     static std::string ignoreNameString() { return "ignore_rest"; }
-
-    /**
-     * Sets the delimiter for all arguments.
-     * \param c - The character that delimits flags/names from values.
-     */
-    static void setDelimiter(char c) { delimiterRef() = c; }
 
     /**
      * Pure virtual method meant to handle the parsing and value assignment
@@ -485,7 +489,8 @@ inline Arg::Arg(std::string flag, std::string name, std::string desc,
       _visitor(v),
       _ignoreable(true),
       _acceptsMultipleValues(false),
-      _visibleInHelp(true) {
+      _visibleInHelp(true),
+      _dialect(nullptr) {
     if (_flag.length() > 1)
         throw(SpecificationException(
             "Argument flag can only be one character long", Arg::toString()));

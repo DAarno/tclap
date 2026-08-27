@@ -42,6 +42,7 @@
 
 #include <tclap/ArgGroup.h>
 #include <tclap/DeferDelete.h>
+#include <tclap/Dialect.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -125,6 +126,15 @@ protected:
      * from the value.  Defaults to ' ' (space).
      */
     char _delimiter;
+
+    /**
+     * The parsing conventions (delimiter, flag/name prefixes) this
+     * CmdLine uses. Every Arg registered with this CmdLine is bound to
+     * this Dialect (see addToArgList()), so independent CmdLine
+     * instances never interfere with each other the way the pre-2.0
+     * global delimiter/prefix state used to.
+     */
+    Dialect _dialect;
 
     /**
      * Add pointers that should be deleted as part of cleanup when
@@ -315,6 +325,15 @@ public:
     }
 
     [[nodiscard]] char getDelimiter() const override { return _delimiter; }
+
+    /**
+     * Returns the Dialect (delimiter, flag/name prefixes) this CmdLine
+     * uses. Every Arg registered with this CmdLine shares this Dialect.
+     */
+    [[nodiscard]] const Dialect &getDialect() const override {
+        return _dialect;
+    }
+
     [[nodiscard]] std::string getMessage() const override { return _message; }
     [[nodiscard]] bool hasHelpAndVersion() const override {
         return _helpAndVersion;
@@ -403,6 +422,7 @@ inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
       _version(std::move(v)),
       _numRequired(0),
       _delimiter(delim),
+      _dialect{delim, Arg::flagStartString(), Arg::nameStartString()},
       _deleteOnExit(),
       _defaultOutput(),
       _output(&_defaultOutput),
@@ -418,8 +438,6 @@ inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
 }
 
 inline void CmdLine::_constructor() {
-    Arg::setDelimiter(_delimiter);
-
     Visitor *v;
     CmdLine::add(_standaloneArgs);
     _autoArgs.setParser(*this);
@@ -501,6 +519,7 @@ inline void CmdLine::addToArgList(Arg *a) {
             "Argument with same flag/name already exists!", a->longID());
     }
 
+    a->_setDialect(&_dialect);
     a->addToList(_argList);
 
     if (a->isRequired()) _numRequired++;
