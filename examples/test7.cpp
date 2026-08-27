@@ -11,13 +11,11 @@ int main(int argc, char **argv) {
     // because exceptions will be thrown for problems.
     try {
         // Define the command line object.
-        CmdLine cmd(
-            "Command description message. This is a long multi-line message "
-            "meant to test line wrapping.  This is more text that doesn't "
-            "really do anything besides take up lots of space that otherwise "
-            "might be used for something real.  That should be enough, don't "
-            "you think?",
-            ' ', "0.9");
+        CmdLine cmd(CmdLineSpec{
+            .message = "Command description message. This is a long multi-line message " "meant to test line wrapping.  This is more text that doesn't " "really do anything besides take up lots of space that otherwise " "might be used for something real.  That should be enough, don't " "you think?",
+            .dialect = {.delimiter = ' '},
+            .version = "0.9"
+        });
 
         vector<string> allowed;
         allowed.push_back("homer");
@@ -27,11 +25,13 @@ int main(int argc, char **argv) {
         allowed.push_back("maggie");
         const ValuesConstraint<string> vallowed(allowed);
 
-        MultiArg<string> nameArg("n", "name",
-                                 "Name to print. This is a long, nonsensical "
-                                 "message to test line wrapping.  Hopefully it "
-                                 "works.",
-                                 true, &vallowed);
+        MultiArg<string> nameArg(MultiArgSpec<string>{
+            .flag = "n",
+            .name = "name",
+            .description = "Name to print. This is a long, nonsensical " "message to test line wrapping.  Hopefully it " "works.",
+            .required = true,
+            .constraint = &vallowed
+        });
         cmd.add(nameArg);
 
         vector<int> iallowed;
@@ -40,49 +40,102 @@ int main(int argc, char **argv) {
         iallowed.push_back(3);
         const ValuesConstraint<int> iiallowed(iallowed);
 
-        UnlabeledMultiArg<int> intArg("times", "Number of times to print",
-                                      false, &iiallowed);
+        UnlabeledMultiArg<int> intArg(UnlabeledMultiArgSpec<int>{
+            .name = "times",
+            .description = "Number of times to print",
+            .required = false,
+            .constraint = &iiallowed
+        });
         cmd.add(intArg);
 
         // Ignore the names and comments!  These  args mean nothing (to this
         // program) and are here solely to take up space.
-        ValueArg<int> gapCreate("f", "gapCreate", "The cost of creating a gap",
-                                false, -10, "negative int");
+        ValueArg<int> gapCreate(ValueArgSpec<int>{
+            .flag = "f",
+            .name = "gapCreate",
+            .description = "The cost of creating a gap",
+            .required = false,
+            .defaultValue = -10,
+            .typeDesc = "negative int"
+        });
         cmd.add(gapCreate);
 
-        ValueArg<int> gapExtend("g", "gap-Extend",
-                                "The cost for each extension of a gap", false,
-                                -2, "negative int");
+        ValueArg<int> gapExtend(ValueArgSpec<int>{
+            .flag = "g",
+            .name = "gap-Extend",
+            .description = "The cost for each extension of a gap",
+            .required = false,
+            .defaultValue = -2,
+            .typeDesc = "negative int"
+        });
         cmd.add(gapExtend);
 
-        SwitchArg dna("d", "isDna", "The input sequences are DNA", false);
+        SwitchArg dna(SwitchArgSpec{
+            .flag = "d",
+            .name = "isDna",
+            .description = "The input sequences are DNA",
+            .defaultValue = false
+        });
         cmd.add(dna);
 
-        ValueArg<string> scoringMatrixName("s", "scoring--Matrix",
-                                           "Scoring Matrix name", false,
-                                           "BLOSUM50", "name string");
+        ValueArg<string> scoringMatrixName(ValueArgSpec<string>{
+            .flag = "s",
+            .name = "scoring--Matrix",
+            .description = "Scoring Matrix name",
+            .required = false,
+            .defaultValue = "BLOSUM50",
+            .typeDesc = "name string"
+        });
         cmd.add(scoringMatrixName);
 
-        ValueArg<string> seq1Filename("x", "filename1",
-                                      "Sequence 1 filename (FASTA format)",
-                                      false, "", "filename");
+        ValueArg<string> seq1Filename(ValueArgSpec<string>{
+            .flag = "x",
+            .name = "filename1",
+            .description = "Sequence 1 filename (FASTA format)",
+            .required = false,
+            .defaultValue = "",
+            .typeDesc = "filename"
+        });
         cmd.add(seq1Filename);
 
-        ValueArg<string> seq2Filename("z", "filename2",
-                                      "Sequence 2 filename (FASTA format)",
-                                      false, "", "filename");
+        ValueArg<string> seq2Filename(ValueArgSpec<string>{
+            .flag = "z",
+            .name = "filename2",
+            .description = "Sequence 2 filename (FASTA format)",
+            .required = false,
+            .defaultValue = "",
+            .typeDesc = "filename"
+        });
         cmd.add(seq2Filename);
 
-        ValueArg<float> lowerBound("b", "lowerBound", "lower percentage bound",
-                                   false, 1.0, "float lte 1");
+        ValueArg<float> lowerBound(ValueArgSpec<float>{
+            .flag = "b",
+            .name = "lowerBound",
+            .description = "lower percentage bound",
+            .required = false,
+            .defaultValue = 1.0,
+            .typeDesc = "float lte 1"
+        });
         cmd.add(lowerBound);
 
-        ValueArg<float> upperBound("u", "upperBound", "upper percentage bound",
-                                   false, 1.0, "float lte 1");
+        ValueArg<float> upperBound(ValueArgSpec<float>{
+            .flag = "u",
+            .name = "upperBound",
+            .description = "upper percentage bound",
+            .required = false,
+            .defaultValue = 1.0,
+            .typeDesc = "float lte 1"
+        });
         cmd.add(upperBound);
 
-        ValueArg<int> limit("l", "limit", "Max number of alignments allowed",
-                            false, 1000, "int");
+        ValueArg<int> limit(ValueArgSpec<int>{
+            .flag = "l",
+            .name = "limit",
+            .description = "Max number of alignments allowed",
+            .required = false,
+            .defaultValue = 1000,
+            .typeDesc = "int"
+        });
         cmd.add(limit);
 
         argv[0] = const_cast<char *>(
@@ -93,12 +146,12 @@ int main(int argc, char **argv) {
         cmd.parse(argc, argv);
 
         // Get the value parsed by each arg.
-        vector<int> num = intArg.getValue();
+        vector<int> num = intArg.value();
 
         for (unsigned int i = 0; i < num.size(); i++)
             cout << "Got num " << num[i] << endl;
 
-        vector<string> name = nameArg.getValue();
+        vector<string> name = nameArg.value();
 
         for (unsigned int i = 0; i < name.size(); i++)
             cout << "Got name " << name[i] << endl;

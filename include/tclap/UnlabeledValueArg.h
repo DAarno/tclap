@@ -34,6 +34,47 @@
 namespace TCLAP {
 
 /**
+ * Constructor arguments for UnlabeledValueArg<T>, passed as a single
+ * designated-initializer aggregate. Unlike ValueArgSpec<T>, there's no
+ * `flag` (unlabeled args aren't matched by one). `typeDesc` defaults to
+ * TypeName<T>::value if not given; `constraint`, if set, takes over as
+ * the type description shown in USAGE text instead.
+ *
+ * To register the Arg with a CmdLine, call cmd.add() separately --
+ * UnlabeledValueArg no longer has a self-registering constructor
+ * overload.
+ */
+template <typename T>
+struct UnlabeledValueArgSpec {
+    /// A one word name for the argument. Used for identification, not
+    /// as a long flag.
+    std::string name;
+    /// A description of what the argument is for or does.
+    std::string description;
+    /// Whether the argument is required on the command line.
+    bool required = false;
+    /// The default value assigned to this argument if it is not present
+    /// on the command line.
+    T defaultValue{};
+    /// A short, human readable description of the type that this object
+    /// expects, used in the generated USAGE statement. Defaults to
+    /// TypeName<T>::value.
+    std::string typeDesc = TypeName<T>::value;
+    /// A Constraint this Arg's value must conform to. If set, its
+    /// shortID() is used as the type description shown in USAGE text
+    /// instead of typeDesc.
+    const Constraint<T> *constraint = nullptr;
+    /// Allows you to specify that this argument can be ignored if the
+    /// '--' flag is set. Defaults to false (cannot be ignored) and
+    /// should generally stay that way unless you have some special need
+    /// for certain arguments to be ignored.
+    bool ignoreable = false;
+    /// An optional callback invoked as soon as this Arg is matched. You
+    /// should leave this blank unless you have a very good reason.
+    Arg::Callback onMatch = nullptr;
+};
+
+/**
  * The basic unlabeled argument that parses a value.
  * This is a template class, which means the type T defines the type
  * that a given object will attempt to parse when an UnlabeledValueArg
@@ -56,111 +97,10 @@ class UnlabeledValueArg : public ValueArg<T> {
 public:
     /**
      * UnlabeledValueArg constructor.
-     * \param name - A one word name for the argument.  Note that this is used
-     * for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param ignoreable - Allows you to specify that this argument can be
-     * ignored if the '--' flag is set.  This defaults to false (cannot
-     * be ignored) and should  generally stay that way unless you have
-     * some special need for certain arguments to be ignored.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You should leave this blank unless
-     * you have a very good reason.
+     * \param spec - The name/description/required/default value/
+     * typeDesc/constraint/ignoreable/onMatch callback for this Arg.
      */
-    UnlabeledValueArg(const std::string &name, const std::string &desc,
-                      bool req, T value, const std::string &typeDesc,
-                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
-
-    /**
-     * UnlabeledValueArg constructor.
-     * \param name - A one word name for the argument.  Note that this is used
-     * for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param ignoreable - Allows you to specify that this argument can be
-     * ignored if the '--' flag is set.  This defaults to false (cannot
-     * be ignored) and should  generally stay that way unless you have
-     * some special need for certain arguments to be ignored.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You should leave this blank unless
-     * you have a very good reason.
-     */
-    UnlabeledValueArg(const std::string &name, const std::string &desc,
-                      bool req, T value, const std::string &typeDesc,
-                      CmdLineInterface &parser, bool ignoreable = false,
-                      Arg::Callback onMatch = nullptr);
-
-    /**
-     * UnlabeledValueArg constructor.
-     * \param name - A one word name for the argument.  Note that this is used
-     * for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param ignoreable - Allows you to specify that this argument can be
-     * ignored if the '--' flag is set.  This defaults to false (cannot
-     * be ignored) and should  generally stay that way unless you have
-     * some special need for certain arguments to be ignored.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You should leave this blank unless
-     * you have a very good reason.
-     */
-    UnlabeledValueArg(const std::string &name, const std::string &desc,
-                      bool req, T value, const Constraint<T> *constraint,
-                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
-
-    /**
-     * UnlabeledValueArg constructor.
-     * \param name - A one word name for the argument.  Note that this is used
-     * for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param ignoreable - Allows you to specify that this argument can be
-     * ignored if the '--' flag is set.  This defaults to false (cannot
-     * be ignored) and should  generally stay that way unless you have
-     * some special need for certain arguments to be ignored.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You should leave this blank unless
-     * you have a very good reason.
-     */
-    UnlabeledValueArg(const std::string &name, const std::string &desc,
-                      bool req, T value, const Constraint<T> *constraint,
-                      CmdLineInterface &parser, bool ignoreable = false,
-                      Arg::Callback onMatch = nullptr);
+    explicit UnlabeledValueArg(UnlabeledValueArgSpec<T> spec);
 
     /**
      * Handles the processing of the argument.
@@ -204,46 +144,18 @@ public:
  * Constructor implementation.
  */
 template <class T>
-UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        T val, const std::string &typeDesc,
-                                        bool ignoreable, Arg::Callback onMatch)
-    : ValueArg<T>("", name, desc, req, val, typeDesc, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-}
-
-template <class T>
-UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        T val, const std::string &typeDesc,
-                                        CmdLineInterface &parser,
-                                        bool ignoreable, Arg::Callback onMatch)
-    : ValueArg<T>("", name, desc, req, val, typeDesc, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-    parser.add(this);
-}
-
-/**
- * Constructor implementation.
- */
-template <class T>
-UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        T val, const Constraint<T> *constraint,
-                                        bool ignoreable, Arg::Callback onMatch)
-    : ValueArg<T>("", name, desc, req, val, constraint, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-}
-
-template <class T>
-UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        T val, const Constraint<T> *constraint,
-                                        CmdLineInterface &parser,
-                                        bool ignoreable, Arg::Callback onMatch)
-    : ValueArg<T>("", name, desc, req, val, constraint, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-    parser.add(this);
+UnlabeledValueArg<T>::UnlabeledValueArg(UnlabeledValueArgSpec<T> spec)
+    : ValueArg<T>(ValueArgSpec<T>{
+          .flag = "",
+          .name = std::move(spec.name),
+          .description = std::move(spec.description),
+          .required = spec.required,
+          .defaultValue = std::move(spec.defaultValue),
+          .typeDesc = std::move(spec.typeDesc),
+          .constraint = spec.constraint,
+          .onMatch = std::move(spec.onMatch),
+      }) {
+    _ignoreable = spec.ignoreable;
 }
 
 /**

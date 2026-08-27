@@ -14,10 +14,15 @@ using namespace std;
 
 int main(int argc, char **argv) {
     try {
-        CmdLine cmd("this is a message", ' ', "0.99");
+        CmdLine cmd(CmdLineSpec{
+            .message = "this is a message",
+            .dialect = {.delimiter = ' '},
+            .version = "0.99"
+        });
 
-        ValueArg<AutoBaseInt<int>> itest("i", "intTest", "integer test", true,
-                                         5, "int");
+        ValueArg<AutoBaseInt<int>> itest(
+            {.flag = "i", .name = "intTest", .description = "integer test",
+             .required = true, .defaultValue = 5});
         cmd.add(itest);
 
         //
@@ -28,7 +33,7 @@ int main(int argc, char **argv) {
         //
         // Set variables
         //
-        int _intTest = itest.getValue();
+        int _intTest = itest.value();
         cout << "found int: " << _intTest << endl;
 
     } catch (ArgException &e) {

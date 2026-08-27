@@ -23,12 +23,12 @@ using namespace TCLAP;
 
 // Our pair can now be used as any other type.
 int main(int argc, char **argv) {
-  CmdLine cmd("test pair argument");
-  ValueArg<std::pair<int, double> > parg("p", "pair", "int,double pair",
-                                         true,
-                                         std::make_pair(0, 0.0),
-                                         "int,double",
-                                         cmd);
+  CmdLine cmd(CmdLineSpec{.message = "test pair argument"});
+  ValueArg<std::pair<int, double> > parg(
+      {.flag = "p", .name = "pair", .description = "int,double pair",
+       .required = true, .defaultValue = std::make_pair(0, 0.0),
+       .typeDesc = "int,double"});
+  cmd.add(parg);
   cmd.parse(argc, argv);
-  std::cout << parg.getValue() << std::endl;
+  std::cout << parg.value() << std::endl;
 }

@@ -47,7 +47,11 @@ int main(int argc, char **argv) {
 
 void parseOptions(int argc, char **argv) {
     try {
-        CmdLine cmd("this is a message", ' ', "0.99");
+        CmdLine cmd(CmdLineSpec{
+            .message = "this is a message",
+            .dialect = {.delimiter = ' '},
+            .version = "0.99"
+        });
 
         // set the output
         MyOutput my;
@@ -57,11 +61,27 @@ void parseOptions(int argc, char **argv) {
         // Define arguments
         //
 
-        SwitchArg btest("B", "sB", "exist Test B", false);
-        SwitchArg atest("A", "sA", "exist Test A", false);
+        SwitchArg btest(SwitchArgSpec{
+            .flag = "B",
+            .name = "sB",
+            .description = "exist Test B",
+            .defaultValue = false
+        });
+        SwitchArg atest(SwitchArgSpec{
+            .flag = "A",
+            .name = "sA",
+            .description = "exist Test A",
+            .defaultValue = false
+        });
 
-        ValueArg<string> stest("s", "Bs", "string test", true, "homer",
-                               "string");
+        ValueArg<string> stest(ValueArgSpec<string>{
+            .flag = "s",
+            .name = "Bs",
+            .description = "string test",
+            .required = true,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
         cmd.add(stest);
         cmd.add(btest);
         cmd.add(atest);
@@ -74,9 +94,9 @@ void parseOptions(int argc, char **argv) {
         //
         // Set variables
         //
-        _stringTest = stest.getValue();
-        _boolTestB = btest.getValue();
-        _boolTestA = atest.getValue();
+        _stringTest = stest.value();
+        _boolTestB = btest.value();
+        _boolTestA = atest.value();
 
     } catch (ArgException &e) {
         cout << "ERROR: " << e.error() << " " << e.argId() << endl;

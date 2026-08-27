@@ -25,9 +25,21 @@ void SetString<std::vector<double> >(std::vector<double> &v,
 }
 
 int main(int argc, char *argv[]) {
-    TCLAP::CmdLine cmd("Command description message", ' ', "0.9");
+    TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
+        .message = "Command description message",
+        .dialect = {.delimiter = ' '},
+        .version = "0.9"
+    });
     TCLAP::ValueArg<std::vector<double> > vec(
-        "v", "vect", "vector", true, std::vector<double>(), "3D vector", cmd);
+        TCLAP::ValueArgSpec<std::vector<double> >{
+            .flag = "v",
+            .name = "vect",
+            .description = "vector",
+            .required = true,
+            .defaultValue = std::vector<double>(),
+            .typeDesc = "3D vector"
+        });
+    cmd.add(vec);
     try {
         cmd.parse(argc, argv);
     } catch (std::exception &e) {
@@ -35,7 +47,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    const std::vector<double> &v = vec.getValue();
+    const std::vector<double> &v = vec.value();
     std::copy(v.begin(), v.end(),
               std::ostream_iterator<double>(std::cout, "\n"));
     std::cout << std::endl;

@@ -31,41 +31,85 @@ int main(int argc, char **argv) {
 
 void parseOptions(int argc, char **argv) {
     try {
-        CmdLine cmd("this is a message", ' ', "0.99");
+        CmdLine cmd(CmdLineSpec{
+            .message = "this is a message",
+            .dialect = {.delimiter = ' '},
+            .version = "0.99"
+        });
 
         //
         // Define arguments
         //
 
-        SwitchArg btest("B", "existTestB", "tests for the existence of B",
-                        false);
+        SwitchArg btest(SwitchArgSpec{
+            .flag = "B",
+            .name = "existTestB",
+            .description = "tests for the existence of B",
+            .defaultValue = false
+        });
         cmd.add(btest);
 
-        SwitchArg ctest("C", "existTestC", "tests for the existence of C",
-                        false);
+        SwitchArg ctest(SwitchArgSpec{
+            .flag = "C",
+            .name = "existTestC",
+            .description = "tests for the existence of C",
+            .defaultValue = false
+        });
         cmd.add(ctest);
 
-        SwitchArg atest("A", "existTestA", "tests for the existence of A",
-                        false);
+        SwitchArg atest(SwitchArgSpec{
+            .flag = "A",
+            .name = "existTestA",
+            .description = "tests for the existence of A",
+            .defaultValue = false
+        });
         cmd.add(atest);
 
-        ValueArg<string> stest("s", "stringTest", "string test", true, "homer",
-                               "string");
+        ValueArg<string> stest(ValueArgSpec<string>{
+            .flag = "s",
+            .name = "stringTest",
+            .description = "string test",
+            .required = true,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
         cmd.add(stest);
 
-        ValueArg<int> itest("i", "intTest", "integer test", true, 5, "int");
+        ValueArg<int> itest(ValueArgSpec<int>{
+            .flag = "i",
+            .name = "intTest",
+            .description = "integer test",
+            .required = true,
+            .defaultValue = 5,
+            .typeDesc = "int"
+        });
         cmd.add(itest);
 
-        ValueArg<double> ftest("f", "floatTest", "float test", false, 3.7,
-                               "float");
+        ValueArg<double> ftest(ValueArgSpec<double>{
+            .flag = "f",
+            .name = "floatTest",
+            .description = "float test",
+            .required = false,
+            .defaultValue = 3.7,
+            .typeDesc = "float"
+        });
         cmd.add(ftest);
 
-        UnlabeledValueArg<string> utest("unTest", "unlabeld test", true,
-                                        "default", "string");
+        UnlabeledValueArg<string> utest(UnlabeledValueArgSpec<string>{
+            .name = "unTest",
+            .description = "unlabeld test",
+            .required = true,
+            .defaultValue = "default",
+            .typeDesc = "string"
+        });
         cmd.add(utest);
 
-        UnlabeledMultiArg<string> mtest("fileName", "file names", false,
-                                        "string");
+        UnlabeledMultiArg<string> mtest(UnlabeledMultiArgSpec<string>{
+            .name = "fileName",
+            .description = "file names",
+            .required = false,
+            .typeDesc = "string"
+        });
         cmd.add(mtest);
 
         //
@@ -76,15 +120,15 @@ void parseOptions(int argc, char **argv) {
         //
         // Set variables
         //
-        _intTest = itest.getValue();
-        _floatTest = ftest.getValue();
-        _stringTest = stest.getValue();
-        _boolTestB = btest.getValue();
-        _boolTestC = ctest.getValue();
-        _boolTestA = atest.getValue();
-        _utest = utest.getValue();
+        _intTest = itest.value();
+        _floatTest = ftest.value();
+        _stringTest = stest.value();
+        _boolTestB = btest.value();
+        _boolTestC = ctest.value();
+        _boolTestA = atest.value();
+        _utest = utest.value();
 
-        vector<string> v = mtest.getValue();
+        vector<string> v = mtest.value();
         for (int i = 0; static_cast<unsigned int>(i) < v.size(); i++)
             cout << i << "  " << v[i] << endl;
 

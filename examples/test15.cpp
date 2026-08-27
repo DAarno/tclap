@@ -39,9 +39,20 @@ struct Vect {
 };
 
 int main(int argc, char *argv[]) {
-    TCLAP::CmdLine cmd("Command description message", ' ', "0.9");
-    TCLAP::ValueArg<Vect<double, 3> > vec("v", "vect", "vector", true,
-                                          Vect<double, 3>(), "3D vector", cmd);
+    TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
+        .message = "Command description message",
+        .dialect = {.delimiter = ' '},
+        .version = "0.9"
+    });
+    TCLAP::ValueArg<Vect<double, 3> > vec(TCLAP::ValueArgSpec<Vect<double, 3> >{
+        .flag = "v",
+        .name = "vect",
+        .description = "vector",
+        .required = true,
+        .defaultValue = Vect<double, 3>(),
+        .typeDesc = "3D vector"
+    });
+    cmd.add(vec);
 
     try {
         cmd.parse(argc, argv);
@@ -50,6 +61,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    vec.getValue().print(std::cout);
+    vec.value().print(std::cout);
     std::cout << std::endl;
 }

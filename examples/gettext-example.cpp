@@ -30,13 +30,21 @@ int main(int argc, char **argv) {
     bind_textdomain_codeset("tclap-example", "UTF-8");
     textdomain("tclap-example");
 
-    TCLAP::CmdLine cmd(translate("A small German gettext example"), ' ',
-                       "1.0");
+    TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
+        .message = translate("A small German gettext example"),
+        .dialect = {.delimiter = ' '},
+        .version = "1.0"
+    });
     cmd.setMessageTranslator(&translateTclapMessage);
 
-    TCLAP::ValueArg<std::string> name(
-        "n", "name", translate("The name to greet"), true, "",
-        translate("NAME"));
+    TCLAP::ValueArg<std::string> name(TCLAP::ValueArgSpec<std::string>{
+        .flag = "n",
+        .name = "name",
+        .description = translate("The name to greet"),
+        .required = true,
+        .defaultValue = "",
+        .typeDesc = translate("NAME")
+    });
     cmd.add(name);
 
     cmd.parse(argc, argv);

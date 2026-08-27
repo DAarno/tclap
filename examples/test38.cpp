@@ -28,14 +28,35 @@ using namespace TCLAP;
 
 int main() {
     try {
-        CmdLine cmd("");
+        CmdLine cmd(CmdLineSpec{.message = ""});
         OneOf input(cmd);
-        ValueArg<int> arg0("a", "a_int", "first int arg", false, 4711, "int",
-                           input);
-        ValueArg<int> arg1("b", "b_int", "second int arg", false, 4711, "int",
-                           input);
-        ValueArg<int> arg2("a", "a_int", "second int arg", false, 4711, "int",
-                           input);
+        ValueArg<int> arg0(ValueArgSpec<int>{
+            .flag = "a",
+            .name = "a_int",
+            .description = "first int arg",
+            .required = false,
+            .defaultValue = 4711,
+            .typeDesc = "int"
+        });
+        input.add(arg0);
+        ValueArg<int> arg1(ValueArgSpec<int>{
+            .flag = "b",
+            .name = "b_int",
+            .description = "second int arg",
+            .required = false,
+            .defaultValue = 4711,
+            .typeDesc = "int"
+        });
+        input.add(arg1);
+        ValueArg<int> arg2(ValueArgSpec<int>{
+            .flag = "a",
+            .name = "a_int",
+            .description = "second int arg",
+            .required = false,
+            .defaultValue = 4711,
+            .typeDesc = "int"
+        });
+        input.add(arg2);
     } catch (SpecificationException &e) {
         // Expected
         std::cout << e.what() << std::endl;

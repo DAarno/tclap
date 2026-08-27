@@ -29,13 +29,34 @@
 #include <tclap/SwitchArg.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace TCLAP {
 
 /**
+ * Constructor arguments for MultiSwitchArg, passed as a single
+ * designated-initializer aggregate.
+ */
+struct MultiSwitchArgSpec {
+    /// The one character flag that identifies this argument on the
+    /// command line.
+    std::string flag;
+    /// A one word name for the argument. Can be used as a long flag on
+    /// the command line.
+    std::string name;
+    /// A description of what the argument is for or does.
+    std::string description;
+    /// The initial/default value of this Arg.
+    int initialValue = 0;
+    /// An optional callback invoked as soon as this Arg is matched. You
+    /// probably should not use this unless you have a very good reason.
+    Arg::Callback onMatch = nullptr;
+};
+
+/**
  * A multiple switch argument.  If the switch is set on the command line, then
- * the getValue method will return the number of times the switch appears.
+ * the value() method will return the number of times the switch appears.
  */
 class MultiSwitchArg : public SwitchArg {
 protected:
@@ -53,39 +74,10 @@ protected:
 public:
     /**
      * MultiSwitchArg constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param init - Optional. The initial/default value of this Arg.
-     * Defaults to 0.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
+     * \param spec - The flag/name/description/initial value/onMatch
+     * callback for this Arg.
      */
-    MultiSwitchArg(const std::string &flag, const std::string &name,
-                   const std::string &desc, int init = 0, Arg::Callback onMatch = nullptr);
-
-    /**
-     * MultiSwitchArg constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param init - Optional. The initial/default value of this Arg.
-     * Defaults to 0.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    MultiSwitchArg(const std::string &flag, const std::string &name,
-                   const std::string &desc, ArgContainer &parser, int init = 0,
-                   Arg::Callback onMatch = nullptr);
+    explicit MultiSwitchArg(MultiSwitchArgSpec spec);
 
     /**
      * Handles the processing of the argument.
@@ -100,7 +92,7 @@ public:
     /**
      * Returns int, the number of times the switch has been set.
      */
-    [[nodiscard]] int getValue() const noexcept { return _value; }
+    [[nodiscard]] int value() const noexcept { return _value; }
 
     /**
      * Returns the shortID for this Arg.
@@ -115,20 +107,16 @@ public:
     void reset() override;
 };
 
-inline MultiSwitchArg::MultiSwitchArg(const std::string &flag,
-                                      const std::string &name,
-                                      const std::string &desc, int init,
-                                      Arg::Callback onMatch)
-    : SwitchArg(flag, name, desc, false, std::move(onMatch)), _value(init), _default(init) {}
-
-inline MultiSwitchArg::MultiSwitchArg(const std::string &flag,
-                                      const std::string &name,
-                                      const std::string &desc,
-                                      ArgContainer &parser, int init,
-                                      Arg::Callback onMatch)
-    : SwitchArg(flag, name, desc, false, std::move(onMatch)), _value(init), _default(init) {
-    parser.add(this);
-}
+inline MultiSwitchArg::MultiSwitchArg(MultiSwitchArgSpec spec)
+    : SwitchArg(SwitchArgSpec{
+          .flag = std::move(spec.flag),
+          .name = std::move(spec.name),
+          .description = std::move(spec.description),
+          .defaultValue = false,
+          .onMatch = std::move(spec.onMatch),
+      }),
+      _value(spec.initialValue),
+      _default(spec.initialValue) {}
 
 inline bool MultiSwitchArg::processArg(int *i, std::vector<std::string> &args) {
     if (argMatches(args[*i])) {

@@ -28,9 +28,14 @@ using namespace TCLAP;
 
 void TestEitherOfNoneSelected(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        SwitchArg a("a", "aaa", "switch a");
-        SwitchArg b("b", "bbb", "switch b");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);
@@ -51,9 +56,14 @@ void TestEitherOfNoneSelected(Testing &t) {
 
 void TestEitherOfOneSelected(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        SwitchArg a("a", "aaa", "switch a");
-        SwitchArg b("b", "bbb", "switch b");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);
@@ -74,9 +84,14 @@ void TestEitherOfOneSelected(Testing &t) {
 
 void TestEitherOfTwoSelectedThrows(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        SwitchArg a("a", "aaa", "switch a");
-        SwitchArg b("b", "bbb", "switch b");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);
@@ -102,7 +117,14 @@ void TestEitherOfRejectsRequiredArg(Testing &t) {
     try {
         // SwitchArgs are never individually required, so use a
         // required ValueArg to exercise the check instead.
-        ValueArg<int> req("n", "num", "a number", true, 0, "int");
+        ValueArg<int> req(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = true,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         EitherOf group;
         group.add(req);
 
@@ -119,9 +141,14 @@ void TestEitherOfRejectsRequiredArg(Testing &t) {
 
 void TestOneOfMissingThrows(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        SwitchArg a("a", "aaa", "switch a");
-        SwitchArg b("b", "bbb", "switch b");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
         OneOf group;
         group.add(a);
         group.add(b);
@@ -144,9 +171,14 @@ void TestOneOfMissingThrows(Testing &t) {
 
 void TestOneOfExactlyOneSelected(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        SwitchArg a("a", "aaa", "switch a");
-        SwitchArg b("b", "bbb", "switch b");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
         OneOf group;
         group.add(a);
         group.add(b);
@@ -167,9 +199,14 @@ void TestOneOfExactlyOneSelected(Testing &t) {
 
 void TestAnyOfAllowsAnyCombination(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        SwitchArg a("a", "aaa", "switch a");
-        SwitchArg b("b", "bbb", "switch b");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
         AnyOf group;
         group.add(a);
         group.add(b);
@@ -190,10 +227,20 @@ void TestAnyOfAllowsAnyCombination(Testing &t) {
 
 void TestGroupRejectsSecondParser(Testing &t) {
     try {
-        CmdLine cmd1("test", ' ', "1.0", false);
-        CmdLine cmd2("test", ' ', "1.0", false);
-        SwitchArg a("a", "aaa", "switch a");
-        SwitchArg b("b", "bbb", "switch b");
+        CmdLine cmd1(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        CmdLine cmd2(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);

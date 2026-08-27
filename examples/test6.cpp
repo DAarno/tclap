@@ -11,7 +11,11 @@ int main(int argc, char **argv) {
     // because exceptions will be thrown for problems.
     try {
         // Define the command line object.
-        CmdLine cmd("Command description message", ' ', "0.9");
+        CmdLine cmd(CmdLineSpec{
+            .message = "Command description message",
+            .dialect = {.delimiter = ' '},
+            .version = "0.9"
+        });
 
         vector<string> allowed;
         allowed.push_back("homer");
@@ -21,8 +25,14 @@ int main(int argc, char **argv) {
         allowed.push_back("maggie");
         const ValuesConstraint<string> allowedVals(allowed);
 
-        ValueArg<string> nameArg("n", "name", "Name to print", true, "homer",
-                                 &allowedVals);
+        ValueArg<string> nameArg(ValueArgSpec<string>{
+            .flag = "n",
+            .name = "name",
+            .description = "Name to print",
+            .required = true,
+            .defaultValue = "homer",
+            .constraint = &allowedVals
+        });
         cmd.add(nameArg);
 
         vector<int> iallowed;
@@ -31,16 +41,22 @@ int main(int argc, char **argv) {
         iallowed.push_back(3);
         const ValuesConstraint<int> iallowedVals(iallowed);
 
-        UnlabeledValueArg<int> intArg("times", "Number of times to print", true,
-                                      1, &iallowedVals, false);
+        UnlabeledValueArg<int> intArg(UnlabeledValueArgSpec<int>{
+            .name = "times",
+            .description = "Number of times to print",
+            .required = true,
+            .defaultValue = 1,
+            .constraint = &iallowedVals,
+            .ignoreable = false
+        });
         cmd.add(intArg);
 
         // Parse the args.
         cmd.parse(argc, argv);
 
         // Get the value parsed by each arg.
-        int num = intArg.getValue();
-        string name = nameArg.getValue();
+        int num = intArg.value();
+        string name = nameArg.value();
 
         for (int i = 0; i < num; i++) cout << "My name is " << name << endl;
 

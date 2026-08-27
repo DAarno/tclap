@@ -37,22 +37,44 @@ using namespace TCLAP;
 int main(int argc, char **argv) {
     try {
         // "usage: f [-a | -b] [-c [-de] [-n number]]\n"
-        CmdLine cmd("");
+        CmdLine cmd(CmdLineSpec{.message = ""});
         EitherOf aorb(cmd);
-        SwitchArg a("a", "aopt", "a", aorb);
-        SwitchArg b("b", "bopt", "b", aorb);
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aopt", .description = "a"});
+        aorb.add(a);
+        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bopt", .description = "b"});
+        aorb.add(b);
 
         AnyOf other(cmd);
-        SwitchArg c("c", "copt", "c", other);
-        SwitchArg d("d", "dopt", "d", other);
-        SwitchArg e("e", "eopt", "e", other);
-        ValueArg<int> n_arg("n", "narg", "n_arg", false, 4711, "number", other);
+        SwitchArg c(SwitchArgSpec{.flag = "c", .name = "copt", .description = "c"});
+        other.add(c);
+        SwitchArg d(SwitchArgSpec{.flag = "d", .name = "dopt", .description = "d"});
+        other.add(d);
+        SwitchArg e(SwitchArgSpec{.flag = "e", .name = "eopt", .description = "e"});
+        other.add(e);
+        ValueArg<int> n_arg(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "narg",
+            .description = "n_arg",
+            .required = false,
+            .defaultValue = 4711,
+            .typeDesc = "number"
+        });
+        other.add(n_arg);
 
         OneOf x(cmd);
-        SwitchArg f("f", "fopt", "f", x);
-        SwitchArg g("", "gopt", "g", x);
+        SwitchArg f(SwitchArgSpec{.flag = "f", .name = "fopt", .description = "f"});
+        x.add(f);
+        SwitchArg g(SwitchArgSpec{.flag = "", .name = "gopt", .description = "g"});
+        x.add(g);
 
-        UnlabeledValueArg<int> req1("req1", "req_1", true, 47, "int", cmd);
+        UnlabeledValueArg<int> req1(UnlabeledValueArgSpec<int>{
+            .name = "req1",
+            .description = "req_1",
+            .required = true,
+            .defaultValue = 47,
+            .typeDesc = "int"
+        });
+        cmd.add(req1);
 
         cmd.parse(argc, argv);
 

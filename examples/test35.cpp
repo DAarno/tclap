@@ -23,15 +23,45 @@
 using namespace TCLAP;
 
 int main(int argc, char **argv) {
-    CmdLine cmd("");
+    CmdLine cmd(CmdLineSpec{.message = ""});
 
-    ValueArg<int> arg0("a", "a_int", "int arg", false, 4711, "int", cmd);
-    ValueArg<int> arg1("b", "b_int", "int arg", false, 4711, "int", cmd);
+    ValueArg<int> arg0(ValueArgSpec<int>{
+        .flag = "a",
+        .name = "a_int",
+        .description = "int arg",
+        .required = false,
+        .defaultValue = 4711,
+        .typeDesc = "int"
+    });
+    cmd.add(arg0);
+    ValueArg<int> arg1(ValueArgSpec<int>{
+        .flag = "b",
+        .name = "b_int",
+        .description = "int arg",
+        .required = false,
+        .defaultValue = 4711,
+        .typeDesc = "int"
+    });
+    cmd.add(arg1);
     arg1.hideFromHelp();
 
-    ValueArg<int> arg2("c", "c_int", "int arg", false, 4711, "int");
+    ValueArg<int> arg2(ValueArgSpec<int>{
+        .flag = "c",
+        .name = "c_int",
+        .description = "int arg",
+        .required = false,
+        .defaultValue = 4711,
+        .typeDesc = "int"
+    });
     arg2.hideFromHelp();
-    ValueArg<int> arg3("d", "d_int", "int arg", false, 4711, "int");
+    ValueArg<int> arg3(ValueArgSpec<int>{
+        .flag = "d",
+        .name = "d_int",
+        .description = "int arg",
+        .required = false,
+        .defaultValue = 4711,
+        .typeDesc = "int"
+    });
     arg3.hideFromHelp();
 
     if (argc > 2) {

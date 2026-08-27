@@ -33,6 +33,39 @@
 namespace TCLAP {
 
 /**
+ * Constructor arguments for UnlabeledMultiArg<T>, passed as a single
+ * designated-initializer aggregate. Like MultiArgSpec<T>, but with no
+ * `flag` (unlabeled args aren't matched by one) and an added
+ * `ignoreable` flag.
+ *
+ * To register the Arg with a CmdLine, call cmd.add() separately --
+ * UnlabeledMultiArg no longer has a self-registering constructor
+ * overload.
+ */
+template <typename T>
+struct UnlabeledMultiArgSpec {
+    /// The name of the Arg. Used for identification, not as a long flag.
+    std::string name;
+    /// A description of what the argument is for or does.
+    std::string description;
+    /// Whether the argument is required on the command line.
+    bool required = false;
+    /// A short, human readable description of the type that this object
+    /// expects, used in the generated USAGE statement. Defaults to
+    /// TypeName<T>::value.
+    std::string typeDesc = TypeName<T>::value;
+    /// A Constraint each value of this Arg must conform to. If set, its
+    /// shortID() is used as the type description shown in USAGE text
+    /// instead of typeDesc.
+    const Constraint<T> *constraint = nullptr;
+    /// Whether or not this argument can be ignored using the "--" flag.
+    bool ignoreable = false;
+    /// An optional callback invoked as soon as this Arg is matched. You
+    /// probably should not use this unless you have a very good reason.
+    Arg::Callback onMatch = nullptr;
+};
+
+/**
  * Just like a MultiArg, except that the arguments are unlabeled.  Basically,
  * this Arg will slurp up everything that hasn't been matched to another
  * Arg.
@@ -54,90 +87,10 @@ class UnlabeledMultiArg : public MultiArg<T> {
 public:
     /**
      * Constructor.
-     * \param name - The name of the Arg. Note that this is used for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     *  line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param ignoreable - Whether or not this argument can be ignored
-     * using the "--" flag.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
+     * \param spec - The name/description/required/typeDesc/constraint/
+     * ignoreable/onMatch callback for this Arg.
      */
-    UnlabeledMultiArg(const std::string &name, const std::string &desc,
-                      bool req, const std::string &typeDesc,
-                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
-    /**
-     * Constructor.
-     * \param name - The name of the Arg. Note that this is used for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     *  line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param ignoreable - Whether or not this argument can be ignored
-     * using the "--" flag.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    UnlabeledMultiArg(const std::string &name, const std::string &desc,
-                      bool req, const std::string &typeDesc,
-                      ArgContainer &parser, bool ignoreable = false,
-                      Arg::Callback onMatch = nullptr);
-
-    /**
-     * Constructor.
-     * \param name - The name of the Arg. Note that this is used for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     *  line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param ignoreable - Whether or not this argument can be ignored
-     * using the "--" flag.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    UnlabeledMultiArg(const std::string &name, const std::string &desc,
-                      bool req, const Constraint<T> *constraint,
-                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
-
-    /**
-     * Constructor.
-     * \param name - The name of the Arg. Note that this is used for
-     * identification, not as a long flag.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     *  line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param ignoreable - Whether or not this argument can be ignored
-     * using the "--" flag.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    UnlabeledMultiArg(const std::string &name, const std::string &desc,
-                      bool req, const Constraint<T> *constraint,
-                      ArgContainer &parser, bool ignoreable = false,
-                      Arg::Callback onMatch = nullptr);
+    explicit UnlabeledMultiArg(UnlabeledMultiArgSpec<T> spec);
 
     /**
      * Handles the processing of the argument.
@@ -181,43 +134,17 @@ public:
 };
 
 template <class T>
-UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        const std::string &typeDesc,
-                                        bool ignoreable, Arg::Callback onMatch)
-    : MultiArg<T>("", name, desc, req, typeDesc, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-}
-
-template <class T>
-UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        const std::string &typeDesc,
-                                        ArgContainer &parser, bool ignoreable,
-                                        Arg::Callback onMatch)
-    : MultiArg<T>("", name, desc, req, typeDesc, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-    parser.add(this);
-}
-
-template <class T>
-UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        const Constraint<T> *constraint,
-                                        bool ignoreable, Arg::Callback onMatch)
-    : MultiArg<T>("", name, desc, req, constraint, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-}
-
-template <class T>
-UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
-                                        const std::string &desc, bool req,
-                                        const Constraint<T> *constraint,
-                                        ArgContainer &parser, bool ignoreable,
-                                        Arg::Callback onMatch)
-    : MultiArg<T>("", name, desc, req, constraint, std::move(onMatch)) {
-    _ignoreable = ignoreable;
-    parser.add(this);
+UnlabeledMultiArg<T>::UnlabeledMultiArg(UnlabeledMultiArgSpec<T> spec)
+    : MultiArg<T>(MultiArgSpec<T>{
+          .flag = "",
+          .name = std::move(spec.name),
+          .description = std::move(spec.description),
+          .required = spec.required,
+          .typeDesc = std::move(spec.typeDesc),
+          .constraint = spec.constraint,
+          .onMatch = std::move(spec.onMatch),
+      }) {
+    _ignoreable = spec.ignoreable;
 }
 
 template <class T>

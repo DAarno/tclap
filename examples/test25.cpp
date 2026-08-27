@@ -9,14 +9,36 @@ using namespace TCLAP;
 using namespace std;
 
 int main(int argc, char **argv) {
-    CmdLine cmd("this is a message", ' ', "0.99");
+    CmdLine cmd(CmdLineSpec{
+        .message = "this is a message",
+        .dialect = {.delimiter = ' '},
+        .version = "0.99"
+    });
     DocBookOutput docoutput;
     cmd.setOutput(&docoutput);
 
-    SwitchArg btest("B", "sB", "exist Test B", false);
-    MultiArg<int> atest("A", "sA", "exist Test A", false, "integer");
+    SwitchArg btest(SwitchArgSpec{
+        .flag = "B",
+        .name = "sB",
+        .description = "exist Test B",
+        .defaultValue = false
+    });
+    MultiArg<int> atest(MultiArgSpec<int>{
+        .flag = "A",
+        .name = "sA",
+        .description = "exist Test A",
+        .required = false,
+        .typeDesc = "integer"
+    });
 
-    ValueArg<string> stest("s", "Bs", "string test", false, "homer", "string");
+    ValueArg<string> stest(ValueArgSpec<string>{
+        .flag = "s",
+        .name = "Bs",
+        .description = "string test",
+        .required = false,
+        .defaultValue = "homer",
+        .typeDesc = "string"
+    });
 
     cmd.xorAdd(stest, btest);
     cmd.add(atest);

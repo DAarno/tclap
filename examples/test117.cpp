@@ -36,13 +36,34 @@ using namespace TCLAP;
 using namespace std;
 
 int main() {
-    UnlabeledValueArg<int> a("count", "a count", true, 0, "int");
-    UnlabeledValueArg<int> sameName("count", "different description", true, 0,
-                                    "int");
-    UnlabeledValueArg<int> sameDescription("other", "a count", true, 0,
-                                           "int");
-    UnlabeledValueArg<int> different("other", "different description", true,
-                                     0, "int");
+    UnlabeledValueArg<int> a(UnlabeledValueArgSpec<int>{
+        .name = "count",
+        .description = "a count",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
+    UnlabeledValueArg<int> sameName(UnlabeledValueArgSpec<int>{
+        .name = "count",
+        .description = "different description",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
+    UnlabeledValueArg<int> sameDescription(UnlabeledValueArgSpec<int>{
+        .name = "other",
+        .description = "a count",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
+    UnlabeledValueArg<int> different(UnlabeledValueArgSpec<int>{
+        .name = "other",
+        .description = "different description",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
     // Compared through the Arg& base, matching how CmdLine/ArgGroup always
     // invoke this operator; comparing two same-typed derived objects
     // directly would make C++20's reversed-candidate rule ambiguous.

@@ -34,8 +34,34 @@
 namespace TCLAP {
 
 /**
+ * Constructor arguments for SwitchArg, passed as a single designated-
+ * initializer aggregate: SwitchArg reverseSwitch({.flag = "r",
+ * .name = "reverse", .description = "Print name backwards"});
+ *
+ * To register the Arg with a CmdLine, call cmd.add() separately --
+ * SwitchArg no longer has a self-registering constructor overload; see
+ * TCLAP_2.0_DESIGN.md §5.6 for why that's still the ergonomic default
+ * despite the extra line.
+ */
+struct SwitchArgSpec {
+    /// The one character flag that identifies this argument on the
+    /// command line.
+    std::string flag;
+    /// A one word name for the argument. Can be used as a long flag on
+    /// the command line.
+    std::string name;
+    /// A description of what the argument is for or does.
+    std::string description;
+    /// The default value for this Switch.
+    bool defaultValue = false;
+    /// An optional callback invoked as soon as this Arg is matched. You
+    /// probably should not use this unless you have a very good reason.
+    Arg::Callback onMatch = nullptr;
+};
+
+/**
  * A simple switch argument.  If the switch is set on the command line, then
- * the getValue method will return the opposite of the default value for the
+ * the value() method will return the opposite of the default value for the
  * switch.
  */
 class SwitchArg : public Arg {
@@ -54,37 +80,10 @@ protected:
 public:
     /**
      * SwitchArg constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param def - The default value for this Switch.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
+     * \param spec - The flag/name/description/default value/onMatch
+     * callback for this Arg.
      */
-    SwitchArg(const std::string &flag, const std::string &name,
-              const std::string &desc, bool def = false, Arg::Callback onMatch = nullptr);
-
-    /**
-     * SwitchArg constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param def - The default value for this Switch.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    SwitchArg(const std::string &flag, const std::string &name,
-              const std::string &desc, ArgContainer &parser, bool def = false,
-              Arg::Callback onMatch = nullptr);
+    explicit SwitchArg(SwitchArgSpec spec);
 
     /**
      * Handles the processing of the argument.
@@ -105,12 +104,12 @@ public:
     /**
      * Returns bool, whether or not the switch has been set.
      */
-    [[nodiscard]] bool getValue() const noexcept { return _value; }
+    [[nodiscard]] bool value() const noexcept { return _value; }
 
     /**
      * A SwitchArg can be used as a boolean, indicating
      * whether or not the switch has been set. This is the
-     * same as calling getValue()
+     * same as calling value()
      */
     operator bool() const noexcept { return _value; }
 
@@ -132,21 +131,11 @@ private:
 //////////////////////////////////////////////////////////////////////
 // BEGIN SwitchArg.cpp
 //////////////////////////////////////////////////////////////////////
-inline SwitchArg::SwitchArg(const std::string &flag, const std::string &name,
-                            const std::string &desc, bool default_val,
-                            Arg::Callback onMatch)
-    : Arg(flag, name, desc, false, false, std::move(onMatch)),
-      _value(default_val),
-      _default(default_val) {}
-
-inline SwitchArg::SwitchArg(const std::string &flag, const std::string &name,
-                            const std::string &desc, ArgContainer &parser,
-                            bool default_val, Arg::Callback onMatch)
-    : Arg(flag, name, desc, false, false, std::move(onMatch)),
-      _value(default_val),
-      _default(default_val) {
-    parser.add(this);
-}
+inline SwitchArg::SwitchArg(SwitchArgSpec spec)
+    : Arg(std::move(spec.flag), std::move(spec.name),
+          std::move(spec.description), false, false, std::move(spec.onMatch)),
+      _value(spec.defaultValue),
+      _default(spec.defaultValue) {}
 
 inline bool SwitchArg::lastCombined(std::string &combinedSwitches) {
     return combinedSwitches.find_first_not_of(Arg::blankChar(), 1) ==

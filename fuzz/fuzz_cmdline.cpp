@@ -64,28 +64,79 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     std::vector<std::string> args = tclap_fuzz::SplitArgs(data, size);
 
     try {
-        TCLAP::CmdLine cmd("fuzz target", ' ', "1.0");
+        TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
+            .message = "fuzz target",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0"
+        });
         cmd.setExceptionHandling(false);
         NullOutput out;
         cmd.setOutput(&out);
 
-        TCLAP::SwitchArg reverseSwitch("r", "reverse", "Reverse", cmd, false);
-        TCLAP::MultiSwitchArg verboseSwitch("V", "verbose", "Verbosity", cmd);
+        TCLAP::SwitchArg reverseSwitch(TCLAP::SwitchArgSpec{
+            .flag = "r",
+            .name = "reverse",
+            .description = "Reverse",
+            .defaultValue = false
+        });
+        cmd.add(reverseSwitch);
+        TCLAP::MultiSwitchArg verboseSwitch(TCLAP::MultiSwitchArgSpec{
+            .flag = "V",
+            .name = "verbose",
+            .description = "Verbosity"
+        });
+        cmd.add(verboseSwitch);
 
-        TCLAP::ValueArg<std::string> nameArg("n", "name", "Name", false,
-                                              "homer", "string", cmd);
-        TCLAP::ValueArg<int> countArg("c", "count", "Count", false, 0, "int",
-                                       cmd);
+        TCLAP::ValueArg<std::string> nameArg(TCLAP::ValueArgSpec<std::string>{
+            .flag = "n",
+            .name = "name",
+            .description = "Name",
+            .required = false,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
+        cmd.add(nameArg);
+        TCLAP::ValueArg<int> countArg(TCLAP::ValueArgSpec<int>{
+            .flag = "c",
+            .name = "count",
+            .description = "Count",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
+        cmd.add(countArg);
 
-        TCLAP::MultiArg<std::string> extraArg("x", "extra", "Extra", false,
-                                               "string", cmd);
+        TCLAP::MultiArg<std::string> extraArg(TCLAP::MultiArgSpec<std::string>{
+            .flag = "x",
+            .name = "extra",
+            .description = "Extra",
+            .required = false,
+            .typeDesc = "string"
+        });
+        cmd.add(extraArg);
 
-        TCLAP::UnlabeledValueArg<std::string> posArg(
-            "pos", "Positional argument", false, "", "string", cmd);
+        TCLAP::UnlabeledValueArg<std::string> posArg(TCLAP::UnlabeledValueArgSpec<std::string>{
+            .name = "pos",
+            .description = "Positional argument",
+            .required = false,
+            .defaultValue = "",
+            .typeDesc = "string"
+        });
+        cmd.add(posArg);
 
         TCLAP::EitherOf group(cmd);
-        TCLAP::SwitchArg aSwitch("a", "alpha", "Alpha", false);
-        TCLAP::SwitchArg bSwitch("b", "beta", "Beta", false);
+        TCLAP::SwitchArg aSwitch(TCLAP::SwitchArgSpec{
+            .flag = "a",
+            .name = "alpha",
+            .description = "Alpha",
+            .defaultValue = false
+        });
+        TCLAP::SwitchArg bSwitch(TCLAP::SwitchArgSpec{
+            .flag = "b",
+            .name = "beta",
+            .description = "Beta",
+            .defaultValue = false
+        });
         group.add(aSwitch).add(bSwitch);
 
         cmd.parse(args);
@@ -93,12 +144,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         // Touch the parsed values so the whole extraction path (including
         // the ValueArg<int> stream conversion) actually runs and isn't
         // optimized away.
-        (void)reverseSwitch.getValue();
-        (void)verboseSwitch.getValue();
-        (void)nameArg.getValue();
-        (void)countArg.getValue();
-        (void)extraArg.getValue();
-        (void)posArg.getValue();
+        (void)reverseSwitch.value();
+        (void)verboseSwitch.value();
+        (void)nameArg.value();
+        (void)countArg.value();
+        (void)extraArg.value();
+        (void)posArg.value();
     } catch (TCLAP::ArgException &) {
         // Expected: malformed/conflicting/missing arguments.
     } catch (TCLAP::ExitException &) {

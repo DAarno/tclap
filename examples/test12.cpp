@@ -41,8 +41,19 @@ struct ArgTraits<Vect3D> {
 }
 
 int main(int argc, char *argv[]) {
-    CmdLine cmd("Command description message", ' ', "0.9");
-    MultiArg<Vect3D> vec("v", "vect", "vector", true, "3D vector", cmd);
+    CmdLine cmd(CmdLineSpec{
+        .message = "Command description message",
+        .dialect = {.delimiter = ' '},
+        .version = "0.9"
+    });
+    MultiArg<Vect3D> vec(MultiArgSpec<Vect3D>{
+        .flag = "v",
+        .name = "vect",
+        .description = "vector",
+        .required = true,
+        .typeDesc = "3D vector"
+    });
+    cmd.add(vec);
 
     try {
         cmd.parse(argc, argv);
@@ -57,7 +68,7 @@ int main(int argc, char *argv[]) {
     std::cout << "REVERSED" << std::endl;
 
     // use alt. form getValue()
-    std::vector<Vect3D> v(vec.getValue());
+    std::vector<Vect3D> v(vec.value());
     std::reverse(v.begin(), v.end());
 
     std::copy(v.begin(), v.end(),

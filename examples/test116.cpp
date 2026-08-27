@@ -32,20 +32,24 @@ using namespace std;
 
 int main(int argc, char **argv) {
     try {
-        CmdLine cmd("MultiSwitchArg::reset() regression test");
+        CmdLine cmd(CmdLineSpec{.message = "MultiSwitchArg::reset() regression test"});
 
-        MultiSwitchArg verbose("v", "verbose", "be verbose, repeatedly");
+        MultiSwitchArg verbose(MultiSwitchArgSpec{
+            .flag = "v",
+            .name = "verbose",
+            .description = "be verbose, repeatedly"
+        });
         cmd.add(verbose);
 
         cmd.parse(argc, argv);
 
         cout << "before reset: isSet=" << verbose.isSet()
-             << " value=" << verbose.getValue() << endl;
+             << " value=" << verbose.value() << endl;
 
         verbose.reset();
 
         cout << "after reset:  isSet=" << verbose.isSet()
-             << " value=" << verbose.getValue() << endl;
+             << " value=" << verbose.value() << endl;
     } catch (ArgException &e) {
         cout << "ERROR: " << e.error() << " " << e.argId() << endl;
     }

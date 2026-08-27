@@ -11,24 +11,39 @@ int main(int argc, char **argv) {
     // because exceptions will be thrown for problems.
     try {
         // Define the command line object.
-        CmdLine cmd("Command description message", ' ', "0.9");
+        CmdLine cmd(CmdLineSpec{
+            .message = "Command description message",
+            .dialect = {.delimiter = ' '},
+            .version = "0.9"
+        });
         cmd.ignoreUnmatched(true);
 
         // Define a value argument and add it to the command line.
-        ValueArg<string> nameArg("n", "name", "Name to print", true, "homer",
-                                 "string");
+        ValueArg<string> nameArg(ValueArgSpec<string>{
+            .flag = "n",
+            .name = "name",
+            .description = "Name to print",
+            .required = true,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
         cmd.add(nameArg);
 
         // Define a switch and add it to the command line.
-        SwitchArg reverseSwitch("r", "reverse", "Print name backwards", false);
+        SwitchArg reverseSwitch(SwitchArgSpec{
+            .flag = "r",
+            .name = "reverse",
+            .description = "Print name backwards",
+            .defaultValue = false
+        });
         cmd.add(reverseSwitch);
 
         // Parse the args.
         cmd.parse(argc, argv);
 
         // Get the value parsed by each arg.
-        string name = nameArg.getValue();
-        bool reverseName = reverseSwitch.getValue();
+        string name = nameArg.value();
+        bool reverseName = reverseSwitch.value();
 
         // Do what you intend too...
         if (reverseName) {

@@ -23,9 +23,20 @@ std::istream &operator>>(std::istream &is, Vect3D &v) {
 }
 
 int main(int argc, char *argv[]) {
-    CmdLine cmd("Command description message", ' ', "0.9");
-    ValueArg<Vect3D> vec("v", "vect", "vector", true, Vect3D(), "3D vector",
-                         cmd);
+    CmdLine cmd(CmdLineSpec{
+        .message = "Command description message",
+        .dialect = {.delimiter = ' '},
+        .version = "0.9"
+    });
+    ValueArg<Vect3D> vec(ValueArgSpec<Vect3D>{
+        .flag = "v",
+        .name = "vect",
+        .description = "vector",
+        .required = true,
+        .defaultValue = Vect3D(),
+        .typeDesc = "3D vector"
+    });
+    cmd.add(vec);
 
     try {
         cmd.parse(argc, argv);
@@ -34,6 +45,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    vec.getValue().print(std::cout);
+    vec.value().print(std::cout);
     std::cout << std::endl;
 }

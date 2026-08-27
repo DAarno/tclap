@@ -25,35 +25,96 @@ int main(int argc, char **argv) {
 
 void parseOptions(int argc, char **argv) {
     try {
-        CmdLine cmd("this is a message", ' ', "0.99");
+        CmdLine cmd(CmdLineSpec{
+            .message = "this is a message",
+            .dialect = {.delimiter = ' '},
+            .version = "0.99"
+        });
 
         //
         // Define arguments
         //
 
-        ValueArg<string> atest("a", "aaa", "or test a", false, "homer",
-                               "string");
-        ValueArg<string> btest("b", "bbb", "or test b", false, "homer",
-                               "string");
+        ValueArg<string> atest(ValueArgSpec<string>{
+            .flag = "a",
+            .name = "aaa",
+            .description = "or test a",
+            .required = false,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
+        ValueArg<string> btest(ValueArgSpec<string>{
+            .flag = "b",
+            .name = "bbb",
+            .description = "or test b",
+            .required = false,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
         cmd.xorAdd(atest, btest);
 
-        ValueArg<string> ctest("c", "ccc", "c test", true, "homer", "string");
+        ValueArg<string> ctest(ValueArgSpec<string>{
+            .flag = "c",
+            .name = "ccc",
+            .description = "c test",
+            .required = true,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
         cmd.add(ctest);
 
-        SwitchArg dtest("", "ddd", "d test", false);
+        SwitchArg dtest(SwitchArgSpec{
+            .flag = "",
+            .name = "ddd",
+            .description = "d test",
+            .defaultValue = false
+        });
         cmd.add(dtest);
 
-        ValueArg<string> etest("", "eee", "e test", false, "homer", "string");
-        ValueArg<string> ftest("", "fff", "f test", false, "homer", "string");
-        ValueArg<string> gtest("g", "ggg", "g test", false, "homer", "string");
+        ValueArg<string> etest(ValueArgSpec<string>{
+            .flag = "",
+            .name = "eee",
+            .description = "e test",
+            .required = false,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
+        ValueArg<string> ftest(ValueArgSpec<string>{
+            .flag = "",
+            .name = "fff",
+            .description = "f test",
+            .required = false,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
+        ValueArg<string> gtest(ValueArgSpec<string>{
+            .flag = "g",
+            .name = "ggg",
+            .description = "g test",
+            .required = false,
+            .defaultValue = "homer",
+            .typeDesc = "string"
+        });
         vector<Arg *> xorlist;
         xorlist.push_back(&etest);
         xorlist.push_back(&ftest);
         xorlist.push_back(&gtest);
         cmd.xorAdd(xorlist);
 
-        MultiArg<string> itest("i", "iii", "or test i", false, "string");
-        MultiArg<string> jtest("j", "jjj", "or test j", false, "string");
+        MultiArg<string> itest(MultiArgSpec<string>{
+            .flag = "i",
+            .name = "iii",
+            .description = "or test i",
+            .required = false,
+            .typeDesc = "string"
+        });
+        MultiArg<string> jtest(MultiArgSpec<string>{
+            .flag = "j",
+            .name = "jjj",
+            .description = "or test j",
+            .required = false,
+            .typeDesc = "string"
+        });
         cmd.xorAdd(itest, jtest);
 
         //
@@ -66,34 +127,34 @@ void parseOptions(int argc, char **argv) {
         //
 
         if (atest.isSet())
-            _orTest = atest.getValue();
+            _orTest = atest.value();
         else if (btest.isSet())
-            _orTest = btest.getValue();
+            _orTest = btest.value();
         else
             // Should never get here because TCLAP will note that one of the
             // required args above has not been set.
             throw("very bad things...");
 
-        _testc = ctest.getValue();
-        _testd = dtest.getValue();
+        _testc = ctest.value();
+        _testd = dtest.value();
 
         if (etest.isSet())
-            _orTest2 = etest.getValue();
+            _orTest2 = etest.value();
         else if (ftest.isSet())
-            _orTest2 = ftest.getValue();
+            _orTest2 = ftest.value();
         else if (gtest.isSet())
-            _orTest2 = gtest.getValue();
+            _orTest2 = gtest.value();
         else
             throw("still bad");
 
         if (jtest.isSet()) {
             cout << "for J:" << endl;
-            vector<string> v = jtest.getValue();
+            vector<string> v = jtest.value();
             for (int z = 0; static_cast<unsigned int>(z) < v.size(); z++)
                 cout << " " << z << "  " << v[z] << endl;
         } else if (itest.isSet()) {
             cout << "for I:" << endl;
-            vector<string> v = itest.getValue();
+            vector<string> v = itest.value();
             for (int z = 0; static_cast<unsigned int>(z) < v.size(); z++)
                 cout << " " << z << "  " << v[z] << endl;
         } else

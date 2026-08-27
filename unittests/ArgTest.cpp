@@ -32,7 +32,7 @@ using namespace TCLAP;
 
 void TestArgRejectsMultiCharFlag(Testing &t) {
     try {
-        SwitchArg bad("ab", "name", "desc");
+        SwitchArg bad(SwitchArgSpec{.flag = "ab", .name = "name", .description = "desc"});
         ERROR(t, "Arg: expected SpecificationException for a two-character "
                  "flag, none thrown");
     } catch (SpecificationException &) {
@@ -47,7 +47,11 @@ void TestArgRejectsReservedFlags(Testing &t) {
     const char *reserved[] = {"-", "--", " "};
     for (unsigned i = 0; i < sizeof(reserved) / sizeof(reserved[0]); i++) {
         try {
-            SwitchArg bad(reserved[i], "name", "desc");
+            SwitchArg bad(SwitchArgSpec{
+                .flag = reserved[i],
+                .name = "name",
+                .description = "desc"
+            });
             ERROR(t, "Arg: expected SpecificationException for flag \""
                          << reserved[i] << "\", none thrown");
         } catch (SpecificationException &) {
@@ -67,7 +71,11 @@ void TestArgAllowsIgnoreRestNameWithDashFlag(Testing &t) {
         // "-" is the default Dialect's flagPrefix (see Dialect.h); this
         // Arg isn't registered with any CmdLine, so there's no Dialect
         // instance to query it from.
-        SwitchArg ignoreRest("-", Arg::ignoreNameString(), "desc");
+        SwitchArg ignoreRest(SwitchArgSpec{
+            .flag = "-",
+            .name = Arg::ignoreNameString(),
+            .description = "desc"
+        });
     } catch (ArgException &e) {
         ERROR(t, "Arg: unexpected exception constructing the ignore_rest "
                  "switch: "
@@ -77,7 +85,7 @@ void TestArgAllowsIgnoreRestNameWithDashFlag(Testing &t) {
 
 void TestArgRejectsNameStartingWithDash(Testing &t) {
     try {
-        SwitchArg bad("a", "-name", "desc");
+        SwitchArg bad(SwitchArgSpec{.flag = "a", .name = "-name", .description = "desc"});
         ERROR(t, "Arg: expected SpecificationException for a name starting "
                  "with '-', none thrown");
     } catch (SpecificationException &) {
@@ -88,7 +96,11 @@ void TestArgRejectsNameStartingWithDash(Testing &t) {
     }
 
     try {
-        SwitchArg bad("a", "--name", "desc");
+        SwitchArg bad(SwitchArgSpec{
+            .flag = "a",
+            .name = "--name",
+            .description = "desc"
+        });
         ERROR(t, "Arg: expected SpecificationException for a name starting "
                  "with '--', none thrown");
     } catch (SpecificationException &) {
@@ -102,7 +114,7 @@ void TestArgRejectsNameStartingWithDash(Testing &t) {
 
 void TestArgRejectsNameWithSpace(Testing &t) {
     try {
-        SwitchArg bad("a", "na me", "desc");
+        SwitchArg bad(SwitchArgSpec{.flag = "a", .name = "na me", .description = "desc"});
         ERROR(t, "Arg: expected SpecificationException for a name "
                  "containing a space, none thrown");
     } catch (SpecificationException &) {
@@ -115,10 +127,22 @@ void TestArgRejectsNameWithSpace(Testing &t) {
 }
 
 void TestArgEqualityByFlagOrName(Testing &t) {
-    SwitchArg a("a", "aaa", "desc a");
-    SwitchArg sameFlag("a", "different", "same flag as a");
-    SwitchArg sameName("z", "aaa", "same name as a");
-    SwitchArg different("d", "ddd", "neither flag nor name matches");
+    SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "desc a"});
+    SwitchArg sameFlag(SwitchArgSpec{
+        .flag = "a",
+        .name = "different",
+        .description = "same flag as a"
+    });
+    SwitchArg sameName(SwitchArgSpec{
+        .flag = "z",
+        .name = "aaa",
+        .description = "same name as a"
+    });
+    SwitchArg different(SwitchArgSpec{
+        .flag = "d",
+        .name = "ddd",
+        .description = "neither flag nor name matches"
+    });
 
     if (!(a == sameFlag))
         ERROR(t, "Arg: operator== should match on flag alone");
@@ -132,7 +156,11 @@ void TestArgFlaglessFormatting(Testing &t) {
     // An Arg with an empty flag can only be specified via "--name" on
     // the command line; shortID/longID/toString should omit the flag
     // entirely rather than rendering an empty "-,".
-    SwitchArg longOnly("", "verbose", "be verbose");
+    SwitchArg longOnly(SwitchArgSpec{
+        .flag = "",
+        .name = "verbose",
+        .description = "be verbose"
+    });
 
     if (longOnly.getFlag() != "")
         ERROR(t, "Arg: expected an empty flag, got \"" << longOnly.getFlag()
@@ -148,7 +176,12 @@ void TestArgFlaglessFormatting(Testing &t) {
                      << longOnly.toString());
 
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
         cmd.add(longOnly);
         cmd.setExceptionHandling(false);
 
@@ -167,7 +200,7 @@ void TestArgFlaglessFormatting(Testing &t) {
 }
 
 void TestArgAcceptsMultipleValues(Testing &t) {
-    SwitchArg s("a", "aaa", "desc");
+    SwitchArg s(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "desc"});
     if (s.acceptsMultipleValues())
         ERROR(t, "Arg: a plain SwitchArg should not accept multiple values");
 }

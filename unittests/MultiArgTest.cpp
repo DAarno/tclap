@@ -29,8 +29,19 @@ using namespace TCLAP;
 
 void TestMultiArgCollectsValues(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        MultiArg<int> nums("x", "num", "a number", false, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        MultiArg<int> nums(MultiArgSpec<int>{
+            .flag = "x",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .typeDesc = "int"
+        });
         cmd.add(nums);
         cmd.setExceptionHandling(false);
 
@@ -41,7 +52,7 @@ void TestMultiArgCollectsValues(Testing &t) {
         if (!nums.isSet())
             ERROR(t, "MultiArg: isSet() false after being specified");
 
-        const std::vector<int> &values = nums.getValue();
+        const std::vector<int> &values = nums.value();
         if (values.size() != 3)
             ERROR(t, "MultiArg: expected 3 values, got " << values.size());
 
@@ -58,8 +69,19 @@ void TestMultiArgCollectsValues(Testing &t) {
 
 void TestMultiArgEmptyWhenUnset(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        MultiArg<int> nums("x", "num", "a number", false, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        MultiArg<int> nums(MultiArgSpec<int>{
+            .flag = "x",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .typeDesc = "int"
+        });
         cmd.add(nums);
         cmd.setExceptionHandling(false);
 
@@ -69,9 +91,9 @@ void TestMultiArgEmptyWhenUnset(Testing &t) {
 
         if (nums.isSet())
             ERROR(t, "MultiArg: isSet() true without being specified");
-        if (!nums.getValue().empty())
+        if (!nums.value().empty())
             ERROR(t, "MultiArg: expected no values, got "
-                         << nums.getValue().size());
+                         << nums.value().size());
     } catch (ArgException &e) {
         ERROR(t, "MultiArg: unexpected exception: " << e.error());
     }
@@ -79,8 +101,19 @@ void TestMultiArgEmptyWhenUnset(Testing &t) {
 
 void TestMultiArgMissingRequired(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        MultiArg<int> nums("x", "num", "a number", true, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        MultiArg<int> nums(MultiArgSpec<int>{
+            .flag = "x",
+            .name = "num",
+            .description = "a number",
+            .required = true,
+            .typeDesc = "int"
+        });
         cmd.add(nums);
         cmd.setExceptionHandling(false);
 
@@ -106,8 +139,19 @@ void TestMultiArgConstraint(Testing &t) {
     ValuesConstraint<int> constraint(allowed);
 
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        MultiArg<int> nums("x", "num", "a number", false, &constraint);
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        MultiArg<int> nums(MultiArgSpec<int>{
+            .flag = "x",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .constraint = &constraint
+        });
         cmd.add(nums);
         cmd.setExceptionHandling(false);
 
@@ -127,7 +171,13 @@ void TestMultiArgConstraint(Testing &t) {
 }
 
 void TestMultiArgAllowMore(Testing &t) {
-    MultiArg<int> nums("x", "num", "a number", false, "int");
+    MultiArg<int> nums(MultiArgSpec<int>{
+        .flag = "x",
+        .name = "num",
+        .description = "a number",
+        .required = false,
+        .typeDesc = "int"
+    });
 
     if (nums.allowMore())
         ERROR(t, "MultiArg: allowMore() true before any value was parsed");
@@ -137,8 +187,19 @@ void TestMultiArgAllowMore(Testing &t) {
 
 void TestMultiArgReset(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        MultiArg<int> nums("x", "num", "a number", false, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        MultiArg<int> nums(MultiArgSpec<int>{
+            .flag = "x",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .typeDesc = "int"
+        });
         cmd.add(nums);
         cmd.setExceptionHandling(false);
 
@@ -150,7 +211,7 @@ void TestMultiArgReset(Testing &t) {
 
         if (nums.isSet())
             ERROR(t, "MultiArg: reset() did not clear isSet()");
-        if (!nums.getValue().empty())
+        if (!nums.value().empty())
             ERROR(t, "MultiArg: reset() did not clear the values");
     } catch (ArgException &e) {
         ERROR(t, "MultiArg: unexpected exception: " << e.error());

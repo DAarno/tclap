@@ -59,14 +59,27 @@ std::string swedishTranslator(const std::string &messageId,
 }  // namespace
 
 int main(int argc, char **argv) {
-    TCLAP::CmdLine cmd("Exempelprogram", ' ', "1.0");
+    TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
+        .message = "Exempelprogram",
+        .dialect = {.delimiter = ' '},
+        .version = "1.0"
+    });
     cmd.setMessageTranslator(&swedishTranslator);
 
-    TCLAP::ValueArg<std::string> name("n", "name",
-                                      "Namn att h\u00e4lsa till", true, "",
-                                      "name");
-    TCLAP::SwitchArg verbose("v", "verbose", "Aktivera verbose-l\u00e4ge",
-                             false);
+    TCLAP::ValueArg<std::string> name(TCLAP::ValueArgSpec<std::string>{
+        .flag = "n",
+        .name = "name",
+        .description = "Namn att h\u00e4lsa till",
+        .required = true,
+        .defaultValue = "",
+        .typeDesc = "name"
+    });
+    TCLAP::SwitchArg verbose(TCLAP::SwitchArgSpec{
+        .flag = "v",
+        .name = "verbose",
+        .description = "Aktivera verbose-l\u00e4ge",
+        .defaultValue = false
+    });
 
     cmd.add(name);
     cmd.add(verbose);

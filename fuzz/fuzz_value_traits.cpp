@@ -52,13 +52,24 @@ public:
 template <typename T>
 void FuzzOneType(const std::string &typeDesc, const std::string &value) {
     try {
-        TCLAP::CmdLine cmd("fuzz target", ' ', "1.0");
+        TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
+            .message = "fuzz target",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0"
+        });
         cmd.setExceptionHandling(false);
         NullOutput out;
         cmd.setOutput(&out);
 
-        TCLAP::ValueArg<T> valueArg("v", "value", "Value", false, T(),
-                                     typeDesc, cmd);
+        TCLAP::ValueArg<T> valueArg(TCLAP::ValueArgSpec<T>{
+            .flag = "v",
+            .name = "value",
+            .description = "Value",
+            .required = false,
+            .defaultValue = T(),
+            .typeDesc = typeDesc
+        });
+        cmd.add(valueArg);
 
         std::vector<std::string> args;
         args.push_back("fuzz");
@@ -67,7 +78,7 @@ void FuzzOneType(const std::string &typeDesc, const std::string &value) {
 
         cmd.parse(args);
 
-        (void)valueArg.getValue();
+        (void)valueArg.value();
     } catch (TCLAP::ArgException &) {
     } catch (TCLAP::ExitException &) {
     } catch (std::exception &) {

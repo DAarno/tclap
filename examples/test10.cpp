@@ -15,7 +15,11 @@ int main() {
     const char *const *argv3 = argv7;
     const char *const *const argv4 = argv7;
 
-    CmdLine cmd("Command description message", ' ', "0.9");
+    CmdLine cmd(CmdLineSpec{
+        .message = "Command description message",
+        .dialect = {.delimiter = ' '},
+        .version = "0.9"
+    });
     cmd.parse(0, argv1);
     cmd.parse(0, argv2);
     cmd.parse(0, argv3);

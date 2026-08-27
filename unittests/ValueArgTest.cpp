@@ -28,8 +28,20 @@ using namespace TCLAP;
 
 void TestValueArgDefault(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 42, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 42,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -39,8 +51,8 @@ void TestValueArgDefault(Testing &t) {
 
         if (num.isSet())
             ERROR(t, "ValueArg: isSet() true without being specified");
-        if (num.getValue() != 42)
-            ERROR(t, "ValueArg: expected default 42, got " << num.getValue());
+        if (num.value() != 42)
+            ERROR(t, "ValueArg: expected default 42, got " << num.value());
     } catch (ArgException &e) {
         ERROR(t, "ValueArg: unexpected exception: " << e.error());
     }
@@ -48,8 +60,20 @@ void TestValueArgDefault(Testing &t) {
 
 void TestValueArgParse(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -59,12 +83,8 @@ void TestValueArgParse(Testing &t) {
 
         if (!num.isSet())
             ERROR(t, "ValueArg: isSet() false after being specified");
-        if (num.getValue() != 7)
-            ERROR(t, "ValueArg: expected 7, got " << num.getValue());
-
-        // operator const T&()
-        int v = num;
-        if (v != 7) ERROR(t, "ValueArg: operator const T&() returned " << v);
+        if (num.value() != 7)
+            ERROR(t, "ValueArg: expected 7, got " << num.value());
     } catch (ArgException &e) {
         ERROR(t, "ValueArg: unexpected exception: " << e.error());
     }
@@ -72,8 +92,20 @@ void TestValueArgParse(Testing &t) {
 
 void TestValueArgShortFlag(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -81,9 +113,9 @@ void TestValueArgShortFlag(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        if (num.getValue() != 9)
+        if (num.value() != 9)
             ERROR(t, "ValueArg: expected 9 via short flag, got "
-                         << num.getValue());
+                         << num.value());
     } catch (ArgException &e) {
         ERROR(t, "ValueArg: unexpected exception: " << e.error());
     }
@@ -91,8 +123,20 @@ void TestValueArgShortFlag(Testing &t) {
 
 void TestValueArgEqualsDelimiter(Testing &t) {
     try {
-        CmdLine cmd("test", '=', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = '='},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -100,9 +144,9 @@ void TestValueArgEqualsDelimiter(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        if (num.getValue() != 99)
+        if (num.value() != 99)
             ERROR(t, "ValueArg: expected 99 with '=' delimiter, got "
-                         << num.getValue());
+                         << num.value());
     } catch (ArgException &e) {
         ERROR(t, "ValueArg: unexpected exception: " << e.error());
     }
@@ -114,8 +158,20 @@ void TestValueArgEqualsDelimiter(Testing &t) {
 
 void TestValueArgStringLike(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<std::string> name("", "name", "a name", false, "", "string");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<std::string> name(ValueArgSpec<std::string>{
+            .flag = "",
+            .name = "name",
+            .description = "a name",
+            .required = false,
+            .defaultValue = "",
+            .typeDesc = "string"
+        });
         cmd.add(name);
         cmd.setExceptionHandling(false);
 
@@ -127,9 +183,9 @@ void TestValueArgStringLike(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        if (name.getValue() != "John Doe")
+        if (name.value() != "John Doe")
             ERROR(t, "ValueArg<string>: expected \"John Doe\", got \""
-                         << name.getValue() << '"');
+                         << name.value() << '"');
     } catch (ArgException &e) {
         ERROR(t, "ValueArg<string>: unexpected exception: " << e.error());
     }
@@ -137,8 +193,20 @@ void TestValueArgStringLike(Testing &t) {
 
 void TestValueArgBadValue(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -158,8 +226,20 @@ void TestValueArgBadValue(Testing &t) {
 
 void TestValueArgMultipleValuesInOneToken(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -182,8 +262,20 @@ void TestValueArgMultipleValuesInOneToken(Testing &t) {
 
 void TestValueArgAlreadySet(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -204,8 +296,20 @@ void TestValueArgAlreadySet(Testing &t) {
 
 void TestValueArgMissingRequired(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", true, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = true,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -232,8 +336,20 @@ void TestValueArgConstraint(Testing &t) {
     ValuesConstraint<int> constraint(allowed);
 
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 1, &constraint);
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 1,
+            .constraint = &constraint
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -241,17 +357,29 @@ void TestValueArgConstraint(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        if (num.getValue() != 2)
+        if (num.value() != 2)
             ERROR(t, "ValueArg: constrained value expected 2, got "
-                         << num.getValue());
+                         << num.value());
     } catch (ArgException &e) {
         ERROR(t, "ValueArg: unexpected exception for an allowed value: "
                      << e.error());
     }
 
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 1, &constraint);
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 1,
+            .constraint = &constraint
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -272,8 +400,20 @@ void TestValueArgConstraint(Testing &t) {
 
 void TestValueArgReset(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        ValueArg<int> num("n", "num", "a number", false, 42, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        ValueArg<int> num(ValueArgSpec<int>{
+            .flag = "n",
+            .name = "num",
+            .description = "a number",
+            .required = false,
+            .defaultValue = 42,
+            .typeDesc = "int"
+        });
         cmd.add(num);
         cmd.setExceptionHandling(false);
 
@@ -285,9 +425,9 @@ void TestValueArgReset(Testing &t) {
 
         if (num.isSet())
             ERROR(t, "ValueArg: reset() did not clear isSet()");
-        if (num.getValue() != 42)
+        if (num.value() != 42)
             ERROR(t, "ValueArg: reset() did not restore the default, got "
-                         << num.getValue());
+                         << num.value());
     } catch (ArgException &e) {
         ERROR(t, "ValueArg: unexpected exception: " << e.error());
     }

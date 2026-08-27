@@ -37,19 +37,56 @@ using namespace TCLAP;
 int main(int argc, char **argv) {
     try {
         // "usage: f [-aDde] [-b b_arg] [-m m_arg] req1 req2 [opt1 [opt2]]\n"
-        CmdLine cmd("");
-        SwitchArg a("a", "aopt", "a", cmd);
-        SwitchArg d("d", "dopt", "d", cmd);
-        SwitchArg D("D", "Dopt", "D", cmd);
-        SwitchArg e("e", "eopt", "e", cmd);
-        ValueArg<int> b_arg("b", "barg", "Desc b_arg", false, 4711, "b_arg",
-                            cmd);
-        ValueArg<std::string> m_arg("m", "marg", "Desc m_arg", false, "foo",
-                                    "m_arg", cmd);
-        UnlabeledValueArg<int> req1("req1", "req_1", true, 47, "int", cmd);
-        UnlabeledValueArg<std::string> req2("req2", "req_2", true, "bar", "str",
-                                            cmd);
-        UnlabeledMultiArg<int> opt1("opt1", "opt_1", false, "int", cmd);
+        CmdLine cmd(CmdLineSpec{.message = ""});
+        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aopt", .description = "a"});
+        cmd.add(a);
+        SwitchArg d(SwitchArgSpec{.flag = "d", .name = "dopt", .description = "d"});
+        cmd.add(d);
+        SwitchArg D(SwitchArgSpec{.flag = "D", .name = "Dopt", .description = "D"});
+        cmd.add(D);
+        SwitchArg e(SwitchArgSpec{.flag = "e", .name = "eopt", .description = "e"});
+        cmd.add(e);
+        ValueArg<int> b_arg(ValueArgSpec<int>{
+            .flag = "b",
+            .name = "barg",
+            .description = "Desc b_arg",
+            .required = false,
+            .defaultValue = 4711,
+            .typeDesc = "b_arg"
+        });
+        cmd.add(b_arg);
+        ValueArg<std::string> m_arg(ValueArgSpec<std::string>{
+            .flag = "m",
+            .name = "marg",
+            .description = "Desc m_arg",
+            .required = false,
+            .defaultValue = "foo",
+            .typeDesc = "m_arg"
+        });
+        cmd.add(m_arg);
+        UnlabeledValueArg<int> req1(UnlabeledValueArgSpec<int>{
+            .name = "req1",
+            .description = "req_1",
+            .required = true,
+            .defaultValue = 47,
+            .typeDesc = "int"
+        });
+        cmd.add(req1);
+        UnlabeledValueArg<std::string> req2(UnlabeledValueArgSpec<std::string>{
+            .name = "req2",
+            .description = "req_2",
+            .required = true,
+            .defaultValue = "bar",
+            .typeDesc = "str"
+        });
+        cmd.add(req2);
+        UnlabeledMultiArg<int> opt1(UnlabeledMultiArgSpec<int>{
+            .name = "opt1",
+            .description = "opt_1",
+            .required = false,
+            .typeDesc = "int"
+        });
+        cmd.add(opt1);
 
         cmd.parse(argc, argv);
 

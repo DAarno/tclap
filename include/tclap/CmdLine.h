@@ -75,6 +75,23 @@ public:
 };
 
 /**
+ * Constructor arguments for CmdLine, passed as a single designated-
+ * initializer aggregate: CmdLine cmd({.message = "Command description
+ * message", .version = "0.9"});
+ */
+struct CmdLineSpec {
+    /// The message to be used in the usage output.
+    std::string message;
+    /// The delimiter and flag/name prefixes to parse with. Defaults to
+    /// "-flag"/"--name" with a ' ' delimiter.
+    Dialect dialect{};
+    /// The version number to be used in the --version switch.
+    std::string version = "none";
+    /// Whether or not to create the Help and Version switches.
+    bool helpAndVersion = true;
+};
+
+/**
  * The base class that manages the command line definition and passes
  * along the parsing to the appropriate Arg classes.
  */
@@ -241,37 +258,17 @@ public:
     /**
      * Command line constructor. Defines how the arguments will be
      * parsed.
-     * \param message - The message to be used in the usage
-     * output.
-     * \param delimiter - The character that is used to separate
-     * the argument flag/name from the value.  Defaults to ' ' (space).
-     * \param version - The version number to be used in the
-     * --version switch.
-     * \param helpAndVersion - Whether or not to create the Help and
-     * Version switches. Defaults to true.
+     * \param spec - The message/dialect/version/helpAndVersion for this
+     * CmdLine. `dialect` (delimiter and flag/name prefixes) defaults to
+     * "-flag"/"--name" with a ' ' delimiter; set it for parsing
+     * conventions other than the default (e.g. Windows-style
+     * "/flag"/"/name") -- this is the replacement for the pre-2.0
+     * TCLAP_FLAGSTARTCHAR/TCLAP_FLAGSTARTSTRING/TCLAP_NAMESTARTSTRING
+     * compile-time, whole-program macros: unlike those, each CmdLine's
+     * Dialect is independent, so parsers using different conventions can
+     * coexist in the same program.
      */
-    CmdLine(std::string message, const char delimiter = ' ',
-            std::string version = "none", bool helpAndVersion = true);
-
-    /**
-     * Command line constructor taking a full Dialect (delimiter and
-     * flag/name prefixes), for parsing conventions other than the
-     * default "-flag"/"--name" (e.g. Windows-style "/flag"/"/name").
-     * This is the replacement for the pre-2.0 TCLAP_FLAGSTARTCHAR/
-     * TCLAP_FLAGSTARTSTRING/TCLAP_NAMESTARTSTRING compile-time,
-     * whole-program macros: unlike those, each CmdLine's Dialect is
-     * independent, so parsers using different conventions can coexist
-     * in the same program.
-     * \param message - The message to be used in the usage output.
-     * \param dialect - The delimiter and flag/name prefixes to parse
-     * with.
-     * \param version - The version number to be used in the
-     * --version switch.
-     * \param helpAndVersion - Whether or not to create the Help and
-     * Version switches. Defaults to true.
-     */
-    CmdLine(std::string message, Dialect dialect, std::string version = "none",
-            bool helpAndVersion = true);
+    explicit CmdLine(CmdLineSpec spec);
 
     /**
      * Deletes any resources allocated by a CmdLine object.
@@ -439,17 +436,17 @@ public:
 // Begin CmdLine.cpp
 ///////////////////////////////////////////////////////////////////////////////
 
-inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
+inline CmdLine::CmdLine(CmdLineSpec spec)
     : _argList(),
       _standaloneArgs(),
       _autoArgs(),
       _argGroups(),
       _progName("not_set_yet"),
-      _message(std::move(m)),
-      _version(std::move(v)),
+      _message(std::move(spec.message)),
+      _version(std::move(spec.version)),
       _numRequired(0),
-      _delimiter(delim),
-      _dialect{delim},
+      _delimiter(spec.dialect.delimiter),
+      _dialect(std::move(spec.dialect)),
       _hasOptionalUnlabeledArg(false),
       _deleteOnExit(),
       _defaultOutput(),
@@ -459,34 +456,7 @@ inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
       _ignoreArg(nullptr),
       _helpArg(nullptr),
       _versionArg(nullptr),
-      _helpAndVersion(help),
-      _ignoreUnmatched(false),
-      _ignoring(false) {
-    _constructor();
-}
-
-inline CmdLine::CmdLine(std::string m, Dialect dialect, std::string v,
-                        bool help)
-    : _argList(),
-      _standaloneArgs(),
-      _autoArgs(),
-      _argGroups(),
-      _progName("not_set_yet"),
-      _message(std::move(m)),
-      _version(std::move(v)),
-      _numRequired(0),
-      _delimiter(dialect.delimiter),
-      _dialect(std::move(dialect)),
-      _hasOptionalUnlabeledArg(false),
-      _deleteOnExit(),
-      _defaultOutput(),
-      _output(&_defaultOutput),
-      _handleExceptions(true),
-      _messageTranslator(nullptr),
-      _ignoreArg(nullptr),
-      _helpArg(nullptr),
-      _versionArg(nullptr),
-      _helpAndVersion(help),
+      _helpAndVersion(spec.helpAndVersion),
       _ignoreUnmatched(false),
       _ignoring(false) {
     _constructor();
@@ -497,11 +467,15 @@ inline void CmdLine::_constructor() {
     _autoArgs.setParser(*this);
     // add(_autoArgs);
 
-    auto *ignore = new SwitchArg(
-        _dialect.flagPrefix, Arg::ignoreNameString(),
-        translateMessage("ignore_rest_description",
-                         "Ignores the rest of the labeled arguments following this flag."),
-        false, [this] { beginIgnoring(); });
+    auto *ignore = new SwitchArg(SwitchArgSpec{
+        .flag = _dialect.flagPrefix,
+        .name = Arg::ignoreNameString(),
+        .description = translateMessage(
+            "ignore_rest_description",
+            "Ignores the rest of the labeled arguments following this flag."),
+        .defaultValue = false,
+        .onMatch = [this] { beginIgnoring(); },
+    });
     _ignoreArg = ignore;
     _deleteOnExit(ignore);
     _autoArgs.add(ignore);
@@ -511,25 +485,34 @@ inline void CmdLine::_constructor() {
         // Captures `this` rather than a CmdLineOutput* snapshot, so it
         // always sees whatever _output currently is -- including a
         // setOutput() call made after this Arg was constructed.
-        auto *help = new SwitchArg(
-            "h", "help",
-            translateMessage("help_description",
-                             "Displays usage information and exits."),
-            false, [this] {
-                _output->usage(*this);
-                throw ExitException(0);
-            });
+        auto *help = new SwitchArg(SwitchArgSpec{
+            .flag = "h",
+            .name = "help",
+            .description = translateMessage(
+                "help_description", "Displays usage information and exits."),
+            .defaultValue = false,
+            .onMatch =
+                [this] {
+                    _output->usage(*this);
+                    throw ExitException(0);
+                },
+        });
         _helpArg = help;
         _deleteOnExit(help);
 
-        auto *vers = new SwitchArg(
-            "", "version",
-            translateMessage("version_description",
-                             "Displays version information and exits."),
-            false, [this] {
-                _output->version(*this);
-                throw ExitException(0);
-            });
+        auto *vers = new SwitchArg(SwitchArgSpec{
+            .flag = "",
+            .name = "version",
+            .description = translateMessage(
+                "version_description",
+                "Displays version information and exits."),
+            .defaultValue = false,
+            .onMatch =
+                [this] {
+                    _output->version(*this);
+                    throw ExitException(0);
+                },
+        });
         _versionArg = vers;
         _deleteOnExit(vers);
 

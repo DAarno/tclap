@@ -31,11 +31,11 @@ using namespace TCLAP;
 using namespace std;
 
 int main() {
-    CmdLine cmd1("first parser");
-    CmdLine cmd2("second parser");
+    CmdLine cmd1(CmdLineSpec{.message = "first parser"});
+    CmdLine cmd2(CmdLineSpec{.message = "second parser"});
 
-    SwitchArg a("a", "aaa", "switch a");
-    SwitchArg b("b", "bbb", "switch b");
+    SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
     EitherOf group;
     group.add(a);
     group.add(b);

@@ -27,6 +27,7 @@
 
 #include <tclap/Arg.h>
 #include <tclap/Constraint.h>
+#include <tclap/TypeName.h>
 
 #include <concepts>
 #include <string>
@@ -34,6 +35,42 @@
 #include <vector>
 
 namespace TCLAP {
+
+/**
+ * Constructor arguments for MultiArg<T>, passed as a single designated-
+ * initializer aggregate. `typeDesc` defaults to TypeName<T>::value if not
+ * given. If `constraint` is set, it takes over as the type description
+ * shown in USAGE text (via Constraint<T>::shortID()) regardless of what
+ * `typeDesc` says.
+ *
+ * To register the Arg with a CmdLine, call cmd.add() separately --
+ * MultiArg no longer has a self-registering constructor overload.
+ */
+template <typename T>
+struct MultiArgSpec {
+    /// The one character flag that identifies this argument on the
+    /// command line.
+    std::string flag;
+    /// A one word name for the argument. Can be used as a long flag on
+    /// the command line.
+    std::string name;
+    /// A description of what the argument is for or does.
+    std::string description;
+    /// Whether the argument is required on the command line.
+    bool required = false;
+    /// A short, human readable description of the type that this object
+    /// expects, used in the generated USAGE statement. Defaults to
+    /// TypeName<T>::value.
+    std::string typeDesc = TypeName<T>::value;
+    /// A Constraint each value of this Arg must conform to. If set, its
+    /// shortID() is used as the type description shown in USAGE text
+    /// instead of typeDesc.
+    const Constraint<T> *constraint = nullptr;
+    /// An optional callback invoked as soon as this Arg is matched. You
+    /// probably should not use this unless you have a very good reason.
+    Arg::Callback onMatch = nullptr;
+};
+
 /**
  * An argument that allows multiple values of type T to be specified.  Very
  * similar to a ValueArg, except a vector of values will be returned
@@ -80,89 +117,10 @@ protected:
 public:
     /**
      * Constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
+     * \param spec - The flag/name/description/required/typeDesc/
+     * constraint/onMatch callback for this Arg.
      */
-    MultiArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, std::string typeDesc,
-             Arg::Callback onMatch = nullptr);
-
-    /**
-     * Constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    MultiArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, std::string typeDesc,
-             ArgContainer &parser, Arg::Callback onMatch = nullptr);
-
-    /**
-     * Constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    MultiArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, const Constraint<T> *constraint,
-             Arg::Callback onMatch = nullptr);
-
-    /**
-     * Constructor.
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    MultiArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, const Constraint<T> *constraint,
-             ArgContainer &parser, Arg::Callback onMatch = nullptr);
+    explicit MultiArg(MultiArgSpec<T> spec);
 
     /**
      * Handles the processing of the argument.
@@ -178,7 +136,7 @@ public:
      * Returns a vector of type T containing the values parsed from
      * the command line.
      */
-    const std::vector<T> &getValue() const noexcept { return _values; }
+    [[nodiscard]] const std::vector<T> &value() const noexcept { return _values; }
 
     /**
      * Returns an iterator over the values parsed from the command
@@ -218,57 +176,16 @@ public:
 };
 
 template <class T>
-MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req,
-                      std::string typeDesc, Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
+MultiArg<T>::MultiArg(MultiArgSpec<T> spec)
+    : Arg(std::move(spec.flag), std::move(spec.name),
+          std::move(spec.description), spec.required, true,
+          std::move(spec.onMatch)),
       _values(),
-      _typeDesc(std::move(typeDesc)),
-      _constraint(nullptr),
+      _typeDesc(spec.constraint != nullptr
+                    ? Constraint<T>::shortID(spec.constraint)
+                    : std::move(spec.typeDesc)),
+      _constraint(spec.constraint),
       _allowMore(false) {
-    _acceptsMultipleValues = true;
-}
-
-template <class T>
-MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req,
-                      std::string typeDesc, ArgContainer &parser,
-                      Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
-      _values(),
-      _typeDesc(std::move(typeDesc)),
-      _constraint(nullptr),
-      _allowMore(false) {
-    parser.add(this);
-    _acceptsMultipleValues = true;
-}
-
-/**
- *
- */
-template <class T>
-MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req,
-                      const Constraint<T> *constraint, Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
-      _values(),
-      _typeDesc(Constraint<T>::shortID(constraint)),
-      _constraint(constraint),
-      _allowMore(false) {
-    _acceptsMultipleValues = true;
-}
-
-template <class T>
-MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req,
-                      const Constraint<T> *constraint, ArgContainer &parser,
-                      Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
-      _values(),
-      _typeDesc(Constraint<T>::shortID(constraint)),
-      _constraint(constraint),
-      _allowMore(false) {
-    parser.add(this);
     _acceptsMultipleValues = true;
 }
 

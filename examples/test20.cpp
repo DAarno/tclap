@@ -13,10 +13,24 @@ int main(int argc, char **argv) {
     // because exceptions will be thrown for problems.
     try {
         // Define the command line object.
-        CmdLine cmd("Command description message", '=', "0.9");
+        CmdLine cmd(CmdLineSpec{
+            .message = "Command description message",
+            .dialect = {.delimiter = '='},
+            .version = "0.9"
+        });
 
-        SwitchArg atmcSwitch("a", "atmc", "aContinuous time semantics", false);
-        SwitchArg btmcSwitch("b", "btmc", "bDiscrete time semantics", false);
+        SwitchArg atmcSwitch(SwitchArgSpec{
+            .flag = "a",
+            .name = "atmc",
+            .description = "aContinuous time semantics",
+            .defaultValue = false
+        });
+        SwitchArg btmcSwitch(SwitchArgSpec{
+            .flag = "b",
+            .name = "btmc",
+            .description = "bDiscrete time semantics",
+            .defaultValue = false
+        });
         cmd.xorAdd(atmcSwitch, btmcSwitch);
 
         // Parse the args.

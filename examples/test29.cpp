@@ -27,10 +27,31 @@
 using namespace TCLAP;
 
 int main(int argc, char **argv) {
-    CmdLine cmd("");
-    ValueArg<int> arg0("a", "a_int", "first int arg", false, 4711, "int");
-    ValueArg<int> arg1("b", "b_int", "second int arg", false, 4711, "int");
-    ValueArg<std::string> arg2("s", "str", "string arg", false, "foo", "str");
+    CmdLine cmd(CmdLineSpec{.message = ""});
+    ValueArg<int> arg0(ValueArgSpec<int>{
+        .flag = "a",
+        .name = "a_int",
+        .description = "first int arg",
+        .required = false,
+        .defaultValue = 4711,
+        .typeDesc = "int"
+    });
+    ValueArg<int> arg1(ValueArgSpec<int>{
+        .flag = "b",
+        .name = "b_int",
+        .description = "second int arg",
+        .required = false,
+        .defaultValue = 4711,
+        .typeDesc = "int"
+    });
+    ValueArg<std::string> arg2(ValueArgSpec<std::string>{
+        .flag = "s",
+        .name = "str",
+        .description = "string arg",
+        .required = false,
+        .defaultValue = "foo",
+        .typeDesc = "str"
+    });
 
     EitherOf input;
     input.add(arg0).add(arg1).add(arg2);
@@ -39,12 +60,12 @@ int main(int argc, char **argv) {
     cmd.parse(argc, argv);
 
     if (arg0.isSet()) {
-        std::cout << "a_int was set to: " << arg0.getValue() << std::endl;
+        std::cout << "a_int was set to: " << arg0.value() << std::endl;
     }
     if (arg1.isSet()) {
-        std::cout << "b_int was set to: " << arg1.getValue() << std::endl;
+        std::cout << "b_int was set to: " << arg1.value() << std::endl;
     }
     if (arg2.isSet()) {
-        std::cout << "str was set to: " << arg2.getValue() << std::endl;
+        std::cout << "str was set to: " << arg2.value() << std::endl;
     }
 }

@@ -22,11 +22,26 @@ using namespace TCLAP;
 //
 int main() {
     try {
-        CmdLine cmd("Test", ' ', "not versioned", true);
+        CmdLine cmd(CmdLineSpec{
+            .message = "Test",
+            .dialect = {.delimiter = ' '},
+            .version = "not versioned",
+            .helpAndVersion = true
+        });
 
-        MultiArg<std::string> Arg("X", "fli", "fli module", false, "string");
+        MultiArg<std::string> Arg(MultiArgSpec<std::string>{
+            .flag = "X",
+            .name = "fli",
+            .description = "fli module",
+            .required = false,
+            .typeDesc = "string"
+        });
         cmd.add(Arg);
-        MultiSwitchArg ArgMultiSwitch("d", "long_d", "example");
+        MultiSwitchArg ArgMultiSwitch(MultiSwitchArgSpec{
+            .flag = "d",
+            .name = "long_d",
+            .description = "example"
+        });
         cmd.add(ArgMultiSwitch);
 
         std::vector<std::string> in;
@@ -34,11 +49,11 @@ int main() {
         in.push_back("-X module");
         cmd.parse(in);
 
-        std::vector<std::string> s = Arg.getValue();
+        std::vector<std::string> s = Arg.value();
         for (unsigned int i = 0; i < s.size(); i++) {
             std::cout << s[i] << "\n";
         }
-        std::cout << "MultiSwtichArg was found " << ArgMultiSwitch.getValue()
+        std::cout << "MultiSwtichArg was found " << ArgMultiSwitch.value()
                   << " times.\n";
 
     } catch (ArgException &e)  // catch any exceptions

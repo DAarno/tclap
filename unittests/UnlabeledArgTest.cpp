@@ -44,10 +44,26 @@ using namespace TCLAP;
 
 void TestUnlabeledValueArgPositional(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        UnlabeledValueArg<int> count("count", "a count", true, 0, "int");
-        UnlabeledValueArg<std::string> name("name", "a name", true, "",
-                                            "string");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        UnlabeledValueArg<int> count(UnlabeledValueArgSpec<int>{
+            .name = "count",
+            .description = "a count",
+            .required = true,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
+        UnlabeledValueArg<std::string> name(UnlabeledValueArgSpec<std::string>{
+            .name = "name",
+            .description = "a name",
+            .required = true,
+            .defaultValue = "",
+            .typeDesc = "string"
+        });
         cmd.add(count);
         cmd.add(name);
         cmd.setExceptionHandling(false);
@@ -56,12 +72,12 @@ void TestUnlabeledValueArgPositional(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        if (count.getValue() != 5)
+        if (count.value() != 5)
             ERROR(t, "UnlabeledValueArg: expected count 5, got "
-                         << count.getValue());
-        if (name.getValue() != "hello")
+                         << count.value());
+        if (name.value() != "hello")
             ERROR(t, "UnlabeledValueArg: expected name \"hello\", got \""
-                         << name.getValue() << '"');
+                         << name.value() << '"');
 
         if (count.hasLabel())
             ERROR(t, "UnlabeledValueArg: hasLabel() should be false");
@@ -74,8 +90,19 @@ void TestUnlabeledValueArgPositional(Testing &t) {
 
 void TestUnlabeledValueArgMissingRequired(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        UnlabeledValueArg<int> count("count", "a count", true, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        UnlabeledValueArg<int> count(UnlabeledValueArgSpec<int>{
+            .name = "count",
+            .description = "a count",
+            .required = true,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(count);
         cmd.setExceptionHandling(false);
 
@@ -101,13 +128,34 @@ void TestUnlabeledValueArgMissingRequired(Testing &t) {
 // with flag/name instead of just name/description on both sides). All
 // required, so none of this touches the OptionalUnlabeledTracker global.
 void TestUnlabeledValueArgEquality(Testing &t) {
-    UnlabeledValueArg<int> a("count", "a count", true, 0, "int");
-    UnlabeledValueArg<int> sameName("count", "different description", true, 0,
-                                    "int");
-    UnlabeledValueArg<int> sameDescription("other", "a count", true, 0,
-                                           "int");
-    UnlabeledValueArg<int> different("other", "different description", true,
-                                     0, "int");
+    UnlabeledValueArg<int> a(UnlabeledValueArgSpec<int>{
+        .name = "count",
+        .description = "a count",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
+    UnlabeledValueArg<int> sameName(UnlabeledValueArgSpec<int>{
+        .name = "count",
+        .description = "different description",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
+    UnlabeledValueArg<int> sameDescription(UnlabeledValueArgSpec<int>{
+        .name = "other",
+        .description = "a count",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
+    UnlabeledValueArg<int> different(UnlabeledValueArgSpec<int>{
+        .name = "other",
+        .description = "different description",
+        .required = true,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
     // Compared through the Arg& base, matching how CmdLine/ArgGroup always
     // invoke this operator; comparing two same-typed derived objects
     // directly would make C++20's reversed-candidate rule ambiguous.
@@ -128,11 +176,24 @@ void TestUnlabeledValueArgEquality(Testing &t) {
 }
 
 void TestUnlabeledMultiArgEquality(Testing &t) {
-    UnlabeledMultiArg<std::string> a("files", "file names", true, "string");
-    UnlabeledMultiArg<std::string> sameName("files", "different", true,
-                                            "string");
-    UnlabeledMultiArg<std::string> different("other", "different", true,
-                                             "string");
+    UnlabeledMultiArg<std::string> a(UnlabeledMultiArgSpec<std::string>{
+        .name = "files",
+        .description = "file names",
+        .required = true,
+        .typeDesc = "string"
+    });
+    UnlabeledMultiArg<std::string> sameName(UnlabeledMultiArgSpec<std::string>{
+        .name = "files",
+        .description = "different",
+        .required = true,
+        .typeDesc = "string"
+    });
+    UnlabeledMultiArg<std::string> different(UnlabeledMultiArgSpec<std::string>{
+        .name = "other",
+        .description = "different",
+        .required = true,
+        .typeDesc = "string"
+    });
     const Arg &argA = a;
 
     if (!(argA == sameName))
@@ -148,9 +209,18 @@ void TestUnlabeledMultiArgEquality(Testing &t) {
 
 void TestUnlabeledMultiArgOptional(Testing &t) {
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        UnlabeledMultiArg<std::string> files("files", "file names", false,
-                                             "string");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        UnlabeledMultiArg<std::string> files(UnlabeledMultiArgSpec<std::string>{
+            .name = "files",
+            .description = "file names",
+            .required = false,
+            .typeDesc = "string"
+        });
         cmd.add(files);
         cmd.setExceptionHandling(false);
 
@@ -159,18 +229,27 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
             std::vector<std::string> args = MakeArgs(argv);
             cmd.parse(args);
 
-            if (!files.getValue().empty())
+            if (!files.value().empty())
                 ERROR(t, "UnlabeledMultiArg: expected no values, got "
-                             << files.getValue().size());
+                             << files.value().size());
         }
     } catch (ArgException &e) {
         ERROR(t, "UnlabeledMultiArg: unexpected exception: " << e.error());
     }
 
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        UnlabeledMultiArg<std::string> files("files", "file names", false,
-                                             "string");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        UnlabeledMultiArg<std::string> files(UnlabeledMultiArgSpec<std::string>{
+            .name = "files",
+            .description = "file names",
+            .required = false,
+            .typeDesc = "string"
+        });
         cmd.add(files);
         cmd.setExceptionHandling(false);
 
@@ -178,7 +257,7 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        const std::vector<std::string> &values = files.getValue();
+        const std::vector<std::string> &values = files.value();
         if (values.size() != 3 || values[0] != "a" || values[1] != "b" ||
             values[2] != "c")
             ERROR(t, "UnlabeledMultiArg: expected {a, b, c}, got "
@@ -197,8 +276,13 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
 // whether the poisoning Arg was ever added anywhere.
 void TestUnaddedOptionalUnlabeledArgDoesNotPoisonAnything(Testing &t) {
     try {
-        UnlabeledValueArg<int> neverAdded("extra", "an optional trailer",
-                                          false, 0, "int");
+        UnlabeledValueArg<int> neverAdded(UnlabeledValueArgSpec<int>{
+            .name = "extra",
+            .description = "an optional trailer",
+            .required = false,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         static_cast<void>(neverAdded);
     } catch (ArgException &e) {
         ERROR(t, "UnlabeledValueArg: unexpected exception constructing an "
@@ -209,8 +293,19 @@ void TestUnaddedOptionalUnlabeledArgDoesNotPoisonAnything(Testing &t) {
     // A completely unrelated CmdLine must be unaffected: adding a
     // required unlabeled arg to it must succeed.
     try {
-        CmdLine cmd("test", ' ', "1.0", false);
-        UnlabeledValueArg<int> required("count", "a count", true, 0, "int");
+        CmdLine cmd(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        UnlabeledValueArg<int> required(UnlabeledValueArgSpec<int>{
+            .name = "count",
+            .description = "a count",
+            .required = true,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         cmd.add(required);
     } catch (ArgException &e) {
         ERROR(t, "UnlabeledValueArg: unexpected exception adding a required "
@@ -223,9 +318,19 @@ void TestUnaddedOptionalUnlabeledArgDoesNotPoisonAnything(Testing &t) {
 // unlabeled arg from being added to that *same* CmdLine, but must not
 // affect a second, independent CmdLine.
 void TestOptionalUnlabeledArgPoisonsOnlyItsOwnCmdLine(Testing &t) {
-    CmdLine poisoned("test", ' ', "1.0", false);
-    UnlabeledValueArg<int> optional("extra", "an optional trailer", false, 0,
-                                    "int");
+    CmdLine poisoned(CmdLineSpec{
+        .message = "test",
+        .dialect = {.delimiter = ' '},
+        .version = "1.0",
+        .helpAndVersion = false
+    });
+    UnlabeledValueArg<int> optional(UnlabeledValueArgSpec<int>{
+        .name = "extra",
+        .description = "an optional trailer",
+        .required = false,
+        .defaultValue = 0,
+        .typeDesc = "int"
+    });
     try {
         poisoned.add(optional);
     } catch (ArgException &e) {
@@ -235,7 +340,13 @@ void TestOptionalUnlabeledArgPoisonsOnlyItsOwnCmdLine(Testing &t) {
     }
 
     try {
-        UnlabeledValueArg<int> tooLate("too-late", "desc", true, 0, "int");
+        UnlabeledValueArg<int> tooLate(UnlabeledValueArgSpec<int>{
+            .name = "too-late",
+            .description = "desc",
+            .required = true,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         poisoned.add(tooLate);
         ERROR(t, "UnlabeledValueArg: expected SpecificationException "
                  "adding an unlabeled arg after an optional one to the "
@@ -251,8 +362,19 @@ void TestOptionalUnlabeledArgPoisonsOnlyItsOwnCmdLine(Testing &t) {
     // A second, independent CmdLine must be entirely unaffected by the
     // first one's poisoned state.
     try {
-        CmdLine unaffected("test", ' ', "1.0", false);
-        UnlabeledValueArg<int> stillFine("count", "a count", true, 0, "int");
+        CmdLine unaffected(CmdLineSpec{
+            .message = "test",
+            .dialect = {.delimiter = ' '},
+            .version = "1.0",
+            .helpAndVersion = false
+        });
+        UnlabeledValueArg<int> stillFine(UnlabeledValueArgSpec<int>{
+            .name = "count",
+            .description = "a count",
+            .required = true,
+            .defaultValue = 0,
+            .typeDesc = "int"
+        });
         unaffected.add(stillFine);
     } catch (ArgException &e) {
         ERROR(t, "UnlabeledValueArg: an unrelated CmdLine was affected by "

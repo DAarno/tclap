@@ -7,7 +7,7 @@ using namespace std;
 
 // https://sourceforge.net/p/tclap/bugs/30/
 int main() {
-  CmdLine cmd("test empty argv");
+  CmdLine cmd(CmdLineSpec{.message = "test empty argv"});
   std::vector<string> args;
   cmd.parse(args);
 }

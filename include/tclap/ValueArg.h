@@ -27,12 +27,56 @@
 
 #include <tclap/Arg.h>
 #include <tclap/Constraint.h>
+#include <tclap/TypeName.h>
 
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace TCLAP {
+
+/**
+ * Constructor arguments for ValueArg<T>, passed as a single designated-
+ * initializer aggregate: ValueArg<string> nameArg({.flag = "n",
+ * .name = "name", .description = "Name to print", .required = true,
+ * .defaultValue = "homer"});
+ *
+ * `typeDesc` defaults to TypeName<T>::value if not given. If `constraint`
+ * is set, it takes over as the type description shown in USAGE text
+ * (via Constraint<T>::shortID()) regardless of what `typeDesc` says.
+ *
+ * To register the Arg with a CmdLine, call cmd.add() separately --
+ * ValueArg no longer has a self-registering constructor overload; see
+ * TCLAP_2.0_DESIGN.md §5.6 for why that's still the ergonomic default
+ * despite the extra line.
+ */
+template <typename T>
+struct ValueArgSpec {
+    /// The one character flag that identifies this argument on the
+    /// command line.
+    std::string flag;
+    /// A one word name for the argument. Can be used as a long flag on
+    /// the command line.
+    std::string name;
+    /// A description of what the argument is for or does.
+    std::string description;
+    /// Whether the argument is required on the command line.
+    bool required = false;
+    /// The default value assigned to this argument if it is not present
+    /// on the command line.
+    T defaultValue{};
+    /// A short, human readable description of the type that this object
+    /// expects, used in the generated USAGE statement. Defaults to
+    /// TypeName<T>::value.
+    std::string typeDesc = TypeName<T>::value;
+    /// A Constraint this Arg's value must conform to. If set, its
+    /// shortID() is used as the type description shown in USAGE text
+    /// instead of typeDesc.
+    const Constraint<T> *constraint = nullptr;
+    /// An optional callback invoked as soon as this Arg is matched. You
+    /// probably should not use this unless you have a very good reason.
+    Arg::Callback onMatch = nullptr;
+};
 
 /**
  * The basic labeled argument that parses a value.
@@ -84,103 +128,10 @@ protected:
 public:
     /**
      * Labeled ValueArg constructor.
-     *
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
+     * \param spec - The flag/name/description/required/default value/
+     * typeDesc/constraint/onMatch callback for this Arg.
      */
-    ValueArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, T value,
-             std::string typeDesc, Arg::Callback onMatch = nullptr);
-
-    /**
-     * Labeled ValueArg constructor.
-     *
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param typeDesc - A short, human readable description of the
-     * type that this object expects.  This is used in the generation
-     * of the USAGE statement.  The goal is to be helpful to the end user
-     * of the program.
-     * \param parser - A CmdLine parser object to add this Arg to
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    ValueArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, T value,
-             std::string typeDesc, ArgContainer &parser,
-             Arg::Callback onMatch = nullptr);
-
-    /**
-     * Labeled ValueArg constructor.
-     *
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param parser - A CmdLine parser object to add this Arg to.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    ValueArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, T value,
-             const Constraint<T> *constraint, ArgContainer &parser,
-             Arg::Callback onMatch = nullptr);
-
-    /**
-     * Labeled ValueArg constructor.
-     *
-     * \param flag - The one character flag that identifies this
-     * argument on the command line.
-     * \param name - A one word name for the argument.  Can be
-     * used as a long flag on the command line.
-     * \param desc - A description of what the argument is for or
-     * does.
-     * \param req - Whether the argument is required on the command
-     * line.
-     * \param value - The default value assigned to this argument if it
-     * is not present on the command line.
-     * \param constraint - A pointer to a Constraint object used
-     * to constrain this Arg.
-     * \param onMatch - An optional callback invoked as soon as this Arg is
-     * matched. You probably should not
-     * use this unless you have a very good reason.
-     */
-    ValueArg(const std::string &flag, const std::string &name,
-             const std::string &desc, bool req, T value,
-             const Constraint<T> *constraint, Arg::Callback onMatch = nullptr);
+    explicit ValueArg(ValueArgSpec<T> spec);
 
     /**
      * Handles the processing of the argument.
@@ -196,13 +147,7 @@ public:
     /**
      * Returns the value of the argument.
      */
-    const T &getValue() const noexcept { return _value; }
-
-    /**
-     * A ValueArg can be used as as its value type (T) This is the
-     * same as calling getValue()
-     */
-    operator const T &() const noexcept { return getValue(); }
+    [[nodiscard]] const T &value() const noexcept { return _value; }
 
     /**
      * Specialization of shortID.
@@ -231,50 +176,16 @@ public:
  * Constructor implementation.
  */
 template <class T>
-ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req, T val,
-                      std::string typeDesc, Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
-      _value(val),
-      _default(val),
-      _typeDesc(std::move(typeDesc)),
-      _constraint(nullptr) {}
-
-template <class T>
-ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req, T val,
-                      std::string typeDesc, ArgContainer &parser,
-                      Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
-      _value(val),
-      _default(val),
-      _typeDesc(std::move(typeDesc)),
-      _constraint(nullptr) {
-    parser.add(this);
-}
-
-template <class T>
-ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req, T val,
-                      const Constraint<T> *constraint, Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
-      _value(val),
-      _default(val),
-      _typeDesc(Constraint<T>::shortID(constraint)),
-      _constraint(constraint) {}
-
-template <class T>
-ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
-                      const std::string &desc, bool req, T val,
-                      const Constraint<T> *constraint, ArgContainer &parser,
-                      Arg::Callback onMatch)
-    : Arg(flag, name, desc, req, true, std::move(onMatch)),
-      _value(val),
-      _default(val),
-      _typeDesc(Constraint<T>::shortID(constraint)),
-      _constraint(constraint) {
-    parser.add(this);
-}
+ValueArg<T>::ValueArg(ValueArgSpec<T> spec)
+    : Arg(std::move(spec.flag), std::move(spec.name),
+          std::move(spec.description), spec.required, true,
+          std::move(spec.onMatch)),
+      _value(spec.defaultValue),
+      _default(std::move(spec.defaultValue)),
+      _typeDesc(spec.constraint != nullptr
+                    ? Constraint<T>::shortID(spec.constraint)
+                    : std::move(spec.typeDesc)),
+      _constraint(spec.constraint) {}
 
 /**
  * Implementation of processArg().
