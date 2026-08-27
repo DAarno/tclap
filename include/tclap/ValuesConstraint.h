@@ -25,10 +25,10 @@
 #define TCLAP_VALUES_CONSTRAINT_H
 
 #include <tclap/Constraint.h>
-#include <tclap/sstream.h>
 
 #include <algorithm>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 

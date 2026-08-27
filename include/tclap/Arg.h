@@ -34,13 +34,13 @@
 #include <tclap/CmdLineInterface.h>
 #include <tclap/StandardTraits.h>
 #include <tclap/Visitor.h>
-#include <tclap/sstream.h>
 
 #include <concepts>
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
 #include <list>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -398,10 +398,11 @@ using ArgVectorIterator = std::vector<Arg *>::const_iterator;
 using VisitorListIterator = std::list<Visitor *>::const_iterator;
 
 namespace detail {
-// Satisfied iff T can be read from a TCLAP::istringstream via operator>>
+// Satisfied iff T can be read from a std::istringstream via operator>>
 // (the mechanism ExtractValue's ValueLike overload, below, actually uses).
 template <typename T>
-concept StreamExtractable = requires(istringstream &is, T &val) { is >> val; };
+concept StreamExtractable =
+    requires(std::istringstream &is, T &val) { is >> val; };
 
 // Satisfied iff T is usable as a ValueArg/MultiArg value type: either it can
 // be read with operator>> (the ValueLike path) or it has explicitly opted
@@ -426,7 +427,7 @@ concept ValidArgValueType =
 template <typename T>
 void ExtractValue(T &destVal, const std::string &strVal, ValueLike vl) {
     static_cast<void>(vl);  // Avoid warning about unused vl
-    istringstream is(strVal.c_str());
+    std::istringstream is(strVal.c_str());
 
     int valuesRead = 0;
     while (is.good()) {
