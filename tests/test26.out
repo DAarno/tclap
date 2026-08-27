@@ -1,5 +1,5 @@
 PARSE ERROR: Argument: -f (--floatTest)
-             More than one valid value parsed from string '4..2'
+             Couldn't read argument value from string '4..2'
 
 Brief USAGE: 
    test2  [-ABCh] [--version] [-f <float>] -i <int> -s <string> unTest

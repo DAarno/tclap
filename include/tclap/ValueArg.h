@@ -79,7 +79,7 @@ protected:
      * \param val - value to be parsed.
      */
     void _extractValue(const std::string &val)
-        requires detail::ValidArgValueType<T>;
+        requires Parseable<T>;
 
 public:
     /**
@@ -331,10 +331,19 @@ std::string ValueArg<T>::longID(const std::string &) const {
 
 template <class T>
 void ValueArg<T>::_extractValue(const std::string &val)
-    requires detail::ValidArgValueType<T>
+    requires Parseable<T>
 {
+    // parse_value() itself never throws for an ordinary parse failure (it
+    // reports that through its Expected return), but user-provided
+    // extraction code reached through it (a custom operator>>,
+    // operator=, or SetString() overload) may still throw ArgParseException
+    // directly -- a supported customization pattern (see examples/test12.cpp's
+    // Vect3D). Either way, attach this Arg's identity to the error.
     try {
-        ExtractValue(_value, val, typename ArgTraits<T>::ValueCategory());
+        Expected<T, std::string> parsed = parse_value<T>(val);
+        if (!parsed.has_value())
+            throw ArgParseException(parsed.error(), toString());
+        _value = std::move(parsed.value());
     } catch (ArgParseException &e) {
         throw ArgParseException(e.error(), toString());
     }

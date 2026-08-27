@@ -34,6 +34,7 @@
 #include <tclap/CmdLineInterface.h>
 #include <tclap/Dialect.h>
 #include <tclap/StandardTraits.h>
+#include <tclap/ValueParsing.h>
 #include <tclap/Visitor.h>
 
 #include <concepts>
@@ -407,77 +408,6 @@ using ArgVectorIterator = std::vector<Arg *>::const_iterator;
  * Typedef of a Visitor list iterator.
  */
 using VisitorListIterator = std::list<Visitor *>::const_iterator;
-
-namespace detail {
-// Satisfied iff T can be read from a std::istringstream via operator>>
-// (the mechanism ExtractValue's ValueLike overload, below, actually uses).
-template <typename T>
-concept StreamExtractable =
-    requires(std::istringstream &is, T &val) { is >> val; };
-
-// Satisfied iff T is usable as a ValueArg/MultiArg value type: either it can
-// be read with operator>> (the ValueLike path) or it has explicitly opted
-// into the StringLike path (via an ArgTraits<T> specialization or by
-// inheriting StringLikeTrait), in which case it's expected to provide its
-// own SetString/operator=(const std::string&) - that half can't usefully be
-// concept-checked here since the unconstrained default SetString template
-// always matches syntactically regardless of whether its body would
-// actually compile for T.
-template <typename T>
-concept ValidArgValueType =
-    StreamExtractable<T> ||
-    std::same_as<typename ArgTraits<T>::ValueCategory, StringLike>;
-}  // namespace detail
-
-/*
- * Extract a value of type T from it's string representation contained
- * in strVal. The ValueLike parameter used to select the correct
- * specialization of ExtractValue depending on the value traits of T.
- * ValueLike traits use operator>> to assign the value from strVal.
- */
-template <typename T>
-void ExtractValue(T &destVal, const std::string &strVal, ValueLike vl) {
-    static_cast<void>(vl);  // Avoid warning about unused vl
-    std::istringstream is(strVal.c_str());
-
-    int valuesRead = 0;
-    while (is.good()) {
-        if (is.peek() != EOF)
-#ifdef TCLAP_SETBASE_ZERO
-            is >> std::setbase(0) >> destVal;
-#else
-            is >> destVal;
-#endif
-        else
-            break;
-
-        valuesRead++;
-    }
-
-    if (is.fail())
-        throw(
-            ArgParseException("Couldn't read argument value "
-                              "from string '" +
-                              strVal + "'"));
-
-    if (valuesRead > 1)
-        throw(
-            ArgParseException("More than one valid value parsed from "
-                              "string '" +
-                              strVal + "'"));
-}
-
-/*
- * Extract a value of type T from it's string representation contained
- * in strVal. The ValueLike parameter used to select the correct
- * specialization of ExtractValue depending on the value traits of T.
- * StringLike uses assignment (operator=) to assign from strVal.
- */
-template <typename T>
-void ExtractValue(T &destVal, const std::string &strVal, StringLike sl) {
-    static_cast<void>(sl);  // Avoid warning about unused sl
-    SetString(destVal, strVal);
-}
 
 //////////////////////////////////////////////////////////////////////
 // BEGIN Arg.cpp

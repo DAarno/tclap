@@ -69,7 +69,7 @@ protected:
      * \param val - The string to be read.
      */
     void _extractValue(const std::string &val)
-        requires detail::ValidArgValueType<T> && std::default_initializable<T>;
+        requires Parseable<T>;
 
     /**
      * Used by MultiArg to decide whether to keep parsing for this
@@ -324,12 +324,16 @@ std::string MultiArg<T>::longID(const std::string &val) const {
 
 template <class T>
 void MultiArg<T>::_extractValue(const std::string &val)
-    requires detail::ValidArgValueType<T> && std::default_initializable<T>
+    requires Parseable<T>
 {
+    // See ValueArg<T>::_extractValue's comment: user-provided extraction
+    // code reached through parse_value() may throw ArgParseException
+    // directly, without this Arg's identity attached yet.
     try {
-        T tmp;
-        ExtractValue(tmp, val, typename ArgTraits<T>::ValueCategory());
-        _values.push_back(tmp);
+        Expected<T, std::string> parsed = parse_value<T>(val);
+        if (!parsed.has_value())
+            throw ArgParseException(parsed.error(), toString());
+        _values.push_back(std::move(parsed.value()));
     } catch (ArgParseException &e) {
         throw ArgParseException(e.error(), toString());
     }
