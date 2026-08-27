@@ -30,10 +30,6 @@
 #include <tclap/UnlabeledMultiArg.h>
 #include <tclap/UnlabeledValueArg.h>
 
-#include <tclap/HelpVisitor.h>
-#include <tclap/IgnoreRestVisitor.h>
-#include <tclap/VersionVisitor.h>
-
 #include <tclap/CmdLineOutput.h>
 #include <tclap/StdOutput.h>
 
@@ -497,43 +493,45 @@ inline CmdLine::CmdLine(std::string m, Dialect dialect, std::string v,
 }
 
 inline void CmdLine::_constructor() {
-    Visitor *v;
     CmdLine::add(_standaloneArgs);
     _autoArgs.setParser(*this);
     // add(_autoArgs);
 
-    v = new IgnoreRestVisitor(*this);
     auto *ignore = new SwitchArg(
         _dialect.flagPrefix, Arg::ignoreNameString(),
         translateMessage("ignore_rest_description",
                          "Ignores the rest of the labeled arguments following this flag."),
-        false, v);
+        false, [this] { beginIgnoring(); });
     _ignoreArg = ignore;
     _deleteOnExit(ignore);
-    _deleteOnExit(v);
     _autoArgs.add(ignore);
     CmdLine::addToArgList(ignore);
 
     if (_helpAndVersion) {
-        v = new HelpVisitor(this, &_output);
+        // Captures `this` rather than a CmdLineOutput* snapshot, so it
+        // always sees whatever _output currently is -- including a
+        // setOutput() call made after this Arg was constructed.
         auto *help = new SwitchArg(
             "h", "help",
             translateMessage("help_description",
                              "Displays usage information and exits."),
-            false, v);
+            false, [this] {
+                _output->usage(*this);
+                throw ExitException(0);
+            });
         _helpArg = help;
         _deleteOnExit(help);
-        _deleteOnExit(v);
 
-        v = new VersionVisitor(this, &_output);
         auto *vers = new SwitchArg(
             "", "version",
             translateMessage("version_description",
                              "Displays version information and exits."),
-            false, v);
+            false, [this] {
+                _output->version(*this);
+                throw ExitException(0);
+            });
         _versionArg = vers;
         _deleteOnExit(vers);
-        _deleteOnExit(v);
 
         // A bit of a hack on the order to make tests easier to fix,
         // to be reverted

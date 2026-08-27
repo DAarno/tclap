@@ -66,12 +66,13 @@ public:
      * of the program.
      * \param ignoreable - Whether or not this argument can be ignored
      * using the "--" flag.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const std::string &typeDesc,
-                      bool ignoreable = false, Visitor *v = nullptr);
+                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
     /**
      * Constructor.
      * \param name - The name of the Arg. Note that this is used for
@@ -87,13 +88,14 @@ public:
      * \param parser - A CmdLine parser object to add this Arg to
      * \param ignoreable - Whether or not this argument can be ignored
      * using the "--" flag.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const std::string &typeDesc,
                       ArgContainer &parser, bool ignoreable = false,
-                      Visitor *v = nullptr);
+                      Arg::Callback onMatch = nullptr);
 
     /**
      * Constructor.
@@ -107,12 +109,13 @@ public:
      * to constrain this Arg.
      * \param ignoreable - Whether or not this argument can be ignored
      * using the "--" flag.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const Constraint<T> *constraint,
-                      bool ignoreable = false, Visitor *v = nullptr);
+                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
 
     /**
      * Constructor.
@@ -127,13 +130,14 @@ public:
      * \param parser - A CmdLine parser object to add this Arg to
      * \param ignoreable - Whether or not this argument can be ignored
      * using the "--" flag.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     UnlabeledMultiArg(const std::string &name, const std::string &desc,
                       bool req, const Constraint<T> *constraint,
                       ArgContainer &parser, bool ignoreable = false,
-                      Visitor *v = nullptr);
+                      Arg::Callback onMatch = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -180,8 +184,8 @@ template <class T>
 UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         const std::string &typeDesc,
-                                        bool ignoreable, Visitor *v)
-    : MultiArg<T>("", name, desc, req, typeDesc, v) {
+                                        bool ignoreable, Arg::Callback onMatch)
+    : MultiArg<T>("", name, desc, req, typeDesc, std::move(onMatch)) {
     _ignoreable = ignoreable;
 }
 
@@ -190,8 +194,8 @@ UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         const std::string &typeDesc,
                                         ArgContainer &parser, bool ignoreable,
-                                        Visitor *v)
-    : MultiArg<T>("", name, desc, req, typeDesc, v) {
+                                        Arg::Callback onMatch)
+    : MultiArg<T>("", name, desc, req, typeDesc, std::move(onMatch)) {
     _ignoreable = ignoreable;
     parser.add(this);
 }
@@ -200,8 +204,8 @@ template <class T>
 UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         const Constraint<T> *constraint,
-                                        bool ignoreable, Visitor *v)
-    : MultiArg<T>("", name, desc, req, constraint, v) {
+                                        bool ignoreable, Arg::Callback onMatch)
+    : MultiArg<T>("", name, desc, req, constraint, std::move(onMatch)) {
     _ignoreable = ignoreable;
 }
 
@@ -210,8 +214,8 @@ UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         const Constraint<T> *constraint,
                                         ArgContainer &parser, bool ignoreable,
-                                        Visitor *v)
-    : MultiArg<T>("", name, desc, req, constraint, v) {
+                                        Arg::Callback onMatch)
+    : MultiArg<T>("", name, desc, req, constraint, std::move(onMatch)) {
     _ignoreable = ignoreable;
     parser.add(this);
 }
@@ -235,7 +239,7 @@ bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
 
     _alreadySet = true;
     _setBy = args[*i];
-    this->_checkWithVisitor();
+    this->_invokeOnMatch();
     return true;
 }
 

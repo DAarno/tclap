@@ -99,12 +99,13 @@ public:
      * type that this object expects.  This is used in the generation
      * of the USAGE statement.  The goal is to be helpful to the end user
      * of the program.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
-             std::string typeDesc, Visitor *v = nullptr);
+             std::string typeDesc, Arg::Callback onMatch = nullptr);
 
     /**
      * Labeled ValueArg constructor.
@@ -124,13 +125,14 @@ public:
      * of the USAGE statement.  The goal is to be helpful to the end user
      * of the program.
      * \param parser - A CmdLine parser object to add this Arg to
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
              std::string typeDesc, ArgContainer &parser,
-             Visitor *v = nullptr);
+             Arg::Callback onMatch = nullptr);
 
     /**
      * Labeled ValueArg constructor.
@@ -148,13 +150,14 @@ public:
      * \param constraint - A pointer to a Constraint object used
      * to constrain this Arg.
      * \param parser - A CmdLine parser object to add this Arg to.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
              const Constraint<T> *constraint, ArgContainer &parser,
-             Visitor *v = nullptr);
+             Arg::Callback onMatch = nullptr);
 
     /**
      * Labeled ValueArg constructor.
@@ -171,12 +174,13 @@ public:
      * is not present on the command line.
      * \param constraint - A pointer to a Constraint object used
      * to constrain this Arg.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     ValueArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, T value,
-             const Constraint<T> *constraint, Visitor *v = nullptr);
+             const Constraint<T> *constraint, Arg::Callback onMatch = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -229,8 +233,8 @@ public:
 template <class T>
 ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req, T val,
-                      std::string typeDesc, Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      std::string typeDesc, Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _value(val),
       _default(val),
       _typeDesc(std::move(typeDesc)),
@@ -240,8 +244,8 @@ template <class T>
 ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req, T val,
                       std::string typeDesc, ArgContainer &parser,
-                      Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _value(val),
       _default(val),
       _typeDesc(std::move(typeDesc)),
@@ -252,8 +256,8 @@ ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
 template <class T>
 ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req, T val,
-                      const Constraint<T> *constraint, Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      const Constraint<T> *constraint, Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _value(val),
       _default(val),
       _typeDesc(Constraint<T>::shortID(constraint)),
@@ -263,8 +267,8 @@ template <class T>
 ValueArg<T>::ValueArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req, T val,
                       const Constraint<T> *constraint, ArgContainer &parser,
-                      Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _value(val),
       _default(val),
       _typeDesc(Constraint<T>::shortID(constraint)),
@@ -306,7 +310,7 @@ bool ValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
 
         _alreadySet = true;
         _setBy = flag;
-        _checkWithVisitor();
+        _invokeOnMatch();
         return true;
     } else {
         return false;

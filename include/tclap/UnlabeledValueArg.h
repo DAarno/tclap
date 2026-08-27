@@ -73,12 +73,13 @@ public:
      * ignored if the '--' flag is set.  This defaults to false (cannot
      * be ignored) and should  generally stay that way unless you have
      * some special need for certain arguments to be ignored.
-     * \param v - Optional Visitor.  You should leave this blank unless
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You should leave this blank unless
      * you have a very good reason.
      */
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const std::string &typeDesc,
-                      bool ignoreable = false, Visitor *v = nullptr);
+                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
 
     /**
      * UnlabeledValueArg constructor.
@@ -100,13 +101,14 @@ public:
      * ignored if the '--' flag is set.  This defaults to false (cannot
      * be ignored) and should  generally stay that way unless you have
      * some special need for certain arguments to be ignored.
-     * \param v - Optional Visitor.  You should leave this blank unless
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You should leave this blank unless
      * you have a very good reason.
      */
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const std::string &typeDesc,
                       CmdLineInterface &parser, bool ignoreable = false,
-                      Visitor *v = nullptr);
+                      Arg::Callback onMatch = nullptr);
 
     /**
      * UnlabeledValueArg constructor.
@@ -125,12 +127,13 @@ public:
      * ignored if the '--' flag is set.  This defaults to false (cannot
      * be ignored) and should  generally stay that way unless you have
      * some special need for certain arguments to be ignored.
-     * \param v - Optional Visitor.  You should leave this blank unless
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You should leave this blank unless
      * you have a very good reason.
      */
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const Constraint<T> *constraint,
-                      bool ignoreable = false, Visitor *v = nullptr);
+                      bool ignoreable = false, Arg::Callback onMatch = nullptr);
 
     /**
      * UnlabeledValueArg constructor.
@@ -150,13 +153,14 @@ public:
      * ignored if the '--' flag is set.  This defaults to false (cannot
      * be ignored) and should  generally stay that way unless you have
      * some special need for certain arguments to be ignored.
-     * \param v - Optional Visitor.  You should leave this blank unless
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You should leave this blank unless
      * you have a very good reason.
      */
     UnlabeledValueArg(const std::string &name, const std::string &desc,
                       bool req, T value, const Constraint<T> *constraint,
                       CmdLineInterface &parser, bool ignoreable = false,
-                      Visitor *v = nullptr);
+                      Arg::Callback onMatch = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -203,8 +207,8 @@ template <class T>
 UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         T val, const std::string &typeDesc,
-                                        bool ignoreable, Visitor *v)
-    : ValueArg<T>("", name, desc, req, val, typeDesc, v) {
+                                        bool ignoreable, Arg::Callback onMatch)
+    : ValueArg<T>("", name, desc, req, val, typeDesc, std::move(onMatch)) {
     _ignoreable = ignoreable;
 }
 
@@ -213,8 +217,8 @@ UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         T val, const std::string &typeDesc,
                                         CmdLineInterface &parser,
-                                        bool ignoreable, Visitor *v)
-    : ValueArg<T>("", name, desc, req, val, typeDesc, v) {
+                                        bool ignoreable, Arg::Callback onMatch)
+    : ValueArg<T>("", name, desc, req, val, typeDesc, std::move(onMatch)) {
     _ignoreable = ignoreable;
     parser.add(this);
 }
@@ -226,8 +230,8 @@ template <class T>
 UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         T val, const Constraint<T> *constraint,
-                                        bool ignoreable, Visitor *v)
-    : ValueArg<T>("", name, desc, req, val, constraint, v) {
+                                        bool ignoreable, Arg::Callback onMatch)
+    : ValueArg<T>("", name, desc, req, val, constraint, std::move(onMatch)) {
     _ignoreable = ignoreable;
 }
 
@@ -236,8 +240,8 @@ UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
                                         const std::string &desc, bool req,
                                         T val, const Constraint<T> *constraint,
                                         CmdLineInterface &parser,
-                                        bool ignoreable, Visitor *v)
-    : ValueArg<T>("", name, desc, req, val, constraint, v) {
+                                        bool ignoreable, Arg::Callback onMatch)
+    : ValueArg<T>("", name, desc, req, val, constraint, std::move(onMatch)) {
     _ignoreable = ignoreable;
     parser.add(this);
 }
@@ -256,7 +260,7 @@ bool UnlabeledValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
     _extractValue(args[*i]);
     _alreadySet = true;
     _setBy = args[*i];
-    this->_checkWithVisitor();
+    this->_invokeOnMatch();
     return true;
 }
 

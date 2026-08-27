@@ -28,6 +28,7 @@
 #include <tclap/Arg.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace TCLAP {
@@ -60,11 +61,12 @@ public:
      * \param desc - A description of what the argument is for or
      * does.
      * \param def - The default value for this Switch.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     SwitchArg(const std::string &flag, const std::string &name,
-              const std::string &desc, bool def = false, Visitor *v = nullptr);
+              const std::string &desc, bool def = false, Arg::Callback onMatch = nullptr);
 
     /**
      * SwitchArg constructor.
@@ -76,12 +78,13 @@ public:
      * does.
      * \param parser - A CmdLine parser object to add this Arg to
      * \param def - The default value for this Switch.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     SwitchArg(const std::string &flag, const std::string &name,
               const std::string &desc, ArgContainer &parser, bool def = false,
-              Visitor *v = nullptr);
+              Arg::Callback onMatch = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -131,15 +134,15 @@ private:
 //////////////////////////////////////////////////////////////////////
 inline SwitchArg::SwitchArg(const std::string &flag, const std::string &name,
                             const std::string &desc, bool default_val,
-                            Visitor *v)
-    : Arg(flag, name, desc, false, false, v),
+                            Arg::Callback onMatch)
+    : Arg(flag, name, desc, false, false, std::move(onMatch)),
       _value(default_val),
       _default(default_val) {}
 
 inline SwitchArg::SwitchArg(const std::string &flag, const std::string &name,
                             const std::string &desc, ArgContainer &parser,
-                            bool default_val, Visitor *v)
-    : Arg(flag, name, desc, false, false, v),
+                            bool default_val, Arg::Callback onMatch)
+    : Arg(flag, name, desc, false, false, std::move(onMatch)),
       _value(default_val),
       _default(default_val) {
     parser.add(this);
@@ -191,7 +194,7 @@ inline void SwitchArg::commonProcessing() {
     _alreadySet = true;
     _value = !_value;
 
-    _checkWithVisitor();
+    _invokeOnMatch();
 }
 
 inline bool SwitchArg::processArg(int *i, std::vector<std::string> &args) {

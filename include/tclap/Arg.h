@@ -35,10 +35,10 @@
 #include <tclap/Dialect.h>
 #include <tclap/StandardTraits.h>
 #include <tclap/ValueParsing.h>
-#include <tclap/Visitor.h>
 
 #include <concepts>
 #include <cstdio>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <list>
@@ -56,6 +56,18 @@ namespace TCLAP {
  */
 class Arg {
 public:
+    /**
+     * The type of callback an Arg can invoke as soon as it's matched
+     * during parsing. Replaces the pre-2.0 Visitor class hierarchy
+     * (Visitor/HelpVisitor/VersionVisitor/IgnoreRestVisitor), which
+     * existed solely to give each of those three call sites a
+     * heap-allocated object to invoke a single virtual method on; an
+     * ordinary callable does the same job without the allocation, the
+     * indirection, or the boilerplate of implementing an interface for a
+     * single method.
+     */
+    using Callback = std::function<void()>;
+
     /**
      * Prevent accidental copying.
      */
@@ -123,12 +135,11 @@ protected:
     std::string _setBy;
 
     /**
-     * A pointer to a visitor object.
-     * The visitor allows special handling to occur as soon as the
-     * argument is matched.  This defaults to nullptr and should not
-     * be used unless absolutely necessary.
+     * A callback invoked as soon as this argument is matched during
+     * parsing. This defaults to empty and should not be used unless
+     * absolutely necessary.
      */
-    Visitor *_visitor;
+    Callback _onMatch;
 
     /**
      * Whether this argument can be ignored, if desired.
@@ -153,9 +164,9 @@ protected:
     const Dialect *_dialect;
 
     /**
-     * Performs the special handling described by the Visitor.
+     * Invokes _onMatch, if one was given, as soon as this Arg is matched.
      */
-    void _checkWithVisitor() const;
+    void _invokeOnMatch() const;
 
     /**
      * Primary constructor. YOU (yes you) should NEVER construct an Arg
@@ -168,10 +179,12 @@ protected:
      * \param desc - The description of the argument, used in the usage.
      * \param req - Whether the argument is required.
      * \param valreq - Whether the a value is required for the argument.
-     * \param v - The visitor checked by the argument. Defaults to nullptr.
+     * \param onMatch - A callback invoked as soon as this Arg is matched.
+     * Defaults to empty. You probably should not use this unless you
+     * have a very good reason.
      */
     Arg(std::string flag, std::string name, std::string desc, bool req,
-        bool valreq, Visitor *v = nullptr);
+        bool valreq, Callback onMatch = nullptr);
 
 public:
     /**
@@ -404,17 +417,12 @@ using ArgListIterator = std::list<Arg *>::const_iterator;
  */
 using ArgVectorIterator = std::vector<Arg *>::const_iterator;
 
-/**
- * Typedef of a Visitor list iterator.
- */
-using VisitorListIterator = std::list<Visitor *>::const_iterator;
-
 //////////////////////////////////////////////////////////////////////
 // BEGIN Arg.cpp
 //////////////////////////////////////////////////////////////////////
 
 inline Arg::Arg(std::string flag, std::string name, std::string desc,
-                bool req, bool valreq, Visitor *v)
+                bool req, bool valreq, Callback onMatch)
     : _flag(std::move(flag)),
       _name(std::move(name)),
       _description(std::move(desc)),
@@ -423,7 +431,7 @@ inline Arg::Arg(std::string flag, std::string name, std::string desc,
       _valueRequired(valreq),
       _alreadySet(false),
       _setBy(),
-      _visitor(v),
+      _onMatch(std::move(onMatch)),
       _ignoreable(true),
       _acceptsMultipleValues(false),
       _visibleInHelp(true),
@@ -513,8 +521,8 @@ inline std::string Arg::toString() const {
     return s;
 }
 
-inline void Arg::_checkWithVisitor() const {
-    if (_visitor != nullptr) _visitor->visit();
+inline void Arg::_invokeOnMatch() const {
+    if (_onMatch) _onMatch();
 }
 
 /**

@@ -61,11 +61,12 @@ public:
      * does.
      * \param init - Optional. The initial/default value of this Arg.
      * Defaults to 0.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     MultiSwitchArg(const std::string &flag, const std::string &name,
-                   const std::string &desc, int init = 0, Visitor *v = nullptr);
+                   const std::string &desc, int init = 0, Arg::Callback onMatch = nullptr);
 
     /**
      * MultiSwitchArg constructor.
@@ -78,12 +79,13 @@ public:
      * \param parser - A CmdLine parser object to add this Arg to
      * \param init - Optional. The initial/default value of this Arg.
      * Defaults to 0.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     MultiSwitchArg(const std::string &flag, const std::string &name,
                    const std::string &desc, ArgContainer &parser, int init = 0,
-                   Visitor *v = nullptr);
+                   Arg::Callback onMatch = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -116,15 +118,15 @@ public:
 inline MultiSwitchArg::MultiSwitchArg(const std::string &flag,
                                       const std::string &name,
                                       const std::string &desc, int init,
-                                      Visitor *v)
-    : SwitchArg(flag, name, desc, false, v), _value(init), _default(init) {}
+                                      Arg::Callback onMatch)
+    : SwitchArg(flag, name, desc, false, std::move(onMatch)), _value(init), _default(init) {}
 
 inline MultiSwitchArg::MultiSwitchArg(const std::string &flag,
                                       const std::string &name,
                                       const std::string &desc,
                                       ArgContainer &parser, int init,
-                                      Visitor *v)
-    : SwitchArg(flag, name, desc, false, v), _value(init), _default(init) {
+                                      Arg::Callback onMatch)
+    : SwitchArg(flag, name, desc, false, std::move(onMatch)), _value(init), _default(init) {
     parser.add(this);
 }
 
@@ -137,7 +139,7 @@ inline bool MultiSwitchArg::processArg(int *i, std::vector<std::string> &args) {
         // Matched argument: increment value.
         ++_value;
 
-        _checkWithVisitor();
+        _invokeOnMatch();
 
         return true;
     } else if (combinedSwitchesMatch(args[*i])) {
@@ -150,7 +152,7 @@ inline bool MultiSwitchArg::processArg(int *i, std::vector<std::string> &args) {
         // Check for more in argument and increment value.
         while (combinedSwitchesMatch(args[*i])) ++_value;
 
-        _checkWithVisitor();
+        _invokeOnMatch();
 
         return false;
     } else {

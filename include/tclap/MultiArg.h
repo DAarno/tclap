@@ -92,12 +92,13 @@ public:
      * type that this object expects.  This is used in the generation
      * of the USAGE statement.  The goal is to be helpful to the end user
      * of the program.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, std::string typeDesc,
-             Visitor *v = nullptr);
+             Arg::Callback onMatch = nullptr);
 
     /**
      * Constructor.
@@ -114,12 +115,13 @@ public:
      * of the USAGE statement.  The goal is to be helpful to the end user
      * of the program.
      * \param parser - A CmdLine parser object to add this Arg to
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, std::string typeDesc,
-             ArgContainer &parser, Visitor *v = nullptr);
+             ArgContainer &parser, Arg::Callback onMatch = nullptr);
 
     /**
      * Constructor.
@@ -133,12 +135,13 @@ public:
      * line.
      * \param constraint - A pointer to a Constraint object used
      * to constrain this Arg.
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, const Constraint<T> *constraint,
-             Visitor *v = nullptr);
+             Arg::Callback onMatch = nullptr);
 
     /**
      * Constructor.
@@ -153,12 +156,13 @@ public:
      * \param constraint - A pointer to a Constraint object used
      * to constrain this Arg.
      * \param parser - A CmdLine parser object to add this Arg to
-     * \param v - An optional visitor.  You probably should not
+     * \param onMatch - An optional callback invoked as soon as this Arg is
+     * matched. You probably should not
      * use this unless you have a very good reason.
      */
     MultiArg(const std::string &flag, const std::string &name,
              const std::string &desc, bool req, const Constraint<T> *constraint,
-             ArgContainer &parser, Visitor *v = nullptr);
+             ArgContainer &parser, Arg::Callback onMatch = nullptr);
 
     /**
      * Handles the processing of the argument.
@@ -216,8 +220,8 @@ public:
 template <class T>
 MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
-                      std::string typeDesc, Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      std::string typeDesc, Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _values(),
       _typeDesc(std::move(typeDesc)),
       _constraint(nullptr),
@@ -229,8 +233,8 @@ template <class T>
 MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
                       std::string typeDesc, ArgContainer &parser,
-                      Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _values(),
       _typeDesc(std::move(typeDesc)),
       _constraint(nullptr),
@@ -245,8 +249,8 @@ MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
 template <class T>
 MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
-                      const Constraint<T> *constraint, Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      const Constraint<T> *constraint, Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _values(),
       _typeDesc(Constraint<T>::shortID(constraint)),
       _constraint(constraint),
@@ -258,8 +262,8 @@ template <class T>
 MultiArg<T>::MultiArg(const std::string &flag, const std::string &name,
                       const std::string &desc, bool req,
                       const Constraint<T> *constraint, ArgContainer &parser,
-                      Visitor *v)
-    : Arg(flag, name, desc, req, true, v),
+                      Arg::Callback onMatch)
+    : Arg(flag, name, desc, req, true, std::move(onMatch)),
       _values(),
       _typeDesc(Constraint<T>::shortID(constraint)),
       _constraint(constraint),
@@ -296,7 +300,7 @@ bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
 
         _alreadySet = true;
         _setBy = flag;
-        _checkWithVisitor();
+        _invokeOnMatch();
 
         return true;
     } else {
