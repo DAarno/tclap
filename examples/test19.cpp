@@ -1,6 +1,9 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
-#define TCLAP_SETBASE_ZERO 1
+// Wrapping the value type in AutoBaseInt<int> (instead of the pre-2.0
+// TCLAP_SETBASE_ZERO compile-time macro, which applied to every integer
+// ValueArg/MultiArg in the whole program) opts just this one Arg into
+// C-style "0x"-prefix-means-hex, leading-zero-means-octal parsing.
 
 #include "tclap/CmdLine.h"
 #include <iostream>
@@ -13,7 +16,8 @@ int main(int argc, char **argv) {
     try {
         CmdLine cmd("this is a message", ' ', "0.99");
 
-        ValueArg<int> itest("i", "intTest", "integer test", true, 5, "int");
+        ValueArg<AutoBaseInt<int>> itest("i", "intTest", "integer test", true,
+                                         5, "int");
         cmd.add(itest);
 
         //

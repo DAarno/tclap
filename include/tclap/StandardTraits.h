@@ -29,6 +29,9 @@
 
 #include <tclap/ArgTraits.h>
 
+#include <concepts>
+#include <iomanip>
+#include <istream>
 #include <string>
 
 // If Microsoft has already typedef'd wchar_t as an unsigned
@@ -55,6 +58,39 @@ template <typename T>
 void SetString(T &dst, const std::string &src) {
     dst = src;
 }
+
+/**
+ * A thin wrapper around an integral type T that opts into C-style
+ * auto-base integer parsing when used as a ValueArg/MultiArg value type
+ * -- e.g. ValueArg<AutoBaseInt<int>> instead of ValueArg<int>. A "0x" or
+ * "0X" prefix selects base 16, a leading "0" followed by another digit
+ * selects base 8, and otherwise base 10 is used, matching
+ * std::setbase(0)'s effect on operator>> (which is exactly what this
+ * wrapper's own operator>> uses).
+ *
+ * This replaces the pre-2.0 TCLAP_SETBASE_ZERO compile-time macro, which
+ * applied (or didn't) to every integer ValueArg/MultiArg in the whole
+ * program at once. Making the choice part of the value's type instead
+ * makes it an explicit, per-Arg opt-in, and lets auto-base and
+ * decimal-only integer Args coexist in the same program.
+ */
+template <typename T>
+    requires std::integral<T> && (!std::same_as<T, bool>)
+class AutoBaseInt {
+public:
+    AutoBaseInt() = default;
+    AutoBaseInt(T value) noexcept : _value(value) {}
+
+    operator T() const noexcept { return _value; }
+    [[nodiscard]] T value() const noexcept { return _value; }
+
+    friend std::istream &operator>>(std::istream &is, AutoBaseInt &self) {
+        return is >> std::setbase(0) >> self._value;
+    }
+
+private:
+    T _value{};
+};
 
 }  // namespace TCLAP
 
