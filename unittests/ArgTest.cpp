@@ -170,6 +170,29 @@ void TestArgAcceptsMultipleValues(Testing &t) {
         ERROR(t, "Arg: a plain SwitchArg should not accept multiple values");
 }
 
+void TestArgExceptionWhatIsStablePerInstance(Testing &t) {
+    // ArgException::what() used to format into a single buffer shared by
+    // every ArgException instance in the process; formatting a second
+    // exception's what() would silently corrupt an earlier, still-live
+    // exception's what() pointer. Verify each instance's what() is
+    // independent of any other instance's construction/destruction.
+    ArgParseException first("first error", "firstArg");
+    const char *firstWhat = first.what();
+    std::string firstWhatCopy = firstWhat;
+
+    {
+        ArgParseException second("second error", "secondArg");
+        static_cast<void>(second.what());
+    }
+
+    if (std::string(firstWhat) != firstWhatCopy)
+        ERROR(t, "ArgException: what() for one instance changed after "
+                 "formatting/destroying another instance");
+
+    if (firstWhatCopy != "firstArg -- first error")
+        ERROR(t, "ArgException: unexpected what() text: " << firstWhatCopy);
+}
+
 int main() {
     Testing t;
     TestArgRejectsMultiCharFlag(t);
@@ -180,5 +203,6 @@ int main() {
     TestArgEqualityByFlagOrName(t);
     TestArgFlaglessFormatting(t);
     TestArgAcceptsMultipleValues(t);
+    TestArgExceptionWhatIsStablePerInstance(t);
     return t.errorCount();
 }
