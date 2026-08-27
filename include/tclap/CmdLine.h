@@ -137,6 +137,17 @@ protected:
     Dialect _dialect;
 
     /**
+     * Whether an optional (non-required) unlabeled Arg has been added to
+     * this CmdLine yet. Once true, no further unlabeled Arg of any kind
+     * may be added (its position on the command line would be
+     * ambiguous) -- checked and set in addToArgList(). This used to be
+     * OptionalUnlabeledTracker's process-wide static bool, shared (and
+     * corrupted) across every CmdLine in the program; it is now scoped
+     * to this CmdLine alone.
+     */
+    bool _hasOptionalUnlabeledArg;
+
+    /**
      * Add pointers that should be deleted as part of cleanup when
      * this object is destroyed.
      * @internal.
@@ -443,6 +454,7 @@ inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
       _numRequired(0),
       _delimiter(delim),
       _dialect{delim},
+      _hasOptionalUnlabeledArg(false),
       _deleteOnExit(),
       _defaultOutput(),
       _output(&_defaultOutput),
@@ -469,6 +481,7 @@ inline CmdLine::CmdLine(std::string m, Dialect dialect, std::string v,
       _numRequired(0),
       _delimiter(dialect.delimiter),
       _dialect(std::move(dialect)),
+      _hasOptionalUnlabeledArg(false),
       _deleteOnExit(),
       _defaultOutput(),
       _output(&_defaultOutput),
@@ -563,6 +576,25 @@ inline void CmdLine::addToArgList(Arg *a) {
             _argList, [a](const Arg *existing) { return *a == *existing; })) {
         throw SpecificationException(
             "Argument with same flag/name already exists!", a->longID());
+    }
+
+    if (!a->hasLabel()) {
+        // Unlabeled (positional) Arg: no further unlabeled Arg may follow
+        // an optional one, since its position would be ambiguous.
+        if (_hasOptionalUnlabeledArg) {
+            throw SpecificationException(
+                "You can't specify ANY Unlabeled Arg following an optional "
+                "Unlabeled Arg",
+                a->longID());
+        }
+
+        // An UnlabeledMultiArg slurps up everything remaining regardless
+        // of its own required-ness, so (matching the pre-Dialect
+        // OptionalUnlabeledTracker behavior) it never itself poisons this
+        // flag for whatever might be added after it.
+        if (!a->isRequired() && !a->acceptsMultipleValues()) {
+            _hasOptionalUnlabeledArg = true;
+        }
     }
 
     a->_setDialect(&_dialect);

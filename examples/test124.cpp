@@ -20,10 +20,13 @@
  *
  *****************************************************************************/
 
-// Once an optional (non-required) UnlabeledValueArg has been declared,
-// its position on the command line is ambiguous with anything that
-// might follow it -- so TCLAP refuses to declare any further unlabeled
-// arg afterwards (OptionalUnlabeledTracker).
+// Once an optional (non-required) UnlabeledValueArg has been added to a
+// CmdLine, its position on the command line is ambiguous with anything
+// that might follow it -- so TCLAP refuses to add any further unlabeled
+// arg to that same CmdLine afterwards. This is checked when the Arg is
+// added to the CmdLine, not merely constructed: an UnlabeledValueArg that
+// is never added to any CmdLine doesn't affect anything (see
+// CmdLine::addToArgList).
 
 #include "tclap/CmdLine.h"
 #include <iostream>
@@ -32,11 +35,14 @@ using namespace TCLAP;
 using namespace std;
 
 int main() {
+    CmdLine cmd("test124");
     UnlabeledValueArg<int> optional("extra", "an optional trailer", false, 0,
                                     "int");
+    cmd.add(optional);
 
     try {
         UnlabeledValueArg<int> tooLate("too-late", "desc", true, 0, "int");
+        cmd.add(tooLate);
     } catch (SpecificationException &e) {
         cout << e.what() << endl;
     }

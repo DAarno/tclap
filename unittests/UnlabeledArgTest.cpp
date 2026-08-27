@@ -20,18 +20,22 @@
  *
  *****************************************************************************/
 
-// NOTE: OptionalUnlabeledTracker.h tracks, per-process, whether an
-// optional (non-required) UnlabeledValueArg has ever been constructed:
-// once one exists, no *further* unlabeled arg of any kind may be
-// constructed, since its position on the command line would be
-// ambiguous. (UnlabeledMultiArg's constructors happen to never trip
-// this themselves -- see UnlabeledMultiArg.h, they always pass `true`
-// to OptionalUnlabeledTracker::check() regardless of their own `req` --
-// but they still refuse to be constructed *after* the flag has been set
-// by an optional UnlabeledValueArg.) Since this global is shared by
-// every test in this binary, TestOptionalUnlabeledValueArgPoisonsTracker
-// deliberately sets it and so must run last: nothing after it may
-// construct another unlabeled arg.
+// NOTE: CmdLine::addToArgList() tracks, per-CmdLine, whether an optional
+// (non-required) unlabeled arg has been *added to that CmdLine* yet:
+// once one has, no further unlabeled arg of any kind may be added to the
+// same CmdLine, since its position on the command line would be
+// ambiguous. (UnlabeledMultiArg never itself sets this -- see
+// CmdLine::addToArgList()'s use of acceptsMultipleValues() -- since it
+// always slurps up everything remaining regardless of its own
+// required-ness, but it still refuses to be *added* after the flag has
+// already been set by an earlier optional unlabeled arg on the same
+// CmdLine.) This used to be a process-wide static
+// (OptionalUnlabeledTracker), shared and corrupted across every CmdLine
+// in the program and tripped merely by *constructing* an unlabeled arg,
+// whether or not it was ever added to a CmdLine; it is now scoped to a
+// single CmdLine and keyed off registration, not construction, so
+// TestOptionalUnlabeledArgPoisonsOnlyItsOwnCmdLine below no longer needs
+// to run last or affect any other test in this binary.
 
 #include "tclap/CmdLine.h"
 #include "testing.h"
@@ -187,31 +191,73 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
     }
 }
 
-// Must run last (see the file-level comment above): constructing an
-// *optional* UnlabeledValueArg poisons the process-wide
-// OptionalUnlabeledTracker, so no unlabeled arg of any kind may be
-// constructed afterwards.
-void TestOptionalUnlabeledValueArgPoisonsTracker(Testing &t) {
+// Constructing an optional UnlabeledValueArg without ever adding it to a
+// CmdLine must not affect anything -- unlike the old process-wide
+// tracker, which poisoned every CmdLine in the program regardless of
+// whether the poisoning Arg was ever added anywhere.
+void TestUnaddedOptionalUnlabeledArgDoesNotPoisonAnything(Testing &t) {
     try {
-        UnlabeledValueArg<int> optional("extra", "an optional trailer", false,
-                                        0, "int");
+        UnlabeledValueArg<int> neverAdded("extra", "an optional trailer",
+                                          false, 0, "int");
+        static_cast<void>(neverAdded);
     } catch (ArgException &e) {
         ERROR(t, "UnlabeledValueArg: unexpected exception constructing an "
                  "optional unlabeled arg: "
                      << e.error());
     }
 
+    // A completely unrelated CmdLine must be unaffected: adding a
+    // required unlabeled arg to it must succeed.
+    try {
+        CmdLine cmd("test", ' ', "1.0", false);
+        UnlabeledValueArg<int> required("count", "a count", true, 0, "int");
+        cmd.add(required);
+    } catch (ArgException &e) {
+        ERROR(t, "UnlabeledValueArg: unexpected exception adding a required "
+                 "unlabeled arg to an unrelated CmdLine: "
+                     << e.error());
+    }
+}
+
+// Adding an optional unlabeled arg to a CmdLine blocks any further
+// unlabeled arg from being added to that *same* CmdLine, but must not
+// affect a second, independent CmdLine.
+void TestOptionalUnlabeledArgPoisonsOnlyItsOwnCmdLine(Testing &t) {
+    CmdLine poisoned("test", ' ', "1.0", false);
+    UnlabeledValueArg<int> optional("extra", "an optional trailer", false, 0,
+                                    "int");
+    try {
+        poisoned.add(optional);
+    } catch (ArgException &e) {
+        ERROR(t, "UnlabeledValueArg: unexpected exception adding an "
+                 "optional unlabeled arg: "
+                     << e.error());
+    }
+
     try {
         UnlabeledValueArg<int> tooLate("too-late", "desc", true, 0, "int");
+        poisoned.add(tooLate);
         ERROR(t, "UnlabeledValueArg: expected SpecificationException "
-                 "constructing an unlabeled arg after an optional one, "
-                 "none thrown");
+                 "adding an unlabeled arg after an optional one to the "
+                 "same CmdLine, none thrown");
     } catch (SpecificationException &) {
         // Expected.
     } catch (ArgException &e) {
         ERROR(t, "UnlabeledValueArg: wrong exception type after an "
                  "optional unlabeled arg: "
                      << e.typeDescription());
+    }
+
+    // A second, independent CmdLine must be entirely unaffected by the
+    // first one's poisoned state.
+    try {
+        CmdLine unaffected("test", ' ', "1.0", false);
+        UnlabeledValueArg<int> stillFine("count", "a count", true, 0, "int");
+        unaffected.add(stillFine);
+    } catch (ArgException &e) {
+        ERROR(t, "UnlabeledValueArg: an unrelated CmdLine was affected by "
+                 "another CmdLine's poisoned optional-unlabeled state: "
+                     << e.error());
     }
 }
 
@@ -222,6 +268,7 @@ int main() {
     TestUnlabeledValueArgEquality(t);
     TestUnlabeledMultiArgEquality(t);
     TestUnlabeledMultiArgOptional(t);
-    TestOptionalUnlabeledValueArgPoisonsTracker(t);
+    TestUnaddedOptionalUnlabeledArgDoesNotPoisonAnything(t);
+    TestOptionalUnlabeledArgPoisonsOnlyItsOwnCmdLine(t);
     return t.errorCount();
 }

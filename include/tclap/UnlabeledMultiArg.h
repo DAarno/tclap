@@ -25,7 +25,6 @@
 #define TCLAP_UNLABELED_MULTI_ARG_H
 
 #include <tclap/MultiArg.h>
-#include <tclap/OptionalUnlabeledTracker.h>
 
 #include <list>
 #include <string>
@@ -184,7 +183,6 @@ UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         bool ignoreable, Visitor *v)
     : MultiArg<T>("", name, desc, req, typeDesc, v) {
     _ignoreable = ignoreable;
-    OptionalUnlabeledTracker::check(true, toString());
 }
 
 template <class T>
@@ -195,7 +193,6 @@ UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         Visitor *v)
     : MultiArg<T>("", name, desc, req, typeDesc, v) {
     _ignoreable = ignoreable;
-    OptionalUnlabeledTracker::check(true, toString());
     parser.add(this);
 }
 
@@ -206,7 +203,6 @@ UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         bool ignoreable, Visitor *v)
     : MultiArg<T>("", name, desc, req, constraint, v) {
     _ignoreable = ignoreable;
-    OptionalUnlabeledTracker::check(true, toString());
 }
 
 template <class T>
@@ -217,7 +213,6 @@ UnlabeledMultiArg<T>::UnlabeledMultiArg(const std::string &name,
                                         Visitor *v)
     : MultiArg<T>("", name, desc, req, constraint, v) {
     _ignoreable = ignoreable;
-    OptionalUnlabeledTracker::check(true, toString());
     parser.add(this);
 }
 
