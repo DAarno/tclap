@@ -247,6 +247,26 @@ public:
             std::string version = "none", bool helpAndVersion = true);
 
     /**
+     * Command line constructor taking a full Dialect (delimiter and
+     * flag/name prefixes), for parsing conventions other than the
+     * default "-flag"/"--name" (e.g. Windows-style "/flag"/"/name").
+     * This is the replacement for the pre-2.0 TCLAP_FLAGSTARTCHAR/
+     * TCLAP_FLAGSTARTSTRING/TCLAP_NAMESTARTSTRING compile-time,
+     * whole-program macros: unlike those, each CmdLine's Dialect is
+     * independent, so parsers using different conventions can coexist
+     * in the same program.
+     * \param message - The message to be used in the usage output.
+     * \param dialect - The delimiter and flag/name prefixes to parse
+     * with.
+     * \param version - The version number to be used in the
+     * --version switch.
+     * \param helpAndVersion - Whether or not to create the Help and
+     * Version switches. Defaults to true.
+     */
+    CmdLine(std::string message, Dialect dialect, std::string version = "none",
+            bool helpAndVersion = true);
+
+    /**
      * Deletes any resources allocated by a CmdLine object.
      */
     ~CmdLine() override = default;
@@ -422,7 +442,33 @@ inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
       _version(std::move(v)),
       _numRequired(0),
       _delimiter(delim),
-      _dialect{delim, Arg::flagStartString(), Arg::nameStartString()},
+      _dialect{delim},
+      _deleteOnExit(),
+      _defaultOutput(),
+      _output(&_defaultOutput),
+      _handleExceptions(true),
+      _messageTranslator(nullptr),
+      _ignoreArg(nullptr),
+      _helpArg(nullptr),
+      _versionArg(nullptr),
+      _helpAndVersion(help),
+      _ignoreUnmatched(false),
+      _ignoring(false) {
+    _constructor();
+}
+
+inline CmdLine::CmdLine(std::string m, Dialect dialect, std::string v,
+                        bool help)
+    : _argList(),
+      _standaloneArgs(),
+      _autoArgs(),
+      _argGroups(),
+      _progName("not_set_yet"),
+      _message(std::move(m)),
+      _version(std::move(v)),
+      _numRequired(0),
+      _delimiter(dialect.delimiter),
+      _dialect(std::move(dialect)),
       _deleteOnExit(),
       _defaultOutput(),
       _output(&_defaultOutput),
@@ -445,7 +491,7 @@ inline void CmdLine::_constructor() {
 
     v = new IgnoreRestVisitor(*this);
     auto *ignore = new SwitchArg(
-        Arg::flagStartString(), Arg::ignoreNameString(),
+        _dialect.flagPrefix, Arg::ignoreNameString(),
         translateMessage("ignore_rest_description",
                          "Ignores the rest of the labeled arguments following this flag."),
         false, v);
@@ -650,7 +696,9 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
 }
 
 inline bool CmdLine::_emptyCombined(const std::string &s) {
-    if (!s.empty() && s[0] != Arg::flagStartChar()) return false;
+    if (!s.empty() &&
+        (_dialect.flagPrefix.empty() || s[0] != _dialect.flagPrefix.front()))
+        return false;
 
     return s.find_first_not_of(Arg::blankChar(), 1) == std::string::npos;
 }

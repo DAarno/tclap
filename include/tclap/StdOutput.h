@@ -138,7 +138,7 @@ inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
                           _cmd.translateMessage(
                               "complete_usage_hint",
                               "For complete USAGE and HELP type: "),
-                          _cmd.getProgramName(), Arg::nameStartString())
+                          _cmd.getProgramName(), _cmd.getDialect().namePrefix)
                   << std::flush;
     } else {
         usage(_cmd);
@@ -232,7 +232,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     std::ostringstream outp;
     outp << _cmd.getProgramName() + " ";
 
-    std::string switches = Arg::flagStartString();
+    std::string switches = _cmd.getDialect().flagPrefix;
 
     std::list<ArgGroup *> exclusiveGroups;
     std::list<ArgGroup *> nonExclusiveGroups;

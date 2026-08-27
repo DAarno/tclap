@@ -61,6 +61,12 @@ public:
     Arg(const Arg &rhs) = delete;
     Arg &operator=(const Arg &rhs) = delete;
 
+private:
+    // Used by flagStartChar()/flagStartString()/nameStartString() for an
+    // Arg not yet bound to any CmdLine's Dialect (see _dialect below).
+    static inline const std::string kDefaultFlagPrefix = "-";
+    static inline const std::string kDefaultNamePrefix = "--";
+
 protected:
     /**
      * The single char flag used to identify the argument.
@@ -200,33 +206,34 @@ public:
      */
     static constexpr char blankChar() noexcept { return '\a'; }
 
-/**
- * The char that indicates the beginning of a flag.  Defaults to '-', but
- * clients can define TCLAP_FLAGSTARTCHAR to override.
- */
-#ifndef TCLAP_FLAGSTARTCHAR
-#define TCLAP_FLAGSTARTCHAR '-'
-#endif
-    static constexpr char flagStartChar() noexcept { return TCLAP_FLAGSTARTCHAR; }
+    /**
+     * The char that indicates the beginning of a flag. Derived from this
+     * Arg's bound Dialect's flagPrefix (see _setDialect()); an Arg not
+     * yet registered with any CmdLine reports the default '-'.
+     */
+    [[nodiscard]] char flagStartChar() const noexcept {
+        const std::string &prefix =
+            _dialect != nullptr ? _dialect->flagPrefix : kDefaultFlagPrefix;
+        return prefix.empty() ? '\0' : prefix.front();
+    }
 
-/**
- * The sting that indicates the beginning of a flag.  Defaults to "-", but
- * clients can define TCLAP_FLAGSTARTSTRING to override. Should be the same
- * as TCLAP_FLAGSTARTCHAR.
- */
-#ifndef TCLAP_FLAGSTARTSTRING
-#define TCLAP_FLAGSTARTSTRING "-"
-#endif
-    static std::string flagStartString() { return TCLAP_FLAGSTARTSTRING; }
+    /**
+     * The string that indicates the beginning of a flag. Reflects this
+     * Arg's bound Dialect's flagPrefix (see _setDialect()); an Arg not
+     * yet registered with any CmdLine reports the default "-".
+     */
+    [[nodiscard]] std::string flagStartString() const {
+        return _dialect != nullptr ? _dialect->flagPrefix : kDefaultFlagPrefix;
+    }
 
-/**
- * The sting that indicates the beginning of a name.  Defaults to "--", but
- *  clients can define TCLAP_NAMESTARTSTRING to override.
- */
-#ifndef TCLAP_NAMESTARTSTRING
-#define TCLAP_NAMESTARTSTRING "--"
-#endif
-    static std::string nameStartString() { return TCLAP_NAMESTARTSTRING; }
+    /**
+     * The string that indicates the beginning of a name. Reflects this
+     * Arg's bound Dialect's namePrefix (see _setDialect()); an Arg not
+     * yet registered with any CmdLine reports the default "--".
+     */
+    [[nodiscard]] std::string nameStartString() const {
+        return _dialect != nullptr ? _dialect->namePrefix : kDefaultNamePrefix;
+    }
 
     /**
      * The name used to identify the ignore rest argument.

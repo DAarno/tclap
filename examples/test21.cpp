@@ -1,9 +1,9 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
-// This illustrates how to change the flag and name start strings.
-// Note that these defines need to happen *before* tclap is included!
-#define TCLAP_NAMESTARTSTRING "~~"
-#define TCLAP_FLAGSTARTSTRING "/"
+// This illustrates how to change the flag and name start strings: pass a
+// Dialect to the CmdLine constructor instead of the pre-2.0
+// TCLAP_NAMESTARTSTRING/TCLAP_FLAGSTARTSTRING compile-time macros (which
+// applied to the whole program, not just this CmdLine).
 
 #include <string>
 #include <iostream>
@@ -18,7 +18,10 @@ int main(int argc, char **argv) {
     // because exceptions will be thrown for problems.
     try {
         // Define the command line object.
-        CmdLine cmd("Command description message", ' ', "0.9");
+        CmdLine cmd("Command description message",
+                    Dialect{.delimiter = ' ', .flagPrefix = "/",
+                            .namePrefix = "~~"},
+                    "0.9");
 
         // Define a value argument and add it to the command line.
         ValueArg<string> nameArg("n", "name", "Name to print", true, "homer",

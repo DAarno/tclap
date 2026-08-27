@@ -64,8 +64,10 @@ void TestArgAllowsIgnoreRestNameWithDashFlag(Testing &t) {
     // ignore_rest switch is constructed exactly this way internally
     // (see CmdLine::_constructor in CmdLine.h).
     try {
-        SwitchArg ignoreRest(Arg::flagStartString(), Arg::ignoreNameString(),
-                             "desc");
+        // "-" is the default Dialect's flagPrefix (see Dialect.h); this
+        // Arg isn't registered with any CmdLine, so there's no Dialect
+        // instance to query it from.
+        SwitchArg ignoreRest("-", Arg::ignoreNameString(), "desc");
     } catch (ArgException &e) {
         ERROR(t, "Arg: unexpected exception constructing the ignore_rest "
                  "switch: "

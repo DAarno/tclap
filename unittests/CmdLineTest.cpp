@@ -343,6 +343,56 @@ void TestIndependentCmdLinesDoNotShareDialect(Testing &t) {
     }
 }
 
+void TestCustomDialectPrefixesCoexistWithDefault(Testing &t) {
+    // Before the Dialect redesign, flag/name prefixes were fixed at
+    // compile time for the whole program via TCLAP_FLAGSTARTSTRING/
+    // TCLAP_NAMESTARTSTRING macros -- a "/"-prefixed CmdLine and a
+    // "-"-prefixed CmdLine could never coexist in the same binary.
+    // Verify they now can, and that each Arg reports its own CmdLine's
+    // prefixes.
+    try {
+        CmdLine defaultCmd("default-dialect", ' ', "1.0", false);
+        SwitchArg defaultArg("v", "verbose", "be verbose");
+        defaultCmd.add(defaultArg);
+        defaultCmd.setExceptionHandling(false);
+
+        CmdLine slashCmd("slash-dialect",
+                         Dialect{.delimiter = ' ', .flagPrefix = "/",
+                                 .namePrefix = "~~"},
+                         "1.0", false);
+        SwitchArg slashArg("v", "verbose", "be verbose");
+        slashCmd.add(slashArg);
+        slashCmd.setExceptionHandling(false);
+
+        if (defaultArg.flagStartString() != "-")
+            ERROR(t, "Arg: expected defaultArg's flagStartString() to stay "
+                     "\"-\", got \""
+                         << defaultArg.flagStartString() << '"');
+        if (slashArg.flagStartString() != "/")
+            ERROR(t, "Arg: expected slashArg's flagStartString() to be "
+                     "\"/\", got \""
+                         << slashArg.flagStartString() << '"');
+        if (slashArg.nameStartString() != "~~")
+            ERROR(t, "Arg: expected slashArg's nameStartString() to be "
+                     "\"~~\", got \""
+                         << slashArg.nameStartString() << '"');
+
+        const char *defaultArgv[] = {"prog", "-v"};
+        std::vector<std::string> defaultArgs = MakeArgs(defaultArgv);
+        defaultCmd.parse(defaultArgs);
+        if (!defaultArg.getValue())
+            ERROR(t, "SwitchArg: \"-v\" did not set defaultArg");
+
+        const char *slashArgv[] = {"prog", "/v"};
+        std::vector<std::string> slashArgs = MakeArgs(slashArgv);
+        slashCmd.parse(slashArgs);
+        if (!slashArg.getValue())
+            ERROR(t, "SwitchArg: \"/v\" did not set slashArg");
+    } catch (ArgException &e) {
+        ERROR(t, "CmdLine: unexpected exception: " << e.error());
+    }
+}
+
 int main() {
     Testing t;
     TestUnmatchedArgThrows(t);
@@ -357,5 +407,6 @@ int main() {
     TestMessageTranslator(t);
     TestMessageTranslatorRefreshesHelpAndVersion(t);
     TestIndependentCmdLinesDoNotShareDialect(t);
+    TestCustomDialectPrefixesCoexistWithDefault(t);
     return t.errorCount();
 }
