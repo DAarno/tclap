@@ -77,8 +77,17 @@ public:
 private:
     // Used by flagStartChar()/flagStartString()/nameStartString() for an
     // Arg not yet bound to any CmdLine's Dialect (see _dialect below).
-    static inline const std::string kDefaultFlagPrefix = "-";
-    static inline const std::string kDefaultNamePrefix = "--";
+    // std::string, not const char*, deliberately: flagStartChar() ternaries
+    // this against _dialect->flagPrefix (a std::string), and only binds a
+    // zero-copy `const std::string&` to the result because both operands
+    // share the exact same type -- a const char* here would make the
+    // ternary's common type std::string by conversion, turning that
+    // reference bind into a fresh string construction on every call. Safe
+    // to keep as std::string (unlike TypeName.h's TCLAP_DEFINE_TYPE_NAME,
+    // see its comment) since these are fixed 1-2 char literals by design
+    // and will never approach any implementation's SSO capacity.
+    static constexpr std::string kDefaultFlagPrefix = "-";
+    static constexpr std::string kDefaultNamePrefix = "--";
 
 protected:
     /**
@@ -290,7 +299,9 @@ public:
     /**
      * Updates the argument description.
      */
-    virtual void setDescription(const std::string &desc) { _description = desc; }
+    virtual void setDescription(const std::string &desc) {
+        _description = desc;
+    }
 
     /**
      * Returns the argument description.
@@ -421,8 +432,8 @@ using ArgVectorIterator = std::vector<Arg *>::const_iterator;
 // BEGIN Arg.cpp
 //////////////////////////////////////////////////////////////////////
 
-inline Arg::Arg(std::string flag, std::string name, std::string desc,
-                bool req, bool valreq, Callback onMatch)
+inline Arg::Arg(std::string flag, std::string name, std::string desc, bool req,
+                bool valreq, Callback onMatch)
     : _flag(std::move(flag)),
       _name(std::move(name)),
       _description(std::move(desc)),

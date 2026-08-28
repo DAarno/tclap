@@ -68,14 +68,29 @@ inline std::string DemangledTypeName(const char *mangled) {
  */
 template <typename T>
 struct TypeName {
+    // Not constexpr, unlike the specializations below: DemangledTypeName()
+    // goes through __cxa_demangle, a genuine runtime call (and typeid's
+    // name() isn't usable in a constant expression to begin with).
     static inline const std::string value =
         detail::DemangledTypeName(typeid(T).name());
 };
 
-#define TCLAP_DEFINE_TYPE_NAME(T, name)                \
-    template <>                                        \
-    struct TypeName<T> {                                \
-        static inline const std::string value = name;   \
+// `value` is `const char*`, not `std::string`, specifically so this stays
+// constexpr regardless of literal length: a std::string initialized from a
+// literal longer than the standard library's (implementation-defined)
+// small-string-optimization buffer falls back to a heap allocation, which
+// a constexpr static object can't retain past compile time -- confirmed by
+// trying `std::string` here first, which GCC 13.3 rejected for
+// "unsigned long long" (18 chars, past libstdc++'s 15-char SSO capacity)
+// with "is not a constant expression because it refers to a result of
+// 'operator new'". A raw string-literal pointer has no such threshold.
+// Implicit conversion to std::string at each of this trait's call sites
+// (`std::string typeDesc = TypeName<T>::value;`, a default member
+// initializer on ValueArgSpec<T>/MultiArgSpec<T>/etc.) is unaffected.
+#define TCLAP_DEFINE_TYPE_NAME(T, name)            \
+    template <>                                    \
+    struct TypeName<T> {                           \
+        static constexpr const char *value = name; \
     }
 
 TCLAP_DEFINE_TYPE_NAME(bool, "bool");
