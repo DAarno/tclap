@@ -23,59 +23,47 @@ int main(int argc, char **argv) {
 
 void parseOptions(int argc, char **argv) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "this is a message",
-            .dialect = {.delimiter = '='},
-            .version = "0.99"
-        });
+        CmdLine cmd({.message = "this is a message",
+                     .dialect = {.delimiter = '='},
+                     .version = "0.99"});
         cmd.ignoreUnmatched(true);
 
         //
         // Define arguments
         //
 
-        SwitchArg btest(SwitchArgSpec{
-            .flag = "B",
-            .name = "existTestB",
-            .description = "exist Test B",
-            .defaultValue = false
-        });
+        SwitchArg btest({.flag = "B",
+                         .name = "existTestB",
+                         .description = "exist Test B",
+                         .defaultValue = false});
         cmd.add(btest);
 
-        ValueArg<string> stest(ValueArgSpec<string>{
-            .flag = "s",
-            .name = "stringTest",
-            .description = "string test",
-            .required = true,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
+        ValueArg<string> stest({.flag = "s",
+                                .name = "stringTest",
+                                .description = "string test",
+                                .required = true,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
         cmd.add(stest);
 
-        MultiArg<int> itest(MultiArgSpec<int>{
-            .flag = "i",
-            .name = "intTest",
-            .description = "multi int test",
-            .required = false,
-            .typeDesc = "int"
-        });
+        MultiArg<int> itest({.flag = "i",
+                             .name = "intTest",
+                             .description = "multi int test",
+                             .required = false,
+                             .typeDesc = "int"});
         cmd.add(itest);
 
-        MultiArg<float> ftest(MultiArgSpec<float>{
-            .flag = "f",
-            .name = "floatTest",
-            .description = "multi float test",
-            .required = false,
-            .typeDesc = "float"
-        });
+        MultiArg<float> ftest({.flag = "f",
+                               .name = "floatTest",
+                               .description = "multi float test",
+                               .required = false,
+                               .typeDesc = "float"});
         cmd.add(ftest);
 
-        UnlabeledMultiArg<string> mtest(UnlabeledMultiArgSpec<string>{
-            .name = "fileName",
-            .description = "file names",
-            .required = false,
-            .typeDesc = "fileNameString"
-        });
+        UnlabeledMultiArg<string> mtest({.name = "fileName",
+                                         .description = "file names",
+                                         .required = false,
+                                         .typeDesc = "fileNameString"});
         cmd.add(mtest);
         //
         // Parse the command line.

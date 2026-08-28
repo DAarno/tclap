@@ -43,8 +43,8 @@
  *
  *****************************************************************************/
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -105,29 +105,23 @@ void FuzzFullUsage(const uint8_t *data, size_t size) {
 
     try {
         TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
-            .message = desc,
-            .dialect = {.delimiter = ' '},
-            .version = "1.0"
-        });
+            .message = desc, .dialect = {.delimiter = ' '}, .version = "1.0"});
         TCLAP::StdOutput realOutput;
         cmd.setOutput(&realOutput);
         cmd.setExceptionHandling(false);
 
-        TCLAP::SwitchArg switchArg(TCLAP::SwitchArgSpec{
-            .flag = "s",
-            .name = "switch",
-            .description = desc,
-            .defaultValue = false
-        });
+        TCLAP::SwitchArg switchArg(TCLAP::SwitchArgSpec{.flag = "s",
+                                                        .name = "switch",
+                                                        .description = desc,
+                                                        .defaultValue = false});
         cmd.add(switchArg);
-        TCLAP::ValueArg<std::string> valueArg(TCLAP::ValueArgSpec<std::string>{
-            .flag = "d",
-            .name = "described",
-            .description = desc,
-            .required = false,
-            .defaultValue = "",
-            .typeDesc = desc
-        });
+        TCLAP::ValueArg<std::string> valueArg(
+            TCLAP::ValueArgSpec<std::string>{.flag = "d",
+                                             .name = "described",
+                                             .description = desc,
+                                             .required = false,
+                                             .defaultValue = "",
+                                             .typeDesc = desc});
         cmd.add(valueArg);
 
         realOutput.version(cmd);

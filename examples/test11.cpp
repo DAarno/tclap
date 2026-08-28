@@ -33,22 +33,18 @@ template <>
 struct ArgTraits<Vect3D> {
     typedef StringLike ValueCategory;
 };
-}
+}  // namespace TCLAP
 
 int main(int argc, char *argv[]) {
-    CmdLine cmd(CmdLineSpec{
-        .message = "Command description message",
-        .dialect = {.delimiter = ' '},
-        .version = "0.9"
-    });
-    ValueArg<Vect3D> vec(ValueArgSpec<Vect3D>{
-        .flag = "v",
-        .name = "vect",
-        .description = "vector",
-        .required = true,
-        .defaultValue = Vect3D(),
-        .typeDesc = "3D vector"
-    });
+    CmdLine cmd({.message = "Command description message",
+                 .dialect = {.delimiter = ' '},
+                 .version = "0.9"});
+    ValueArg<Vect3D> vec({.flag = "v",
+                          .name = "vect",
+                          .description = "vector",
+                          .required = true,
+                          .defaultValue = Vect3D(),
+                          .typeDesc = "3D vector"});
     cmd.add(vec);
 
     try {

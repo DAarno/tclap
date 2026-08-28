@@ -1,7 +1,7 @@
-#include <string>
-#include <iostream>
-#include <algorithm>
 #include "tclap/CmdLine.h"
+#include <algorithm>
+#include <iostream>
+#include <string>
 
 using namespace TCLAP;
 using namespace std;
@@ -11,31 +11,25 @@ int main(int argc, char **argv) {
     // because exceptions will be thrown for problems.
     try {
         // Define the command line object.
-        CmdLine cmd(CmdLineSpec{
-            .message = "Command description message",
-            .dialect = {.delimiter = ' '},
-            .version = "0.9"
-        });
+        CmdLine cmd({.message = "Command description message",
+                     .dialect = {.delimiter = ' '},
+                     .version = "0.9"});
         cmd.ignoreUnmatched(true);
 
         // Define a value argument and add it to the command line.
-        ValueArg<string> nameArg(ValueArgSpec<string>{
-            .flag = "n",
-            .name = "name",
-            .description = "Name to print",
-            .required = true,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
+        ValueArg<string> nameArg({.flag = "n",
+                                  .name = "name",
+                                  .description = "Name to print",
+                                  .required = true,
+                                  .defaultValue = "homer",
+                                  .typeDesc = "string"});
         cmd.add(nameArg);
 
         // Define a switch and add it to the command line.
-        SwitchArg reverseSwitch(SwitchArgSpec{
-            .flag = "r",
-            .name = "reverse",
-            .description = "Print name backwards",
-            .defaultValue = false
-        });
+        SwitchArg reverseSwitch({.flag = "r",
+                                 .name = "reverse",
+                                 .description = "Print name backwards",
+                                 .defaultValue = false});
         cmd.add(reverseSwitch);
 
         // Parse the args.

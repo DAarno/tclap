@@ -1,8 +1,8 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
-#include <string>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
+#include <string>
 #include <tclap/CmdLine.h>
 
 using namespace TCLAP;
@@ -13,24 +13,18 @@ int main(int argc, char **argv) {
     // because exceptions will be thrown for problems.
     try {
         // Define the command line object.
-        CmdLine cmd(CmdLineSpec{
-            .message = "Command description message",
-            .dialect = {.delimiter = '='},
-            .version = "0.9"
-        });
+        CmdLine cmd({.message = "Command description message",
+                     .dialect = {.delimiter = '='},
+                     .version = "0.9"});
 
-        SwitchArg atmcSwitch(SwitchArgSpec{
-            .flag = "a",
-            .name = "atmc",
-            .description = "aContinuous time semantics",
-            .defaultValue = false
-        });
-        SwitchArg btmcSwitch(SwitchArgSpec{
-            .flag = "b",
-            .name = "btmc",
-            .description = "bDiscrete time semantics",
-            .defaultValue = false
-        });
+        SwitchArg atmcSwitch({.flag = "a",
+                              .name = "atmc",
+                              .description = "aContinuous time semantics",
+                              .defaultValue = false});
+        SwitchArg btmcSwitch({.flag = "b",
+                              .name = "btmc",
+                              .description = "bDiscrete time semantics",
+                              .defaultValue = false});
         cmd.xorAdd(atmcSwitch, btmcSwitch);
 
         // Parse the args.

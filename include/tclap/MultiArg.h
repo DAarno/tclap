@@ -27,6 +27,7 @@
 
 #include <tclap/Arg.h>
 #include <tclap/Constraint.h>
+#include <tclap/Mandatory.h>
 #include <tclap/TypeName.h>
 
 #include <concepts>
@@ -52,8 +53,9 @@ struct MultiArgSpec {
     /// command line.
     std::string flag;
     /// A one word name for the argument. Can be used as a long flag on
-    /// the command line.
-    std::string name;
+    /// the command line. Mandatory<T>, not std::string: omitting `.name`
+    /// entirely is a compile error rather than a silently blank name.
+    Mandatory<std::string> name;
     /// A description of what the argument is for or does.
     std::string description;
     /// Whether the argument is required on the command line.
@@ -136,7 +138,9 @@ public:
      * Returns a vector of type T containing the values parsed from
      * the command line.
      */
-    [[nodiscard]] const std::vector<T> &value() const noexcept { return _values; }
+    [[nodiscard]] const std::vector<T> &value() const noexcept {
+        return _values;
+    }
 
     /**
      * Returns an iterator over the values parsed from the command

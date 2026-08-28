@@ -27,17 +27,12 @@ using namespace TCLAP;
 
 void TestSwitchArgDefault(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
         SwitchArg verbose(SwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose"
-        });
+            .flag = "v", .name = "verbose", .description = "be verbose"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -56,17 +51,12 @@ void TestSwitchArgDefault(Testing &t) {
 
 void TestSwitchArgSetByFlagAndName(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
         SwitchArg verbose(SwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose"
-        });
+            .flag = "v", .name = "verbose", .description = "be verbose"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -81,17 +71,12 @@ void TestSwitchArgSetByFlagAndName(Testing &t) {
     }
 
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
         SwitchArg verbose(SwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose"
-        });
+            .flag = "v", .name = "verbose", .description = "be verbose"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -108,18 +93,14 @@ void TestSwitchArgSetByFlagAndName(Testing &t) {
 
 void TestSwitchArgDefaultTrue(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg noVerbose(SwitchArgSpec{
-            .flag = "q",
-            .name = "quiet",
-            .description = "be quiet",
-            .defaultValue = true
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg noVerbose(SwitchArgSpec{.flag = "q",
+                                          .name = "quiet",
+                                          .description = "be quiet",
+                                          .defaultValue = true});
         cmd.add(noVerbose);
         cmd.setExceptionHandling(false);
 
@@ -128,8 +109,9 @@ void TestSwitchArgDefaultTrue(Testing &t) {
         cmd.parse(args);
 
         if (noVerbose.value() != false)
-            ERROR(t, "SwitchArg: setting a switch with default=true should "
-                     "toggle it to false");
+            ERROR(t,
+                  "SwitchArg: setting a switch with default=true should "
+                  "toggle it to false");
     } catch (ArgException &e) {
         ERROR(t, "SwitchArg: unexpected exception: " << e.error());
     }
@@ -137,15 +119,16 @@ void TestSwitchArgDefaultTrue(Testing &t) {
 
 void TestSwitchArgCombined(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
-        SwitchArg c(SwitchArgSpec{.flag = "c", .name = "ccc", .description = "switch c"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
+        SwitchArg c(SwitchArgSpec{
+            .flag = "c", .name = "ccc", .description = "switch c"});
         cmd.add(a);
         cmd.add(b);
         cmd.add(c);
@@ -164,17 +147,12 @@ void TestSwitchArgCombined(Testing &t) {
 
 void TestSwitchArgAlreadySet(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
         SwitchArg verbose(SwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose"
-        });
+            .flag = "v", .name = "verbose", .description = "be verbose"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -182,30 +160,27 @@ void TestSwitchArgAlreadySet(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        ERROR(t, "SwitchArg: expected CmdLineParseException for a switch "
-                 "specified twice, none thrown");
+        ERROR(t,
+              "SwitchArg: expected CmdLineParseException for a switch "
+              "specified twice, none thrown");
     } catch (CmdLineParseException &) {
         // Expected.
     } catch (ArgException &e) {
-        ERROR(t, "SwitchArg: wrong exception type for a switch specified "
-                 "twice: "
-                     << e.typeDescription());
+        ERROR(t,
+              "SwitchArg: wrong exception type for a switch specified "
+              "twice: "
+                  << e.typeDescription());
     }
 }
 
 void TestSwitchArgReset(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
         SwitchArg verbose(SwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose"
-        });
+            .flag = "v", .name = "verbose", .description = "be verbose"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -226,17 +201,14 @@ void TestSwitchArgReset(Testing &t) {
 
 void TestMultiSwitchArgCounts(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        MultiSwitchArg verbose(MultiSwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose, repeatedly"
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        MultiSwitchArg verbose(
+            MultiSwitchArgSpec{.flag = "v",
+                               .name = "verbose",
+                               .description = "be verbose, repeatedly"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -254,17 +226,14 @@ void TestMultiSwitchArgCounts(Testing &t) {
 
 void TestMultiSwitchArgCombined(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        MultiSwitchArg verbose(MultiSwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose, repeatedly"
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        MultiSwitchArg verbose(
+            MultiSwitchArgSpec{.flag = "v",
+                               .name = "verbose",
+                               .description = "be verbose, repeatedly"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -282,18 +251,15 @@ void TestMultiSwitchArgCombined(Testing &t) {
 
 void TestMultiSwitchArgDefault(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        MultiSwitchArg verbose(MultiSwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose, repeatedly",
-            .initialValue = 2
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        MultiSwitchArg verbose(
+            MultiSwitchArgSpec{.flag = "v",
+                               .name = "verbose",
+                               .description = "be verbose, repeatedly",
+                               .initialValue = 2});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -310,11 +276,10 @@ void TestMultiSwitchArgDefault(Testing &t) {
 }
 
 void TestMultiSwitchArgIDs(Testing &t) {
-    MultiSwitchArg verbose(MultiSwitchArgSpec{
-        .flag = "v",
-        .name = "verbose",
-        .description = "be verbose, repeatedly"
-    });
+    MultiSwitchArg verbose(
+        MultiSwitchArgSpec{.flag = "v",
+                           .name = "verbose",
+                           .description = "be verbose, repeatedly"});
 
     // MultiSwitchArg overrides shortID/longID to flag that it can be
     // repeated; neither is exercised unless something actually renders
@@ -330,17 +295,14 @@ void TestMultiSwitchArgIDs(Testing &t) {
 
 void TestMultiSwitchArgReset(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        MultiSwitchArg verbose(MultiSwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose, repeatedly"
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        MultiSwitchArg verbose(
+            MultiSwitchArgSpec{.flag = "v",
+                               .name = "verbose",
+                               .description = "be verbose, repeatedly"});
         cmd.add(verbose);
         cmd.setExceptionHandling(false);
 
@@ -353,9 +315,10 @@ void TestMultiSwitchArgReset(Testing &t) {
         if (verbose.isSet())
             ERROR(t, "MultiSwitchArg: reset() did not clear isSet()");
         if (verbose.value() != 0)
-            ERROR(t, "MultiSwitchArg: reset() did not restore the default "
-                     "count, got "
-                         << verbose.value());
+            ERROR(t,
+                  "MultiSwitchArg: reset() did not restore the default "
+                  "count, got "
+                      << verbose.value());
     } catch (ArgException &e) {
         ERROR(t, "MultiSwitchArg: unexpected exception: " << e.error());
     }

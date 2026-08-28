@@ -23,45 +23,37 @@
 using namespace TCLAP;
 
 int main(int argc, char **argv) {
-    CmdLine cmd(CmdLineSpec{.message = ""});
+    CmdLine cmd({.message = ""});
 
-    ValueArg<int> arg0(ValueArgSpec<int>{
-        .flag = "a",
-        .name = "a_int",
-        .description = "int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
+    ValueArg<int> arg0({.flag = "a",
+                        .name = "a_int",
+                        .description = "int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
     cmd.add(arg0);
-    ValueArg<int> arg1(ValueArgSpec<int>{
-        .flag = "b",
-        .name = "b_int",
-        .description = "int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
+    ValueArg<int> arg1({.flag = "b",
+                        .name = "b_int",
+                        .description = "int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
     cmd.add(arg1);
     arg1.hideFromHelp();
 
-    ValueArg<int> arg2(ValueArgSpec<int>{
-        .flag = "c",
-        .name = "c_int",
-        .description = "int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
+    ValueArg<int> arg2({.flag = "c",
+                        .name = "c_int",
+                        .description = "int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
     arg2.hideFromHelp();
-    ValueArg<int> arg3(ValueArgSpec<int>{
-        .flag = "d",
-        .name = "d_int",
-        .description = "int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
+    ValueArg<int> arg3({.flag = "d",
+                        .name = "d_int",
+                        .description = "int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
     arg3.hideFromHelp();
 
     if (argc > 2) {

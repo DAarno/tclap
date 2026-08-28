@@ -24,7 +24,8 @@ std::string swedishTranslator(const std::string &messageId,
         return "Kort anv\u00e4ndning:";
     }
     if (messageId == "complete_usage_hint") {
-        return "F\u00f6r fullst\u00e4ndig ANV\u00c4NDNING och HJ\u00c4LP, skriv:";
+        return "F\u00f6r fullst\u00e4ndig ANV\u00c4NDNING och HJ\u00c4LP, "
+               "skriv:";
     }
     if (messageId == "help_description") {
         return "Visar hj\u00e4lptext och avslutar.";
@@ -33,7 +34,8 @@ std::string swedishTranslator(const std::string &messageId,
         return "Visar versionsinformation och avslutar.";
     }
     if (messageId == "ignore_rest_description") {
-        return "Ignorerar resten av de markerade argumenten efter denna flagga.";
+        return "Ignorerar resten av de markerade argumenten efter denna "
+               "flagga.";
     }
     if (messageId == "required_argument_missing") {
         return "Obligatoriskt argument saknas:";
@@ -59,27 +61,22 @@ std::string swedishTranslator(const std::string &messageId,
 }  // namespace
 
 int main(int argc, char **argv) {
-    TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
-        .message = "Exempelprogram",
-        .dialect = {.delimiter = ' '},
-        .version = "1.0"
-    });
+    TCLAP::CmdLine cmd({.message = "Exempelprogram",
+                        .dialect = {.delimiter = ' '},
+                        .version = "1.0"});
     cmd.setMessageTranslator(&swedishTranslator);
 
-    TCLAP::ValueArg<std::string> name(TCLAP::ValueArgSpec<std::string>{
-        .flag = "n",
-        .name = "name",
-        .description = "Namn att h\u00e4lsa till",
-        .required = true,
-        .defaultValue = "",
-        .typeDesc = "name"
-    });
-    TCLAP::SwitchArg verbose(TCLAP::SwitchArgSpec{
-        .flag = "v",
-        .name = "verbose",
-        .description = "Aktivera verbose-l\u00e4ge",
-        .defaultValue = false
-    });
+    TCLAP::ValueArg<std::string> name(
+        {.flag = "n",
+         .name = "name",
+         .description = "Namn att h\u00e4lsa till",
+         .required = true,
+         .defaultValue = "",
+         .typeDesc = "name"});
+    TCLAP::SwitchArg verbose({.flag = "v",
+                              .name = "verbose",
+                              .description = "Aktivera verbose-l\u00e4ge",
+                              .defaultValue = false});
 
     cmd.add(name);
     cmd.add(verbose);

@@ -1,21 +1,19 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
-#include <string>
-#include <iostream>
-#include <algorithm>
 #include "tclap/CmdLine.h"
+#include <algorithm>
+#include <iostream>
+#include <string>
 
 using namespace TCLAP;
 using namespace std;
 
 int main(int argc, char **argv) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "Command description message",
-            .dialect = {.delimiter = ' '},
-            .version = "0.9",
-            .helpAndVersion = true
-        });
+        CmdLine cmd({.message = "Command description message",
+                     .dialect = {.delimiter = ' '},
+                     .version = "0.9",
+                     .helpAndVersion = true});
 
         cmd.setExceptionHandling(false);
 

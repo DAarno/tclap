@@ -32,13 +32,11 @@ using namespace std;
 
 int main(int argc, char **argv) {
     try {
-        CmdLine cmd(CmdLineSpec{.message = "MultiSwitchArg::reset() regression test"});
+        CmdLine cmd({.message = "MultiSwitchArg::reset() regression test"});
 
-        MultiSwitchArg verbose(MultiSwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose, repeatedly"
-        });
+        MultiSwitchArg verbose({.flag = "v",
+                                .name = "verbose",
+                                .description = "be verbose, repeatedly"});
         cmd.add(verbose);
 
         cmd.parse(argc, argv);

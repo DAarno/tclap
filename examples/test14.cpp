@@ -1,8 +1,8 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
 #include "tclap/CmdLine.h"
-#include <iterator>
 #include <algorithm>
+#include <iterator>
 
 #include <sstream>
 
@@ -39,19 +39,15 @@ struct Vect : public TCLAP::StringLikeTrait {
 };
 
 int main(int argc, char *argv[]) {
-    TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
-        .message = "Command description message",
-        .dialect = {.delimiter = ' '},
-        .version = "0.9"
-    });
-    TCLAP::ValueArg<Vect<double, 3> > vec(TCLAP::ValueArgSpec<Vect<double, 3> >{
-        .flag = "v",
-        .name = "vect",
-        .description = "vector",
-        .required = true,
-        .defaultValue = Vect<double, 3>(),
-        .typeDesc = "3D vector"
-    });
+    TCLAP::CmdLine cmd({.message = "Command description message",
+                        .dialect = {.delimiter = ' '},
+                        .version = "0.9"});
+    TCLAP::ValueArg<Vect<double, 3> > vec({.flag = "v",
+                                           .name = "vect",
+                                           .description = "vector",
+                                           .required = true,
+                                           .defaultValue = Vect<double, 3>(),
+                                           .typeDesc = "3D vector"});
     cmd.add(vec);
 
     try {

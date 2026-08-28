@@ -25,6 +25,7 @@
 #ifndef TCLAP_UNLABELED_VALUE_ARG_H
 #define TCLAP_UNLABELED_VALUE_ARG_H
 
+#include <tclap/Mandatory.h>
 #include <tclap/ValueArg.h>
 
 #include <list>
@@ -47,8 +48,9 @@ namespace TCLAP {
 template <typename T>
 struct UnlabeledValueArgSpec {
     /// A one word name for the argument. Used for identification, not
-    /// as a long flag.
-    std::string name;
+    /// as a long flag. Mandatory<T>, not std::string: omitting `.name`
+    /// entirely is a compile error rather than a silently blank name.
+    Mandatory<std::string> name;
     /// A description of what the argument is for or does.
     std::string description;
     /// Whether the argument is required on the command line.

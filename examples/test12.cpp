@@ -1,8 +1,8 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
 #include "tclap/CmdLine.h"
-#include <iterator>
 #include <algorithm>
+#include <iterator>
 
 #include <sstream>
 
@@ -38,21 +38,17 @@ template <>
 struct ArgTraits<Vect3D> {
     typedef StringLike ValueCategory;
 };
-}
+}  // namespace TCLAP
 
 int main(int argc, char *argv[]) {
-    CmdLine cmd(CmdLineSpec{
-        .message = "Command description message",
-        .dialect = {.delimiter = ' '},
-        .version = "0.9"
-    });
-    MultiArg<Vect3D> vec(MultiArgSpec<Vect3D>{
-        .flag = "v",
-        .name = "vect",
-        .description = "vector",
-        .required = true,
-        .typeDesc = "3D vector"
-    });
+    CmdLine cmd({.message = "Command description message",
+                 .dialect = {.delimiter = ' '},
+                 .version = "0.9"});
+    MultiArg<Vect3D> vec({.flag = "v",
+                          .name = "vect",
+                          .description = "vector",
+                          .required = true,
+                          .typeDesc = "3D vector"});
     cmd.add(vec);
 
     try {

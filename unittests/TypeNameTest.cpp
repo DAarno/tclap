@@ -52,11 +52,13 @@ void TestFallbackDoesNotCrashOrLoop(Testing &t) {
     const std::string &second = TypeName<UserDefinedType>::value;
 
     if (first.empty())
-        ERROR(t, "TypeName<UserDefinedType>: expected a non-empty fallback "
-                 "name");
+        ERROR(t,
+              "TypeName<UserDefinedType>: expected a non-empty fallback "
+              "name");
     if (first != second)
-        ERROR(t, "TypeName<UserDefinedType>: value should be stable across "
-                 "accesses");
+        ERROR(t,
+              "TypeName<UserDefinedType>: value should be stable across "
+              "accesses");
 }
 
 int main() {

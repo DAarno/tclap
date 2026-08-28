@@ -28,34 +28,28 @@ using namespace TCLAP;
 
 int main() {
     try {
-        CmdLine cmd(CmdLineSpec{.message = ""});
+        CmdLine cmd({.message = ""});
         OneOf input(cmd);
-        ValueArg<int> arg0(ValueArgSpec<int>{
-            .flag = "a",
-            .name = "a_int",
-            .description = "first int arg",
-            .required = false,
-            .defaultValue = 4711,
-            .typeDesc = "int"
-        });
+        ValueArg<int> arg0({.flag = "a",
+                            .name = "a_int",
+                            .description = "first int arg",
+                            .required = false,
+                            .defaultValue = 4711,
+                            .typeDesc = "int"});
         cmd.add(arg0);
-        ValueArg<int> arg1(ValueArgSpec<int>{
-            .flag = "b",
-            .name = "b_int",
-            .description = "second int arg",
-            .required = false,
-            .defaultValue = 4711,
-            .typeDesc = "int"
-        });
+        ValueArg<int> arg1({.flag = "b",
+                            .name = "b_int",
+                            .description = "second int arg",
+                            .required = false,
+                            .defaultValue = 4711,
+                            .typeDesc = "int"});
         input.add(arg1);
-        ValueArg<int> arg2(ValueArgSpec<int>{
-            .flag = "a",
-            .name = "a_int",
-            .description = "second int arg",
-            .required = false,
-            .defaultValue = 4711,
-            .typeDesc = "int"
-        });
+        ValueArg<int> arg2({.flag = "a",
+                            .name = "a_int",
+                            .description = "second int arg",
+                            .required = false,
+                            .defaultValue = 4711,
+                            .typeDesc = "int"});
         input.add(arg2);
     } catch (SpecificationException &e) {
         // Expected

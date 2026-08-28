@@ -26,6 +26,7 @@
 #define TCLAP_SWITCH_ARG_H
 
 #include <tclap/Arg.h>
+#include <tclap/Mandatory.h>
 
 #include <string>
 #include <utility>
@@ -48,8 +49,9 @@ struct SwitchArgSpec {
     /// command line.
     std::string flag;
     /// A one word name for the argument. Can be used as a long flag on
-    /// the command line.
-    std::string name;
+    /// the command line. Mandatory<T>, not std::string: omitting `.name`
+    /// entirely is a compile error rather than a silently blank name.
+    Mandatory<std::string> name;
     /// A description of what the argument is for or does.
     std::string description;
     /// The default value for this Switch.

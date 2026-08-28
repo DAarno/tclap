@@ -1,8 +1,8 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
 #include "tclap/CmdLine.h"
-#include <iterator>
 #include <algorithm>
+#include <iterator>
 
 #include <sstream>
 
@@ -22,23 +22,19 @@ void SetString<std::vector<double> >(std::vector<double> &v,
         v.push_back(tmp);
     }
 }
-}
+}  // namespace TCLAP
 
 int main(int argc, char *argv[]) {
-    TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
-        .message = "Command description message",
-        .dialect = {.delimiter = ' '},
-        .version = "0.9"
-    });
+    TCLAP::CmdLine cmd({.message = "Command description message",
+                        .dialect = {.delimiter = ' '},
+                        .version = "0.9"});
     TCLAP::ValueArg<std::vector<double> > vec(
-        TCLAP::ValueArgSpec<std::vector<double> >{
-            .flag = "v",
-            .name = "vect",
-            .description = "vector",
-            .required = true,
-            .defaultValue = std::vector<double>(),
-            .typeDesc = "3D vector"
-        });
+        {.flag = "v",
+         .name = "vect",
+         .description = "vector",
+         .required = true,
+         .defaultValue = std::vector<double>(),
+         .typeDesc = "3D vector"});
     cmd.add(vec);
     try {
         cmd.parse(argc, argv);

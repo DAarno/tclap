@@ -62,8 +62,7 @@ public:
                 return *arg == *existing;
             })) {
             throw SpecificationException(
-                "Argument with same flag/name already exists!",
-                arg->longID());
+                "Argument with same flag/name already exists!", arg->longID());
         }
 
         _args.push_back(arg);
@@ -188,7 +187,8 @@ protected:
     struct MessageTranslator {
         virtual ~MessageTranslator() = default;
         [[nodiscard]] virtual std::string translate(
-            const std::string &messageId, const std::string &fallback) const = 0;
+            const std::string &messageId,
+            const std::string &fallback) const = 0;
     };
 
     template <typename T>
@@ -398,21 +398,22 @@ public:
      */
     template <typename T>
     void setMessageTranslator(const T &translator) {
-        _messageTranslator = std::make_unique<MessageTranslatorImpl<T>>(translator);
+        _messageTranslator =
+            std::make_unique<MessageTranslatorImpl<T>>(translator);
         if (_ignoreArg != nullptr) {
-            _ignoreArg->setDescription(translateMessage(
-                "ignore_rest_description",
-                "Ignores the rest of the labeled arguments following this flag."));
+            _ignoreArg->setDescription(
+                translateMessage("ignore_rest_description",
+                                 "Ignores the rest of the labeled arguments "
+                                 "following this flag."));
         }
         if (_helpArg != nullptr) {
             _helpArg->setDescription(translateMessage(
-                "help_description",
-                "Displays usage information and exits."));
+                "help_description", "Displays usage information and exits."));
         }
         if (_versionArg != nullptr) {
-            _versionArg->setDescription(translateMessage(
-                "version_description",
-                "Displays version information and exits."));
+            _versionArg->setDescription(
+                translateMessage("version_description",
+                                 "Displays version information and exits."));
         }
     }
 
@@ -503,9 +504,9 @@ inline void CmdLine::_constructor() {
         auto *vers = new SwitchArg(SwitchArgSpec{
             .flag = "",
             .name = "version",
-            .description = translateMessage(
-                "version_description",
-                "Displays version information and exits."),
+            .description =
+                translateMessage("version_description",
+                                 "Displays version information and exits."),
             .defaultValue = false,
             .onMatch =
                 [this] {
@@ -680,8 +681,7 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
 
         if (requiredCount > _numRequired) {
             throw(CmdLineParseException(
-                translateMessage("too_many_arguments",
-                                 "Too many arguments!")));
+                translateMessage("too_many_arguments", "Too many arguments!")));
         }
     } catch (ArgException &e) {
         // If we're not handling the exceptions, rethrow.

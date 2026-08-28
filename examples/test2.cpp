@@ -31,85 +31,67 @@ int main(int argc, char **argv) {
 
 void parseOptions(int argc, char **argv) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "this is a message",
-            .dialect = {.delimiter = ' '},
-            .version = "0.99"
-        });
+        CmdLine cmd({.message = "this is a message",
+                     .dialect = {.delimiter = ' '},
+                     .version = "0.99"});
 
         //
         // Define arguments
         //
 
-        SwitchArg btest(SwitchArgSpec{
-            .flag = "B",
-            .name = "existTestB",
-            .description = "tests for the existence of B",
-            .defaultValue = false
-        });
+        SwitchArg btest({.flag = "B",
+                         .name = "existTestB",
+                         .description = "tests for the existence of B",
+                         .defaultValue = false});
         cmd.add(btest);
 
-        SwitchArg ctest(SwitchArgSpec{
-            .flag = "C",
-            .name = "existTestC",
-            .description = "tests for the existence of C",
-            .defaultValue = false
-        });
+        SwitchArg ctest({.flag = "C",
+                         .name = "existTestC",
+                         .description = "tests for the existence of C",
+                         .defaultValue = false});
         cmd.add(ctest);
 
-        SwitchArg atest(SwitchArgSpec{
-            .flag = "A",
-            .name = "existTestA",
-            .description = "tests for the existence of A",
-            .defaultValue = false
-        });
+        SwitchArg atest({.flag = "A",
+                         .name = "existTestA",
+                         .description = "tests for the existence of A",
+                         .defaultValue = false});
         cmd.add(atest);
 
-        ValueArg<string> stest(ValueArgSpec<string>{
-            .flag = "s",
-            .name = "stringTest",
-            .description = "string test",
-            .required = true,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
+        ValueArg<string> stest({.flag = "s",
+                                .name = "stringTest",
+                                .description = "string test",
+                                .required = true,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
         cmd.add(stest);
 
-        ValueArg<int> itest(ValueArgSpec<int>{
-            .flag = "i",
-            .name = "intTest",
-            .description = "integer test",
-            .required = true,
-            .defaultValue = 5,
-            .typeDesc = "int"
-        });
+        ValueArg<int> itest({.flag = "i",
+                             .name = "intTest",
+                             .description = "integer test",
+                             .required = true,
+                             .defaultValue = 5,
+                             .typeDesc = "int"});
         cmd.add(itest);
 
-        ValueArg<double> ftest(ValueArgSpec<double>{
-            .flag = "f",
-            .name = "floatTest",
-            .description = "float test",
-            .required = false,
-            .defaultValue = 3.7,
-            .typeDesc = "float"
-        });
+        ValueArg<double> ftest({.flag = "f",
+                                .name = "floatTest",
+                                .description = "float test",
+                                .required = false,
+                                .defaultValue = 3.7,
+                                .typeDesc = "float"});
         cmd.add(ftest);
 
-        UnlabeledValueArg<string> utest(UnlabeledValueArgSpec<string>{
-            .name = "unTest",
-            .description = "unlabeld test",
-            .required = true,
-            .defaultValue = "default",
-            .typeDesc = "string"
-        });
+        UnlabeledValueArg<string> utest({.name = "unTest",
+                                         .description = "unlabeld test",
+                                         .required = true,
+                                         .defaultValue = "default",
+                                         .typeDesc = "string"});
         cmd.add(utest);
 
-        UnlabeledMultiArg<string> mtest(UnlabeledMultiArgSpec<string>{
-            .name = "fileName",
-            .description = "file names",
-            .required = false,
-            .typeDesc = "string"
-        });
+        UnlabeledMultiArg<string> mtest({.name = "fileName",
+                                         .description = "file names",
+                                         .required = false,
+                                         .typeDesc = "string"});
         cmd.add(mtest);
 
         //

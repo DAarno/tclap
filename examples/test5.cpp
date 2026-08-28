@@ -25,96 +25,76 @@ int main(int argc, char **argv) {
 
 void parseOptions(int argc, char **argv) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "this is a message",
-            .dialect = {.delimiter = ' '},
-            .version = "0.99"
-        });
+        CmdLine cmd({.message = "this is a message",
+                     .dialect = {.delimiter = ' '},
+                     .version = "0.99"});
 
         //
         // Define arguments
         //
 
-        ValueArg<string> atest(ValueArgSpec<string>{
-            .flag = "a",
-            .name = "aaa",
-            .description = "or test a",
-            .required = false,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
-        ValueArg<string> btest(ValueArgSpec<string>{
-            .flag = "b",
-            .name = "bbb",
-            .description = "or test b",
-            .required = false,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
+        ValueArg<string> atest({.flag = "a",
+                                .name = "aaa",
+                                .description = "or test a",
+                                .required = false,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
+        ValueArg<string> btest({.flag = "b",
+                                .name = "bbb",
+                                .description = "or test b",
+                                .required = false,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
         cmd.xorAdd(atest, btest);
 
-        ValueArg<string> ctest(ValueArgSpec<string>{
-            .flag = "c",
-            .name = "ccc",
-            .description = "c test",
-            .required = true,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
+        ValueArg<string> ctest({.flag = "c",
+                                .name = "ccc",
+                                .description = "c test",
+                                .required = true,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
         cmd.add(ctest);
 
-        SwitchArg dtest(SwitchArgSpec{
-            .flag = "",
-            .name = "ddd",
-            .description = "d test",
-            .defaultValue = false
-        });
+        SwitchArg dtest({.flag = "",
+                         .name = "ddd",
+                         .description = "d test",
+                         .defaultValue = false});
         cmd.add(dtest);
 
-        ValueArg<string> etest(ValueArgSpec<string>{
-            .flag = "",
-            .name = "eee",
-            .description = "e test",
-            .required = false,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
-        ValueArg<string> ftest(ValueArgSpec<string>{
-            .flag = "",
-            .name = "fff",
-            .description = "f test",
-            .required = false,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
-        ValueArg<string> gtest(ValueArgSpec<string>{
-            .flag = "g",
-            .name = "ggg",
-            .description = "g test",
-            .required = false,
-            .defaultValue = "homer",
-            .typeDesc = "string"
-        });
+        ValueArg<string> etest({.flag = "",
+                                .name = "eee",
+                                .description = "e test",
+                                .required = false,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
+        ValueArg<string> ftest({.flag = "",
+                                .name = "fff",
+                                .description = "f test",
+                                .required = false,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
+        ValueArg<string> gtest({.flag = "g",
+                                .name = "ggg",
+                                .description = "g test",
+                                .required = false,
+                                .defaultValue = "homer",
+                                .typeDesc = "string"});
         vector<Arg *> xorlist;
         xorlist.push_back(&etest);
         xorlist.push_back(&ftest);
         xorlist.push_back(&gtest);
         cmd.xorAdd(xorlist);
 
-        MultiArg<string> itest(MultiArgSpec<string>{
-            .flag = "i",
-            .name = "iii",
-            .description = "or test i",
-            .required = false,
-            .typeDesc = "string"
-        });
-        MultiArg<string> jtest(MultiArgSpec<string>{
-            .flag = "j",
-            .name = "jjj",
-            .description = "or test j",
-            .required = false,
-            .typeDesc = "string"
-        });
+        MultiArg<string> itest({.flag = "i",
+                                .name = "iii",
+                                .description = "or test i",
+                                .required = false,
+                                .typeDesc = "string"});
+        MultiArg<string> jtest({.flag = "j",
+                                .name = "jjj",
+                                .description = "or test j",
+                                .required = false,
+                                .typeDesc = "string"});
         cmd.xorAdd(itest, jtest);
 
         //

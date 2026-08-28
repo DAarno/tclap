@@ -35,24 +35,20 @@ using namespace TCLAP;
 using namespace std;
 
 int main() {
-    CmdLine cmd(CmdLineSpec{.message = "test124"});
-    UnlabeledValueArg<int> optional(UnlabeledValueArgSpec<int>{
-        .name = "extra",
-        .description = "an optional trailer",
-        .required = false,
-        .defaultValue = 0,
-        .typeDesc = "int"
-    });
+    CmdLine cmd({.message = "test124"});
+    UnlabeledValueArg<int> optional({.name = "extra",
+                                     .description = "an optional trailer",
+                                     .required = false,
+                                     .defaultValue = 0,
+                                     .typeDesc = "int"});
     cmd.add(optional);
 
     try {
-        UnlabeledValueArg<int> tooLate(UnlabeledValueArgSpec<int>{
-            .name = "too-late",
-            .description = "desc",
-            .required = true,
-            .defaultValue = 0,
-            .typeDesc = "int"
-        });
+        UnlabeledValueArg<int> tooLate({.name = "too-late",
+                                        .description = "desc",
+                                        .required = true,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
         cmd.add(tooLate);
     } catch (SpecificationException &e) {
         cout << e.what() << endl;

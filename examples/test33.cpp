@@ -27,22 +27,18 @@
 using namespace TCLAP;
 
 int main() {
-    ValueArg<int> arg0(ValueArgSpec<int>{
-        .flag = "a",
-        .name = "a_int",
-        .description = "first int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
-    ValueArg<int> arg1(ValueArgSpec<int>{
-        .flag = "a",
-        .name = "a_int",
-        .description = "second int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
+    ValueArg<int> arg0({.flag = "a",
+                        .name = "a_int",
+                        .description = "first int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
+    ValueArg<int> arg1({.flag = "a",
+                        .name = "a_int",
+                        .description = "second int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
     OneOf input;
 
     try {

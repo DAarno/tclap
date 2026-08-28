@@ -21,8 +21,10 @@ using namespace std;
 int main() {
     try {
         CmdLine cmd({.message = "test constraint bug"});
-        ValueArg<int> arg({.flag = "i", .name = "int",
-                           .description = "tests int arg", .required = false,
+        ValueArg<int> arg({.flag = "i",
+                           .name = "int",
+                           .description = "tests int arg",
+                           .required = false,
                            .defaultValue = 4711});
         cmd.add(arg);
     } catch (std::logic_error &) {
@@ -32,7 +34,8 @@ int main() {
 
     try {
         CmdLine cmd({.message = "test constraint bug"});
-        MultiArg<int> arg1({.flag = "i", .name = "int",
+        MultiArg<int> arg1({.flag = "i",
+                            .name = "int",
                             .description = "tests int arg",
                             .required = false});
         cmd.add(arg1);

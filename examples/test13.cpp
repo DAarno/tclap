@@ -22,26 +22,19 @@ using namespace TCLAP;
 //
 int main() {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "Test",
-            .dialect = {.delimiter = ' '},
-            .version = "not versioned",
-            .helpAndVersion = true
-        });
+        CmdLine cmd({.message = "Test",
+                     .dialect = {.delimiter = ' '},
+                     .version = "not versioned",
+                     .helpAndVersion = true});
 
-        MultiArg<std::string> Arg(MultiArgSpec<std::string>{
-            .flag = "X",
-            .name = "fli",
-            .description = "fli module",
-            .required = false,
-            .typeDesc = "string"
-        });
+        MultiArg<std::string> Arg({.flag = "X",
+                                   .name = "fli",
+                                   .description = "fli module",
+                                   .required = false,
+                                   .typeDesc = "string"});
         cmd.add(Arg);
-        MultiSwitchArg ArgMultiSwitch(MultiSwitchArgSpec{
-            .flag = "d",
-            .name = "long_d",
-            .description = "example"
-        });
+        MultiSwitchArg ArgMultiSwitch(
+            {.flag = "d", .name = "long_d", .description = "example"});
         cmd.add(ArgMultiSwitch);
 
         std::vector<std::string> in;

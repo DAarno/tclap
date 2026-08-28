@@ -27,13 +27,12 @@ using namespace TCLAP;
 
 void TestUnmatchedArgThrows(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
         cmd.add(a);
         cmd.setExceptionHandling(false);
 
@@ -41,8 +40,9 @@ void TestUnmatchedArgThrows(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        ERROR(t, "CmdLine: expected CmdLineParseException for an unknown "
-                 "argument, none thrown");
+        ERROR(t,
+              "CmdLine: expected CmdLineParseException for an unknown "
+              "argument, none thrown");
     } catch (CmdLineParseException &) {
         // Expected.
     } catch (ArgException &e) {
@@ -53,13 +53,12 @@ void TestUnmatchedArgThrows(Testing &t) {
 
 void TestIgnoreUnmatched(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
         cmd.add(a);
         cmd.setExceptionHandling(false);
         cmd.ignoreUnmatched(true);
@@ -69,8 +68,9 @@ void TestIgnoreUnmatched(Testing &t) {
         cmd.parse(args);
 
         if (!a.isSet())
-            ERROR(t, "CmdLine: -a should still be matched when "
-                     "ignoreUnmatched(true)");
+            ERROR(t,
+                  "CmdLine: -a should still be matched when "
+                  "ignoreUnmatched(true)");
     } catch (ArgException &e) {
         ERROR(t, "CmdLine: unexpected exception with ignoreUnmatched(true): "
                      << e.error());
@@ -79,13 +79,12 @@ void TestIgnoreUnmatched(Testing &t) {
 
 void TestIgnoreRest(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
         cmd.add(a);
         cmd.setExceptionHandling(false);
 
@@ -104,14 +103,14 @@ void TestIgnoreRest(Testing &t) {
 
 void TestXorAddBothSelectedThrows(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         cmd.xorAdd(a, b);
         cmd.setExceptionHandling(false);
 
@@ -119,27 +118,29 @@ void TestXorAddBothSelectedThrows(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        ERROR(t, "CmdLine: expected CmdLineParseException with both "
-                 "xorAdd'd switches selected, none thrown");
+        ERROR(t,
+              "CmdLine: expected CmdLineParseException with both "
+              "xorAdd'd switches selected, none thrown");
     } catch (CmdLineParseException &) {
         // Expected.
     } catch (ArgException &e) {
-        ERROR(t, "CmdLine: wrong exception type with both xorAdd'd "
-                 "switches selected: "
-                     << e.typeDescription());
+        ERROR(t,
+              "CmdLine: wrong exception type with both xorAdd'd "
+              "switches selected: "
+                  << e.typeDescription());
     }
 }
 
 void TestXorAddNoneSelectedThrows(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         cmd.xorAdd(a, b);
         cmd.setExceptionHandling(false);
 
@@ -147,27 +148,29 @@ void TestXorAddNoneSelectedThrows(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        ERROR(t, "CmdLine: expected CmdLineParseException with neither "
-                 "xorAdd'd switch selected, none thrown");
+        ERROR(t,
+              "CmdLine: expected CmdLineParseException with neither "
+              "xorAdd'd switch selected, none thrown");
     } catch (CmdLineParseException &) {
         // Expected.
     } catch (ArgException &e) {
-        ERROR(t, "CmdLine: wrong exception type with neither xorAdd'd "
-                 "switch selected: "
-                     << e.typeDescription());
+        ERROR(t,
+              "CmdLine: wrong exception type with neither xorAdd'd "
+              "switch selected: "
+                  << e.typeDescription());
     }
 }
 
 void TestXorAddOneSelected(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         cmd.xorAdd(a, b);
         cmd.setExceptionHandling(false);
 
@@ -178,21 +181,21 @@ void TestXorAddOneSelected(Testing &t) {
         if (!a.isSet() || b.isSet())
             ERROR(t, "CmdLine: exactly -a should be set after xorAdd");
     } catch (ArgException &e) {
-        ERROR(t, "CmdLine: unexpected exception with one xorAdd'd switch "
-                 "selected: "
-                     << e.error());
+        ERROR(t,
+              "CmdLine: unexpected exception with one xorAdd'd switch "
+              "selected: "
+                  << e.error());
     }
 }
 
 void TestGetters(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "a test message",
-            .dialect = {.delimiter = ','},
-            .version = "3.2.1",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        CmdLine cmd(CmdLineSpec{.message = "a test message",
+                                .dialect = {.delimiter = ','},
+                                .version = "3.2.1",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
         cmd.add(a);
         cmd.setExceptionHandling(false);
 
@@ -208,8 +211,8 @@ void TestGetters(Testing &t) {
         if (cmd.getVersion() != "3.2.1")
             ERROR(t, "CmdLine: unexpected getVersion(): " << cmd.getVersion());
         if (cmd.getDelimiter() != ',')
-            ERROR(t, "CmdLine: unexpected getDelimiter(): "
-                         << cmd.getDelimiter());
+            ERROR(t,
+                  "CmdLine: unexpected getDelimiter(): " << cmd.getDelimiter());
         if (cmd.hasHelpAndVersion())
             ERROR(t, "CmdLine: hasHelpAndVersion() should be false");
     } catch (ArgException &e) {
@@ -219,13 +222,12 @@ void TestGetters(Testing &t) {
 
 void TestReset(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
         cmd.add(a);
         cmd.setExceptionHandling(false);
 
@@ -246,23 +248,20 @@ void TestReset(Testing &t) {
 
 void TestDuplicateArgThrows(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
         SwitchArg sameFlag(SwitchArgSpec{
-            .flag = "a",
-            .name = "different",
-            .description = "reuses -a"
-        });
+            .flag = "a", .name = "different", .description = "reuses -a"});
         cmd.add(a);
         cmd.add(sameFlag);
 
-        ERROR(t, "CmdLine: expected SpecificationException when adding two "
-                 "args with the same flag, none thrown");
+        ERROR(t,
+              "CmdLine: expected SpecificationException when adding two "
+              "args with the same flag, none thrown");
     } catch (SpecificationException &) {
         // Expected.
     } catch (ArgException &e) {
@@ -271,33 +270,28 @@ void TestDuplicateArgThrows(Testing &t) {
     }
 
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        ValueArg<int> a(ValueArgSpec<int>{
-            .flag = "x",
-            .name = "num",
-            .description = "a number",
-            .required = false,
-            .defaultValue = 0,
-            .typeDesc = "int"
-        });
-        ValueArg<int> sameName(ValueArgSpec<int>{
-            .flag = "y",
-            .name = "num",
-            .description = "reuses --num",
-            .required = false,
-            .defaultValue = 0,
-            .typeDesc = "int"
-        });
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        ValueArg<int> a(ValueArgSpec<int>{.flag = "x",
+                                          .name = "num",
+                                          .description = "a number",
+                                          .required = false,
+                                          .defaultValue = 0,
+                                          .typeDesc = "int"});
+        ValueArg<int> sameName(ValueArgSpec<int>{.flag = "y",
+                                                 .name = "num",
+                                                 .description = "reuses --num",
+                                                 .required = false,
+                                                 .defaultValue = 0,
+                                                 .typeDesc = "int"});
         cmd.add(a);
         cmd.add(sameName);
 
-        ERROR(t, "CmdLine: expected SpecificationException when adding two "
-                 "args with the same name, none thrown");
+        ERROR(t,
+              "CmdLine: expected SpecificationException when adding two "
+              "args with the same name, none thrown");
     } catch (SpecificationException &) {
         // Expected.
     } catch (ArgException &e) {
@@ -319,34 +313,33 @@ struct UppercaseTranslator {
 };
 
 void TestMessageTranslator(Testing &t) {
-    CmdLine cmd(CmdLineSpec{
-        .message = "test",
-        .dialect = {.delimiter = ' '},
-        .version = "1.0",
-        .helpAndVersion = false
-    });
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
     cmd.setMessageTranslator(UppercaseTranslator());
 
     if (cmd.translateMessage("too_many_arguments", "Too many arguments!") !=
         "TOO MANY ARGS")
-        ERROR(t, "CmdLine: message translator was not applied for a known "
-                 "message id");
+        ERROR(t,
+              "CmdLine: message translator was not applied for a known "
+              "message id");
 
     if (cmd.translateMessage("some_unknown_id", "fallback text") !=
         "fallback text")
-        ERROR(t, "CmdLine: message translator should fall back for an "
-                 "unknown message id");
+        ERROR(t,
+              "CmdLine: message translator should fall back for an "
+              "unknown message id");
 }
 
 // setMessageTranslator() also refreshes the descriptions of the
 // automatically-created --help/--version switches, but only when they
 // exist in the first place (i.e. helpAndVersion wasn't disabled).
 void TestMessageTranslatorRefreshesHelpAndVersion(Testing &t) {
-    CmdLine cmd(CmdLineSpec{
-        .message = "test",
-        .dialect = {.delimiter = ' '},
-        .version = "1.0"
-    });  // helpAndVersion defaults to true.
+    CmdLine cmd(
+        CmdLineSpec{.message = "test",
+                    .dialect = {.delimiter = ' '},
+                    .version = "1.0"});  // helpAndVersion defaults to true.
     cmd.setMessageTranslator(UppercaseTranslator());
 
     std::list<Arg *> args = cmd.getArgList();
@@ -355,21 +348,24 @@ void TestMessageTranslatorRefreshesHelpAndVersion(Testing &t) {
         if ((*it)->getName() == "help") {
             sawHelp = true;
             if ((*it)->getDescription() != "SHOW HELP")
-                ERROR(t, "CmdLine: --help description was not refreshed by "
-                         "setMessageTranslator(), got \""
-                             << (*it)->getDescription() << '"');
+                ERROR(t,
+                      "CmdLine: --help description was not refreshed by "
+                      "setMessageTranslator(), got \""
+                          << (*it)->getDescription() << '"');
         }
         if ((*it)->getName() == "version") {
             sawVersion = true;
             if ((*it)->getDescription() != "SHOW VERSION")
-                ERROR(t, "CmdLine: --version description was not refreshed "
-                         "by setMessageTranslator(), got \""
-                             << (*it)->getDescription() << '"');
+                ERROR(t,
+                      "CmdLine: --version description was not refreshed "
+                      "by setMessageTranslator(), got \""
+                          << (*it)->getDescription() << '"');
         }
     }
     if (!sawHelp || !sawVersion)
-        ERROR(t, "CmdLine: expected both --help and --version in "
-                 "getArgList()");
+        ERROR(t,
+              "CmdLine: expected both --help and --version in "
+              "getArgList()");
 }
 
 void TestIndependentCmdLinesDoNotShareDialect(Testing &t) {
@@ -381,37 +377,29 @@ void TestIndependentCmdLinesDoNotShareDialect(Testing &t) {
     // two independently constructed, interleaved CmdLines each keep
     // their own delimiter.
     try {
-        CmdLine spaceCmd(CmdLineSpec{
-            .message = "space-delimited",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        ValueArg<int> spaceArg(ValueArgSpec<int>{
-            .flag = "n",
-            .name = "num",
-            .description = "a number",
-            .required = false,
-            .defaultValue = 0,
-            .typeDesc = "int"
-        });
+        CmdLine spaceCmd(CmdLineSpec{.message = "space-delimited",
+                                     .dialect = {.delimiter = ' '},
+                                     .version = "1.0",
+                                     .helpAndVersion = false});
+        ValueArg<int> spaceArg(ValueArgSpec<int>{.flag = "n",
+                                                 .name = "num",
+                                                 .description = "a number",
+                                                 .required = false,
+                                                 .defaultValue = 0,
+                                                 .typeDesc = "int"});
         spaceCmd.add(spaceArg);
         spaceCmd.setExceptionHandling(false);
 
-        CmdLine equalsCmd(CmdLineSpec{
-            .message = "equals-delimited",
-            .dialect = {.delimiter = '='},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        ValueArg<int> equalsArg(ValueArgSpec<int>{
-            .flag = "n",
-            .name = "num",
-            .description = "a number",
-            .required = false,
-            .defaultValue = 0,
-            .typeDesc = "int"
-        });
+        CmdLine equalsCmd(CmdLineSpec{.message = "equals-delimited",
+                                      .dialect = {.delimiter = '='},
+                                      .version = "1.0",
+                                      .helpAndVersion = false});
+        ValueArg<int> equalsArg(ValueArgSpec<int>{.flag = "n",
+                                                  .name = "num",
+                                                  .description = "a number",
+                                                  .required = false,
+                                                  .defaultValue = 0,
+                                                  .typeDesc = "int"});
         equalsCmd.add(equalsArg);
         equalsCmd.setExceptionHandling(false);
 
@@ -421,21 +409,24 @@ void TestIndependentCmdLinesDoNotShareDialect(Testing &t) {
         std::vector<std::string> spaceArgs = MakeArgs(spaceArgv);
         spaceCmd.parse(spaceArgs);
         if (spaceArg.value() != 7)
-            ERROR(t, "CmdLine: expected space-delimited arg to parse "
-                     "\"-n 7\", got "
-                         << spaceArg.value());
+            ERROR(t,
+                  "CmdLine: expected space-delimited arg to parse "
+                  "\"-n 7\", got "
+                      << spaceArg.value());
 
         const char *equalsArgv[] = {"prog", "-n=9"};
         std::vector<std::string> equalsArgs = MakeArgs(equalsArgv);
         equalsCmd.parse(equalsArgs);
         if (equalsArg.value() != 9)
-            ERROR(t, "CmdLine: expected '='-delimited arg to parse "
-                     "\"-n=9\", got "
-                         << equalsArg.value());
+            ERROR(t,
+                  "CmdLine: expected '='-delimited arg to parse "
+                  "\"-n=9\", got "
+                      << equalsArg.value());
 
         if (spaceCmd.getDialect().delimiter != ' ')
-            ERROR(t, "CmdLine: spaceCmd's Dialect delimiter changed after "
-                     "constructing equalsCmd");
+            ERROR(t,
+                  "CmdLine: spaceCmd's Dialect delimiter changed after "
+                  "constructing equalsCmd");
         if (equalsCmd.getDialect().delimiter != '=')
             ERROR(t, "CmdLine: unexpected equalsCmd Dialect delimiter: "
                          << equalsCmd.getDialect().delimiter);
@@ -452,46 +443,41 @@ void TestCustomDialectPrefixesCoexistWithDefault(Testing &t) {
     // Verify they now can, and that each Arg reports its own CmdLine's
     // prefixes.
     try {
-        CmdLine defaultCmd(CmdLineSpec{
-            .message = "default-dialect",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
+        CmdLine defaultCmd(CmdLineSpec{.message = "default-dialect",
+                                       .dialect = {.delimiter = ' '},
+                                       .version = "1.0",
+                                       .helpAndVersion = false});
         SwitchArg defaultArg(SwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose"
-        });
+            .flag = "v", .name = "verbose", .description = "be verbose"});
         defaultCmd.add(defaultArg);
         defaultCmd.setExceptionHandling(false);
 
-        CmdLine slashCmd(CmdLineSpec{
-            .message = "slash-dialect",
-            .dialect = Dialect{.delimiter = ' ', .flagPrefix = "/", .namePrefix = "~~"},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
+        CmdLine slashCmd(CmdLineSpec{.message = "slash-dialect",
+                                     .dialect = Dialect{.delimiter = ' ',
+                                                        .flagPrefix = "/",
+                                                        .namePrefix = "~~"},
+                                     .version = "1.0",
+                                     .helpAndVersion = false});
         SwitchArg slashArg(SwitchArgSpec{
-            .flag = "v",
-            .name = "verbose",
-            .description = "be verbose"
-        });
+            .flag = "v", .name = "verbose", .description = "be verbose"});
         slashCmd.add(slashArg);
         slashCmd.setExceptionHandling(false);
 
         if (defaultArg.flagStartString() != "-")
-            ERROR(t, "Arg: expected defaultArg's flagStartString() to stay "
-                     "\"-\", got \""
-                         << defaultArg.flagStartString() << '"');
+            ERROR(t,
+                  "Arg: expected defaultArg's flagStartString() to stay "
+                  "\"-\", got \""
+                      << defaultArg.flagStartString() << '"');
         if (slashArg.flagStartString() != "/")
-            ERROR(t, "Arg: expected slashArg's flagStartString() to be "
-                     "\"/\", got \""
-                         << slashArg.flagStartString() << '"');
+            ERROR(t,
+                  "Arg: expected slashArg's flagStartString() to be "
+                  "\"/\", got \""
+                      << slashArg.flagStartString() << '"');
         if (slashArg.nameStartString() != "~~")
-            ERROR(t, "Arg: expected slashArg's nameStartString() to be "
-                     "\"~~\", got \""
-                         << slashArg.nameStartString() << '"');
+            ERROR(t,
+                  "Arg: expected slashArg's nameStartString() to be "
+                  "\"~~\", got \""
+                      << slashArg.nameStartString() << '"');
 
         const char *defaultArgv[] = {"prog", "-v"};
         std::vector<std::string> defaultArgs = MakeArgs(defaultArgv);

@@ -24,6 +24,7 @@
 #ifndef TCLAP_UNLABELED_MULTI_ARG_H
 #define TCLAP_UNLABELED_MULTI_ARG_H
 
+#include <tclap/Mandatory.h>
 #include <tclap/MultiArg.h>
 
 #include <list>
@@ -45,7 +46,9 @@ namespace TCLAP {
 template <typename T>
 struct UnlabeledMultiArgSpec {
     /// The name of the Arg. Used for identification, not as a long flag.
-    std::string name;
+    /// Mandatory<T>, not std::string: omitting `.name` entirely is a
+    /// compile error rather than a silently blank name.
+    Mandatory<std::string> name;
     /// A description of what the argument is for or does.
     std::string description;
     /// Whether the argument is required on the command line.

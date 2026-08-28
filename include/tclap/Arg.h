@@ -447,6 +447,14 @@ inline Arg::Arg(std::string flag, std::string name, std::string desc, bool req,
       _acceptsMultipleValues(false),
       _visibleInHelp(true),
       _dialect(nullptr) {
+    // Every spec struct's `.name` field is Mandatory<std::string>
+    // (see Mandatory.h), so omitting `.name` entirely is already a
+    // compile error -- this only catches an explicitly-blank
+    // `.name = ""`, which Mandatory<T> can't rule out on its own.
+    if (_name.empty())
+        throw(SpecificationException("Argument name cannot be blank",
+                                     Arg::toString()));
+
     if (_flag.length() > 1)
         throw(SpecificationException(
             "Argument flag can only be one character long", Arg::toString()));

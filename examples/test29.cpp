@@ -27,31 +27,25 @@
 using namespace TCLAP;
 
 int main(int argc, char **argv) {
-    CmdLine cmd(CmdLineSpec{.message = ""});
-    ValueArg<int> arg0(ValueArgSpec<int>{
-        .flag = "a",
-        .name = "a_int",
-        .description = "first int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
-    ValueArg<int> arg1(ValueArgSpec<int>{
-        .flag = "b",
-        .name = "b_int",
-        .description = "second int arg",
-        .required = false,
-        .defaultValue = 4711,
-        .typeDesc = "int"
-    });
-    ValueArg<std::string> arg2(ValueArgSpec<std::string>{
-        .flag = "s",
-        .name = "str",
-        .description = "string arg",
-        .required = false,
-        .defaultValue = "foo",
-        .typeDesc = "str"
-    });
+    CmdLine cmd({.message = ""});
+    ValueArg<int> arg0({.flag = "a",
+                        .name = "a_int",
+                        .description = "first int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
+    ValueArg<int> arg1({.flag = "b",
+                        .name = "b_int",
+                        .description = "second int arg",
+                        .required = false,
+                        .defaultValue = 4711,
+                        .typeDesc = "int"});
+    ValueArg<std::string> arg2({.flag = "s",
+                                .name = "str",
+                                .description = "string arg",
+                                .required = false,
+                                .defaultValue = "foo",
+                                .typeDesc = "str"});
 
     EitherOf input;
     input.add(arg0).add(arg1).add(arg2);

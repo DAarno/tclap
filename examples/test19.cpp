@@ -14,15 +14,15 @@ using namespace std;
 
 int main(int argc, char **argv) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "this is a message",
-            .dialect = {.delimiter = ' '},
-            .version = "0.99"
-        });
+        CmdLine cmd({.message = "this is a message",
+                     .dialect = {.delimiter = ' '},
+                     .version = "0.99"});
 
-        ValueArg<AutoBaseInt<int>> itest(
-            {.flag = "i", .name = "intTest", .description = "integer test",
-             .required = true, .defaultValue = 5});
+        ValueArg<AutoBaseInt<int>> itest({.flag = "i",
+                                          .name = "intTest",
+                                          .description = "integer test",
+                                          .required = true,
+                                          .defaultValue = 5});
         cmd.add(itest);
 
         //

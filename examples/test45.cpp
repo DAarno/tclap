@@ -17,8 +17,12 @@ using namespace TCLAP;
 using namespace std;
 
 int main(int argc, char *argv[]) {
-    CmdLine cmd(CmdLineSpec{
-        .message = "This is a program with a quite elaborate description\nAs it is so " "long we use multiple lines.\nBut these are so far apart.\nEven though " "I want only one line break"
-    });
+    CmdLine cmd(
+        {.message =
+             "This is a program with a quite elaborate description\nAs it is "
+             "so "
+             "long we use multiple lines.\nBut these are so far apart.\nEven "
+             "though "
+             "I want only one line break"});
     cmd.parse(argc, argv);
 }

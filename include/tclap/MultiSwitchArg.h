@@ -26,6 +26,7 @@
 #ifndef TCLAP_MULTI_SWITCH_ARG_H
 #define TCLAP_MULTI_SWITCH_ARG_H
 
+#include <tclap/Mandatory.h>
 #include <tclap/SwitchArg.h>
 
 #include <string>
@@ -43,8 +44,9 @@ struct MultiSwitchArgSpec {
     /// command line.
     std::string flag;
     /// A one word name for the argument. Can be used as a long flag on
-    /// the command line.
-    std::string name;
+    /// the command line. Mandatory<T>, not std::string: omitting `.name`
+    /// entirely is a compile error rather than a silently blank name.
+    Mandatory<std::string> name;
     /// A description of what the argument is for or does.
     std::string description;
     /// The initial/default value of this Arg.

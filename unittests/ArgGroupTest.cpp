@@ -28,14 +28,14 @@ using namespace TCLAP;
 
 void TestEitherOfNoneSelected(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);
@@ -56,14 +56,14 @@ void TestEitherOfNoneSelected(Testing &t) {
 
 void TestEitherOfOneSelected(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);
@@ -84,14 +84,14 @@ void TestEitherOfOneSelected(Testing &t) {
 
 void TestEitherOfTwoSelectedThrows(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);
@@ -102,14 +102,16 @@ void TestEitherOfTwoSelectedThrows(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        ERROR(t, "EitherOf: expected CmdLineParseException with two "
-                 "exclusive switches selected, none thrown");
+        ERROR(t,
+              "EitherOf: expected CmdLineParseException with two "
+              "exclusive switches selected, none thrown");
     } catch (CmdLineParseException &) {
         // Expected.
     } catch (ArgException &e) {
-        ERROR(t, "EitherOf: wrong exception type with two switches "
-                 "selected: "
-                     << e.typeDescription());
+        ERROR(t,
+              "EitherOf: wrong exception type with two switches "
+              "selected: "
+                  << e.typeDescription());
     }
 }
 
@@ -117,38 +119,38 @@ void TestEitherOfRejectsRequiredArg(Testing &t) {
     try {
         // SwitchArgs are never individually required, so use a
         // required ValueArg to exercise the check instead.
-        ValueArg<int> req(ValueArgSpec<int>{
-            .flag = "n",
-            .name = "num",
-            .description = "a number",
-            .required = true,
-            .defaultValue = 0,
-            .typeDesc = "int"
-        });
+        ValueArg<int> req(ValueArgSpec<int>{.flag = "n",
+                                            .name = "num",
+                                            .description = "a number",
+                                            .required = true,
+                                            .defaultValue = 0,
+                                            .typeDesc = "int"});
         EitherOf group;
         group.add(req);
 
-        ERROR(t, "EitherOf: expected SpecificationException when adding a "
-                 "required arg, none thrown");
+        ERROR(t,
+              "EitherOf: expected SpecificationException when adding a "
+              "required arg, none thrown");
     } catch (SpecificationException &) {
         // Expected.
     } catch (ArgException &e) {
-        ERROR(t, "EitherOf: wrong exception type when adding a required "
-                 "arg: "
-                     << e.typeDescription());
+        ERROR(t,
+              "EitherOf: wrong exception type when adding a required "
+              "arg: "
+                  << e.typeDescription());
     }
 }
 
 void TestOneOfMissingThrows(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         OneOf group;
         group.add(a);
         group.add(b);
@@ -159,8 +161,9 @@ void TestOneOfMissingThrows(Testing &t) {
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
-        ERROR(t, "OneOf: expected CmdLineParseException with nothing "
-                 "selected, none thrown");
+        ERROR(t,
+              "OneOf: expected CmdLineParseException with nothing "
+              "selected, none thrown");
     } catch (CmdLineParseException &) {
         // Expected.
     } catch (ArgException &e) {
@@ -171,14 +174,14 @@ void TestOneOfMissingThrows(Testing &t) {
 
 void TestOneOfExactlyOneSelected(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         OneOf group;
         group.add(a);
         group.add(b);
@@ -192,21 +195,21 @@ void TestOneOfExactlyOneSelected(Testing &t) {
         if (a.isSet() || !b.isSet())
             ERROR(t, "OneOf: exactly -b should be set");
     } catch (ArgException &e) {
-        ERROR(t, "OneOf: unexpected exception with one selected: "
-                     << e.error());
+        ERROR(t,
+              "OneOf: unexpected exception with one selected: " << e.error());
     }
 }
 
 void TestAnyOfAllowsAnyCombination(Testing &t) {
     try {
-        CmdLine cmd(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         AnyOf group;
         group.add(a);
         group.add(b);
@@ -220,27 +223,25 @@ void TestAnyOfAllowsAnyCombination(Testing &t) {
         if (!a.isSet() || !b.isSet())
             ERROR(t, "AnyOf: both -a and -b should be set");
     } catch (ArgException &e) {
-        ERROR(t, "AnyOf: unexpected exception with both selected: "
-                     << e.error());
+        ERROR(t,
+              "AnyOf: unexpected exception with both selected: " << e.error());
     }
 }
 
 void TestGroupRejectsSecondParser(Testing &t) {
     try {
-        CmdLine cmd1(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        CmdLine cmd2(CmdLineSpec{
-            .message = "test",
-            .dialect = {.delimiter = ' '},
-            .version = "1.0",
-            .helpAndVersion = false
-        });
-        SwitchArg a(SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+        CmdLine cmd1(CmdLineSpec{.message = "test",
+                                 .dialect = {.delimiter = ' '},
+                                 .version = "1.0",
+                                 .helpAndVersion = false});
+        CmdLine cmd2(CmdLineSpec{.message = "test",
+                                 .dialect = {.delimiter = ' '},
+                                 .version = "1.0",
+                                 .helpAndVersion = false});
+        SwitchArg a(SwitchArgSpec{
+            .flag = "a", .name = "aaa", .description = "switch a"});
+        SwitchArg b(SwitchArgSpec{
+            .flag = "b", .name = "bbb", .description = "switch b"});
         EitherOf group;
         group.add(a);
         group.add(b);
@@ -250,8 +251,9 @@ void TestGroupRejectsSecondParser(Testing &t) {
         // be ambiguous which CmdLine is responsible for validating it.
         cmd2.add(group);
 
-        ERROR(t, "ArgGroup: expected SpecificationException when adding "
-                 "the same group to a second CmdLine, none thrown");
+        ERROR(t,
+              "ArgGroup: expected SpecificationException when adding "
+              "the same group to a second CmdLine, none thrown");
     } catch (SpecificationException &) {
         // Expected.
     } catch (ArgException &e) {
