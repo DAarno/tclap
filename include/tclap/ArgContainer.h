@@ -43,6 +43,12 @@ public:
     /**
      * Adds an argument. Ownership is not transfered.
      * \param a - Argument to be added.
+     *
+     * `a` takes a non-const lvalue reference, which cannot bind to a
+     * prvalue temporary -- so a caller can never accidentally register a
+     * temporary Arg here (e.g. `container.add(SwitchArg{...})` simply
+     * fails to compile). No `[[lifetimebound]]` annotation is needed to
+     * guard against that; the reference-binding rule already does it.
      */
     virtual ArgContainer &add(Arg &a) = 0;
 
