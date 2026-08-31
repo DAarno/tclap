@@ -438,7 +438,8 @@ inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
     for (;;) {
         if (end - from <= maxChars) {
             // Rest of string fits on line, just print the remainder
-            os << indentString << s.substr(from) << std::endl;
+            os << std::format("{}{}", indentString, s.substr(from))
+               << std::endl;
             return;
         }
 
@@ -466,7 +467,7 @@ inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
             to++;
         }
 
-        os << indentString << s.substr(from, to - from) << '\n';
+        os << std::format("{}{}\n", indentString, s.substr(from, to - from));
 
         // Avoid printing extra white space at start of a line
         for (; s[to] == ' '; to++) {
