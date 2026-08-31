@@ -6,4 +6,18 @@ to either the GNU or POSIX standards, although it is close. See
 docs/manual.html for descriptions of how things work or look at the
 simple examples in the examples dir.
 
+Branches
+--------
+
+This repository has several long-lived branches:
+
+  1.2  Stable, backwards-compatible version with only critical bug fixes.
+  1.4  Current stable version; no new feature development. Should be used
+       by most projects requiring C++98 compatibility. Mostly source
+       compatible with 1.6.
+  1.6  Same as 1.4, but updated to work with modern (C++20 and later)
+       versions of C++. Mostly source compatible with 1.4.
+  2.0  Reworked library for modern C++ (C++20). Not stable, may break
+       API. New features may appear.
+
 Any and all feedback is welcome at https://sf.net/p/tclap/discussion/
