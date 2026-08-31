@@ -1,3 +1,8 @@
+// Second addOwned<ArgType>() demo (see test8.cpp for the fuller tour
+// across every Arg type) -- here two SwitchArgs are constructed, owned,
+// and registered in one call each, in two independent scopes reusing
+// the same flag/name/description each time.
+
 #include <tclap/CmdLine.h>
 
 #include <iostream>
@@ -5,14 +10,14 @@
 int main() {
     {
         TCLAP::CmdLine cmd({.message = "First example"});
-        TCLAP::SwitchArg first_arg({.flag = "f",
-                                    .name = "first",
-                                    .description = "first switch argument"});
-        cmd.add(first_arg);
-        TCLAP::SwitchArg second_arg({.flag = "s",
-                                     .name = "second",
-                                     .description = "second switch argument"});
-        cmd.add(second_arg);
+        auto &first_arg = cmd.addOwned<TCLAP::SwitchArg>(
+            {.flag = "f",
+             .name = "first",
+             .description = "first switch argument"});
+        auto &second_arg = cmd.addOwned<TCLAP::SwitchArg>(
+            {.flag = "s",
+             .name = "second",
+             .description = "second switch argument"});
 
         int first_argc = 3;
         const char **first_argv = new const char *[first_argc];
@@ -28,14 +33,14 @@ int main() {
 
     {
         TCLAP::CmdLine cmd({.message = "Second example"});
-        TCLAP::SwitchArg first_arg({.flag = "f",
-                                    .name = "first",
-                                    .description = "first switch argument"});
-        cmd.add(first_arg);
-        TCLAP::SwitchArg second_arg({.flag = "s",
-                                     .name = "second",
-                                     .description = "second switch argument"});
-        cmd.add(second_arg);
+        auto &first_arg = cmd.addOwned<TCLAP::SwitchArg>(
+            {.flag = "f",
+             .name = "first",
+             .description = "first switch argument"});
+        auto &second_arg = cmd.addOwned<TCLAP::SwitchArg>(
+            {.flag = "s",
+             .name = "second",
+             .description = "second switch argument"});
 
         int second_argc = 3;
         const char **second_argv = new const char *[second_argc];

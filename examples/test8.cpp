@@ -1,5 +1,16 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
+// Demonstrates CmdLine::addOwned<ArgType>(spec): constructs an Arg, has
+// the CmdLine take ownership of it (heap-allocated, destroyed alongside
+// the CmdLine), registers it, and returns a reference, all in one call
+// -- replacing the two statements (`Type var(spec); cmd.add(var);`)
+// every other example uses. This is the closest 2.0 equivalent to the
+// pre-2.0 self-registering constructors (`Type var(..., cmd, ...)`)
+// this file used to demonstrate; see TCLAP_2.0_DESIGN.md Sec 5.6 for why
+// self-registering constructors were removed and addOwned<ArgType>()
+// exists instead. ArgType must always be given explicitly -- it can't be
+// deduced from the spec.
+
 #include "tclap/CmdLine.h"
 #include <iostream>
 #include <string>
@@ -33,53 +44,52 @@ void parseOptions(int argc, char **argv) {
         // Define arguments
         //
 
-        SwitchArg btest({.flag = "B",
-                         .name = "existTestB",
-                         .description = "exist Test B",
-                         .defaultValue = false});
-        cmd.add(btest);
+        auto &btest = cmd.addOwned<SwitchArg>({.flag = "B",
+                                               .name = "existTestB",
+                                               .description = "exist Test B",
+                                               .defaultValue = false});
 
-        ValueArg<string> stest({.flag = "s",
-                                .name = "stringTest",
-                                .description = "string test",
-                                .required = true,
-                                .defaultValue = "homer",
-                                .typeDesc = "string"});
-        cmd.add(stest);
+        auto &stest =
+            cmd.addOwned<ValueArg<string>>({.flag = "s",
+                                            .name = "stringTest",
+                                            .description = "string test",
+                                            .required = true,
+                                            .defaultValue = "homer",
+                                            .typeDesc = "string"});
 
-        UnlabeledValueArg<string> utest({.name = "unTest1",
-                                         .description = "unlabeled test one",
-                                         .required = true,
-                                         .defaultValue = "default",
-                                         .typeDesc = "string"});
-        cmd.add(utest);
+        auto &utest = cmd.addOwned<UnlabeledValueArg<string>>(
+            {.name = "unTest1",
+             .description = "unlabeled test one",
+             .required = true,
+             .defaultValue = "default",
+             .typeDesc = "string"});
 
-        UnlabeledValueArg<string> ztest({.name = "unTest2",
-                                         .description = "unlabeled test two",
-                                         .required = true,
-                                         .defaultValue = "default",
-                                         .typeDesc = "string"});
-        cmd.add(ztest);
+        auto &ztest = cmd.addOwned<UnlabeledValueArg<string>>(
+            {.name = "unTest2",
+             .description = "unlabeled test two",
+             .required = true,
+             .defaultValue = "default",
+             .typeDesc = "string"});
 
-        MultiArg<int> itest({.flag = "i",
-                             .name = "intTest",
-                             .description = "multi int test",
-                             .required = false,
-                             .typeDesc = "int"});
-        cmd.add(itest);
-
-        MultiArg<float> ftest({.flag = "f",
-                               .name = "floatTest",
-                               .description = "multi float test",
-                               .required = false,
-                               .typeDesc = "float"});
-        cmd.add(ftest);
-
-        UnlabeledMultiArg<string> mtest({.name = "fileName",
-                                         .description = "file names",
+        auto &itest =
+            cmd.addOwned<MultiArg<int>>({.flag = "i",
+                                         .name = "intTest",
+                                         .description = "multi int test",
                                          .required = false,
-                                         .typeDesc = "fileNameString"});
-        cmd.add(mtest);
+                                         .typeDesc = "int"});
+
+        auto &ftest =
+            cmd.addOwned<MultiArg<float>>({.flag = "f",
+                                           .name = "floatTest",
+                                           .description = "multi float test",
+                                           .required = false,
+                                           .typeDesc = "float"});
+
+        auto &mtest = cmd.addOwned<UnlabeledMultiArg<string>>(
+            {.name = "fileName",
+             .description = "file names",
+             .required = false,
+             .typeDesc = "fileNameString"});
         //
         // Parse the command line.
         //
