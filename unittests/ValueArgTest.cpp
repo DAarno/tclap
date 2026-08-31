@@ -27,113 +27,93 @@
 using namespace TCLAP;
 
 void TestValueArgDefault(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 42,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 42,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "ValueArg");
 
-        if (num.isSet())
-            ERROR(t, "ValueArg: isSet() true without being specified");
-        if (num.value() != 42)
-            ERROR(t, "ValueArg: expected default 42, got " << num.value());
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg: unexpected exception: " << e.error());
-    }
+    if (num.isSet())
+        ERROR(t, "ValueArg: isSet() true without being specified");
+    if (num.value() != 42)
+        ERROR(t, "ValueArg: expected default 42, got " << num.value());
 }
 
 void TestValueArgParse(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 0,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog", "--num", "7"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "--num", "7"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "ValueArg");
 
-        if (!num.isSet())
-            ERROR(t, "ValueArg: isSet() false after being specified");
-        if (num.value() != 7)
-            ERROR(t, "ValueArg: expected 7, got " << num.value());
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg: unexpected exception: " << e.error());
-    }
+    if (!num.isSet())
+        ERROR(t, "ValueArg: isSet() false after being specified");
+    if (num.value() != 7)
+        ERROR(t, "ValueArg: expected 7, got " << num.value());
 }
 
 void TestValueArgShortFlag(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 0,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog", "-n", "9"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-n", "9"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "ValueArg");
 
-        if (num.value() != 9)
-            ERROR(t,
-                  "ValueArg: expected 9 via short flag, got " << num.value());
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg: unexpected exception: " << e.error());
-    }
+    if (num.value() != 9)
+        ERROR(t,
+              "ValueArg: expected 9 via short flag, got " << num.value());
 }
 
 void TestValueArgEqualsDelimiter(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = '='},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 0,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = '='},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog", "--num=99"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "--num=99"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "ValueArg");
 
-        if (num.value() != 99)
-            ERROR(t, "ValueArg: expected 99 with '=' delimiter, got "
-                         << num.value());
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg: unexpected exception: " << e.error());
-    }
+    if (num.value() != 99)
+        ERROR(t, "ValueArg: expected 99 with '=' delimiter, got "
+                     << num.value());
 
     // No global delimiter to restore: each CmdLine (and every Arg
     // registered with it) has its own independent Dialect now, so this
@@ -141,163 +121,119 @@ void TestValueArgEqualsDelimiter(Testing &t) {
 }
 
 void TestValueArgStringLike(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<std::string> name(
-            ValueArgSpec<std::string>{.flag = "",
-                                      .name = "name",
-                                      .description = "a name",
-                                      .required = false,
-                                      .defaultValue = "",
-                                      .typeDesc = "string"});
-        cmd.add(name);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<std::string> name(
+        ValueArgSpec<std::string>{.flag = "",
+                                  .name = "name",
+                                  .description = "a name",
+                                  .required = false,
+                                  .defaultValue = "",
+                                  .typeDesc = "string"});
+    cmd.add(name);
 
-        // A single argv token containing a space. std::string uses
-        // StringLike traits (plain assignment), so it should come
-        // through whole instead of being split on whitespace the way
-        // operator>> would.
-        const char *argv[] = {"prog", "--name", "John Doe"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    // A single argv token containing a space. std::string uses
+    // StringLike traits (plain assignment), so it should come
+    // through whole instead of being split on whitespace the way
+    // operator>> would.
+    const char *argv[] = {"prog", "--name", "John Doe"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "ValueArg<string>");
 
-        if (name.value() != "John Doe")
-            ERROR(t, "ValueArg<string>: expected \"John Doe\", got \""
-                         << name.value() << '"');
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg<string>: unexpected exception: " << e.error());
-    }
+    if (name.value() != "John Doe")
+        ERROR(t, "ValueArg<string>: expected \"John Doe\", got \""
+                     << name.value() << '"');
 }
 
 void TestValueArgBadValue(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 0,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog", "--num", "notanumber"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "--num", "notanumber"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "ValueArg: expected ArgParseException for a non-numeric "
-              "value, none thrown");
-    } catch (ArgParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg: wrong exception type for a non-numeric value: "
-                     << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "ValueArg: expected ParseError for a non-numeric value");
 }
 
 void TestValueArgMultipleValuesInOneToken(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 0,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        // A single argv token that operator>> can pull two values out
-        // of is rejected, not silently truncated to the first one.
-        const char *argv[] = {"prog", "--num", "1 2"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    // A single argv token that operator>> can pull two values out
+    // of is rejected, not silently truncated to the first one.
+    const char *argv[] = {"prog", "--num", "1 2"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "ValueArg: expected ArgParseException for a token "
-              "containing two values, none thrown");
-    } catch (ArgParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t,
-              "ValueArg: wrong exception type for a token containing "
-              "two values: "
-                  << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "ValueArg: expected ParseError for a token containing "
+                  "two values");
 }
 
 void TestValueArgAlreadySet(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 0,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog", "--num", "1", "--num", "2"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "--num", "1", "--num", "2"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "ValueArg: expected CmdLineParseException for a value "
-              "specified twice, none thrown");
-    } catch (CmdLineParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t,
-              "ValueArg: wrong exception type for a value specified "
-              "twice: "
-                  << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "ValueArg: expected ParseError for a value specified "
+                  "twice");
 }
 
 void TestValueArgMissingRequired(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = true,
-                                            .defaultValue = 0,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = true,
+                                        .defaultValue = 0,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "ValueArg: expected CmdLineParseException for a missing "
-              "required arg, none thrown");
-    } catch (CmdLineParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t,
-              "ValueArg: wrong exception type for a missing required "
-              "arg: "
-                  << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "ValueArg: expected ParseError for a missing required "
+                  "arg");
 }
 
 void TestValueArgConstraint(Testing &t) {
@@ -307,7 +243,7 @@ void TestValueArgConstraint(Testing &t) {
     allowed.push_back(3);
     ValuesConstraint<int> constraint(allowed);
 
-    try {
+    {
         CmdLine cmd(CmdLineSpec{.message = "test",
                                 .dialect = {.delimiter = ' '},
                                 .version = "1.0",
@@ -319,21 +255,17 @@ void TestValueArgConstraint(Testing &t) {
                                             .defaultValue = 1,
                                             .constraint = &constraint});
         cmd.add(num);
-        cmd.setExceptionHandling(false);
 
         const char *argv[] = {"prog", "--num", "2"};
         std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+        CheckParseSuccess(t, cmd.parse(args), "ValueArg");
 
         if (num.value() != 2)
             ERROR(t, "ValueArg: constrained value expected 2, got "
                          << num.value());
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg: unexpected exception for an allowed value: "
-                     << e.error());
     }
 
-    try {
+    {
         CmdLine cmd(CmdLineSpec{.message = "test",
                                 .dialect = {.delimiter = ' '},
                                 .version = "1.0",
@@ -345,53 +277,40 @@ void TestValueArgConstraint(Testing &t) {
                                             .defaultValue = 1,
                                             .constraint = &constraint});
         cmd.add(num);
-        cmd.setExceptionHandling(false);
 
         const char *argv[] = {"prog", "--num", "5"};
         std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+        ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "ValueArg: expected CmdLineParseException for a value "
-              "violating the constraint, none thrown");
-    } catch (CmdLineParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t,
-              "ValueArg: wrong exception type for a constraint "
-              "violation: "
-                  << e.typeDescription());
+        if (result.outcome != Outcome::ParseError)
+            ERROR(t, "ValueArg: expected ParseError for a value violating "
+                      "the constraint");
     }
 }
 
 void TestValueArgReset(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
-                                            .name = "num",
-                                            .description = "a number",
-                                            .required = false,
-                                            .defaultValue = 42,
-                                            .typeDesc = "int"});
-        cmd.add(num);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    ValueArg<int> num(ValueArgSpec<int>{.flag = "n",
+                                        .name = "num",
+                                        .description = "a number",
+                                        .required = false,
+                                        .defaultValue = 42,
+                                        .typeDesc = "int"});
+    cmd.add(num);
 
-        const char *argv[] = {"prog", "--num", "7"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "--num", "7"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "ValueArg");
 
-        num.reset();
+    num.reset();
 
-        if (num.isSet()) ERROR(t, "ValueArg: reset() did not clear isSet()");
-        if (num.value() != 42)
-            ERROR(t, "ValueArg: reset() did not restore the default, got "
-                         << num.value());
-    } catch (ArgException &e) {
-        ERROR(t, "ValueArg: unexpected exception: " << e.error());
-    }
+    if (num.isSet()) ERROR(t, "ValueArg: reset() did not clear isSet()");
+    if (num.value() != 42)
+        ERROR(t, "ValueArg: reset() did not restore the default, got "
+                     << num.value());
 }
 
 int main() {

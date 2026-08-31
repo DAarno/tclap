@@ -55,7 +55,6 @@ void FuzzOneType(const std::string &typeDesc, const std::string &value) {
         TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{.message = "fuzz target",
                                               .dialect = {.delimiter = ' '},
                                               .version = "1.0"});
-        cmd.setExceptionHandling(false);
         NullOutput out;
         cmd.setOutput(&out);
 
@@ -73,11 +72,11 @@ void FuzzOneType(const std::string &typeDesc, const std::string &value) {
         args.push_back("-v");
         args.push_back(value);
 
-        cmd.parse(args);
+        TCLAP::ParseOutcome result = cmd.parse(args);
+        static_cast<void>(result);
 
         (void)valueArg.value();
-    } catch (TCLAP::ArgException &) {
-    } catch (TCLAP::ExitException &) {
+    } catch (TCLAP::SpecificationException &) {
     } catch (std::exception &) {
     }
 }

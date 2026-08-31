@@ -23,20 +23,20 @@
  *  MultiArg repetition, an optional positional argument, an exclusive
  *  ArgGroup, and the automatic --help/--version handling.
  *
- *  Two things the CmdLine::parse() implementation does that this harness
- *  must account for, or it will "crash" on the very first interesting
- *  input:
+ *  CmdLine::parse() returns a ParseOutcome and never throws or exit()s for
+ *  a malformed command line, --help, or --version, so unlike the old
+ *  exception-based contract this harness doesn't need to disable/catch
+ *  anything to stay alive through those cases -- checking the outcome
+ *  below is enough. What's left to account for:
  *
- *   - By default CmdLine handles ArgException/ExitException itself and
- *     calls exit() (see CmdLine::parse in CmdLine.h) -- e.g. on --help,
- *     --version, or any parse error. That would tear down the whole
- *     (long-lived, in-process) fuzzing process on the first such input, so
- *     we disable it via setExceptionHandling(false) and catch the
- *     exceptions ourselves instead.
- *   - HelpVisitor/VersionVisitor print full usage/version text via the
- *     installed CmdLineOutput before throwing. A real StdOutput is fuzzed
- *     separately in fuzz_stdoutput.cpp; here we install a no-op
+ *   - The --help/--version onMatch callbacks print full usage/version text
+ *     via the installed CmdLineOutput before returning. A real StdOutput is
+ *     fuzzed separately in fuzz_stdoutput.cpp; here we install a no-op
  *     CmdLineOutput so this harness stays fast and its log stays quiet.
+ *   - SpecificationException (a programmer error, e.g. two Args sharing a
+ *     flag) is still thrown, not folded into ParseOutcome -- not expected
+ *     here since every Arg this harness registers is fixed/well-formed,
+ *     but caught defensively all the same.
  *
  *****************************************************************************/
 
@@ -67,7 +67,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{.message = "fuzz target",
                                               .dialect = {.delimiter = ' '},
                                               .version = "1.0"});
-        cmd.setExceptionHandling(false);
         NullOutput out;
         cmd.setOutput(&out);
 
@@ -126,7 +125,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                                                       .defaultValue = false});
         group.add(aSwitch).add(bSwitch);
 
-        cmd.parse(args);
+        TCLAP::ParseOutcome result = cmd.parse(args);
+        static_cast<void>(result);  // Outcome itself isn't interesting here.
 
         // Touch the parsed values so the whole extraction path (including
         // the ValueArg<int> stream conversion) actually runs and isn't
@@ -137,10 +137,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         (void)countArg.value();
         (void)extraArg.value();
         (void)posArg.value();
-    } catch (TCLAP::ArgException &) {
-        // Expected: malformed/conflicting/missing arguments.
-    } catch (TCLAP::ExitException &) {
-        // Expected: --help / --version.
+    } catch (TCLAP::SpecificationException &) {
+        // Not expected (see file comment) but not a crash either.
     } catch (std::exception &) {
         // Anything else derived from std::exception is treated as an
         // acceptable, already-reported failure mode rather than a crash.

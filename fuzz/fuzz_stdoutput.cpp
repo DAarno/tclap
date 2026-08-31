@@ -61,8 +61,9 @@ public:
 };
 
 // Restores std::cout/std::cerr's stream buffers on scope exit, including
-// via exception unwinding -- required here since ArgException/ExitException
-// routinely propagate out of the scope that redirects them, and leaving the
+// via exception unwinding -- kept RAII since SpecificationException (a
+// programmer error, not expected here but caught defensively below) could
+// still propagate out of the scope that redirects them, and leaving the
 // global streams pointed at a since-destroyed local ostringstream would
 // make the *next* fuzzer iteration crash on unrelated input.
 class StreamRedirect {
@@ -108,7 +109,6 @@ void FuzzFullUsage(const uint8_t *data, size_t size) {
             .message = desc, .dialect = {.delimiter = ' '}, .version = "1.0"});
         TCLAP::StdOutput realOutput;
         cmd.setOutput(&realOutput);
-        cmd.setExceptionHandling(false);
 
         TCLAP::SwitchArg switchArg(TCLAP::SwitchArgSpec{.flag = "s",
                                                         .name = "switch",
@@ -127,29 +127,19 @@ void FuzzFullUsage(const uint8_t *data, size_t size) {
         realOutput.version(cmd);
         realOutput.usage(cmd);
 
-        // A guaranteed-unmatched flag makes parse() throw ArgException;
-        // with exception handling disabled above it propagates here
-        // instead of CmdLine::parse() swallowing it. We then call
-        // failure() ourselves -- that's the actual target, exercising
-        // _shortUsage on a real parse error. StdOutput::failure() always
-        // ends with `throw ExitException(1)` (see StdOutput.h) regardless
-        // of setExceptionHandling, so that has to be caught right here:
-        // letting it escape this function and reach CmdLine::parse()'s own
-        // handling would call exit() and kill the fuzzer process.
+        // A guaranteed-unmatched flag makes parse() return a ParseError
+        // outcome; StdOutput::failure() (the actual target here,
+        // exercising _shortUsage on a real parse error) is called
+        // internally by parse() itself as part of building that outcome
+        // -- unconditionally now, unlike the old exception-based
+        // contract, so there's nothing left to catch or re-invoke here.
         std::vector<std::string> badArgs;
         badArgs.push_back("fuzz");
         badArgs.push_back("--this-flag-does-not-exist");
 
-        try {
-            cmd.parse(badArgs);
-        } catch (TCLAP::ArgException &e) {
-            try {
-                realOutput.failure(cmd, e);
-            } catch (TCLAP::ExitException &) {
-            }
-        }
-    } catch (TCLAP::ArgException &) {
-    } catch (TCLAP::ExitException &) {
+        TCLAP::ParseOutcome result = cmd.parse(badArgs);
+        static_cast<void>(result);
+    } catch (TCLAP::SpecificationException &) {
     } catch (std::exception &) {
     }
 }

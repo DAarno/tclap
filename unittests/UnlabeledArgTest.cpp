@@ -43,77 +43,62 @@
 using namespace TCLAP;
 
 void TestUnlabeledValueArgPositional(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        UnlabeledValueArg<int> count(
-            UnlabeledValueArgSpec<int>{.name = "count",
-                                       .description = "a count",
-                                       .required = true,
-                                       .defaultValue = 0,
-                                       .typeDesc = "int"});
-        UnlabeledValueArg<std::string> name(
-            UnlabeledValueArgSpec<std::string>{.name = "name",
-                                               .description = "a name",
-                                               .required = true,
-                                               .defaultValue = "",
-                                               .typeDesc = "string"});
-        cmd.add(count);
-        cmd.add(name);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    UnlabeledValueArg<int> count(
+        UnlabeledValueArgSpec<int>{.name = "count",
+                                   .description = "a count",
+                                   .required = true,
+                                   .defaultValue = 0,
+                                   .typeDesc = "int"});
+    UnlabeledValueArg<std::string> name(
+        UnlabeledValueArgSpec<std::string>{.name = "name",
+                                           .description = "a name",
+                                           .required = true,
+                                           .defaultValue = "",
+                                           .typeDesc = "string"});
+    cmd.add(count);
+    cmd.add(name);
 
-        const char *argv[] = {"prog", "5", "hello"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "5", "hello"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "UnlabeledValueArg");
 
-        if (count.value() != 5)
-            ERROR(t,
-                  "UnlabeledValueArg: expected count 5, got " << count.value());
-        if (name.value() != "hello")
-            ERROR(t, "UnlabeledValueArg: expected name \"hello\", got \""
-                         << name.value() << '"');
+    if (count.value() != 5)
+        ERROR(t,
+              "UnlabeledValueArg: expected count 5, got " << count.value());
+    if (name.value() != "hello")
+        ERROR(t, "UnlabeledValueArg: expected name \"hello\", got \""
+                     << name.value() << '"');
 
-        if (count.hasLabel())
-            ERROR(t, "UnlabeledValueArg: hasLabel() should be false");
-        if (count.shortID("val") != count.getName())
-            ERROR(t, "UnlabeledValueArg: shortID() should be the arg name");
-    } catch (ArgException &e) {
-        ERROR(t, "UnlabeledValueArg: unexpected exception: " << e.error());
-    }
+    if (count.hasLabel())
+        ERROR(t, "UnlabeledValueArg: hasLabel() should be false");
+    if (count.shortID("val") != count.getName())
+        ERROR(t, "UnlabeledValueArg: shortID() should be the arg name");
 }
 
 void TestUnlabeledValueArgMissingRequired(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        UnlabeledValueArg<int> count(
-            UnlabeledValueArgSpec<int>{.name = "count",
-                                       .description = "a count",
-                                       .required = true,
-                                       .defaultValue = 0,
-                                       .typeDesc = "int"});
-        cmd.add(count);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    UnlabeledValueArg<int> count(
+        UnlabeledValueArgSpec<int>{.name = "count",
+                                   .description = "a count",
+                                   .required = true,
+                                   .defaultValue = 0,
+                                   .typeDesc = "int"});
+    cmd.add(count);
 
-        const char *argv[] = {"prog"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "UnlabeledValueArg: expected CmdLineParseException for a "
-              "missing required positional arg, none thrown");
-    } catch (CmdLineParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t,
-              "UnlabeledValueArg: wrong exception type for a missing "
-              "required positional arg: "
-                  << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "UnlabeledValueArg: expected ParseError for a missing "
+                  "required positional arg");
 }
 
 // Unlike the base Arg::operator== (which matches on flag OR name),
@@ -199,7 +184,7 @@ void TestUnlabeledMultiArgEquality(Testing &t) {
 }
 
 void TestUnlabeledMultiArgOptional(Testing &t) {
-    try {
+    {
         CmdLine cmd(CmdLineSpec{.message = "test",
                                 .dialect = {.delimiter = ' '},
                                 .version = "1.0",
@@ -210,22 +195,17 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
                                                .required = false,
                                                .typeDesc = "string"});
         cmd.add(files);
-        cmd.setExceptionHandling(false);
 
-        {
-            const char *argv[] = {"prog"};
-            std::vector<std::string> args = MakeArgs(argv);
-            cmd.parse(args);
+        const char *argv[] = {"prog"};
+        std::vector<std::string> args = MakeArgs(argv);
+        CheckParseSuccess(t, cmd.parse(args), "UnlabeledMultiArg");
 
-            if (!files.value().empty())
-                ERROR(t, "UnlabeledMultiArg: expected no values, got "
-                             << files.value().size());
-        }
-    } catch (ArgException &e) {
-        ERROR(t, "UnlabeledMultiArg: unexpected exception: " << e.error());
+        if (!files.value().empty())
+            ERROR(t, "UnlabeledMultiArg: expected no values, got "
+                         << files.value().size());
     }
 
-    try {
+    {
         CmdLine cmd(CmdLineSpec{.message = "test",
                                 .dialect = {.delimiter = ' '},
                                 .version = "1.0",
@@ -236,11 +216,10 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
                                                .required = false,
                                                .typeDesc = "string"});
         cmd.add(files);
-        cmd.setExceptionHandling(false);
 
         const char *argv[] = {"prog", "a", "b", "c"};
         std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+        CheckParseSuccess(t, cmd.parse(args), "UnlabeledMultiArg");
 
         const std::vector<std::string> &values = files.value();
         if (values.size() != 3 || values[0] != "a" || values[1] != "b" ||
@@ -250,8 +229,6 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
 
         if (files.hasLabel())
             ERROR(t, "UnlabeledMultiArg: hasLabel() should be false");
-    } catch (ArgException &e) {
-        ERROR(t, "UnlabeledMultiArg: unexpected exception: " << e.error());
     }
 }
 

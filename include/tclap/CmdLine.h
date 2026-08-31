@@ -39,6 +39,7 @@
 #include <tclap/ArgGroup.h>
 #include <tclap/DeferDelete.h>
 #include <tclap/Dialect.h>
+#include <tclap/ParseOutcome.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -46,6 +47,7 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -177,9 +179,14 @@ protected:
     CmdLineOutput *_output;
 
     /**
-     * Should CmdLine handle parsing exceptions internally?
+     * Set by the --help/--version Args' onMatch callbacks (instead of
+     * throwing, as they used to) when matched during the current
+     * parse(). Checked after each Arg match attempt in parse()'s match
+     * loop and, once set, causes an early return -- printing has
+     * already happened eagerly via _output by the time this is checked,
+     * so streaming output for a long option list isn't delayed.
      */
-    bool _handleExceptions;
+    std::optional<Outcome> _pendingOutcome;
 
     /**
      * Optional callback used to localize user-facing strings.
@@ -352,14 +359,14 @@ public:
      * \param argc - Number of arguments.
      * \param argv - Array of arguments.
      */
-    void parse(int argc, const char *const *argv) override;
+    ParseOutcome parse(int argc, const char *const *argv) override;
 
     /**
      * Parses the command line.
      * \param args - A vector of strings representing the args.
      * args[0] is still the program name.
      */
-    void parse(std::vector<std::string> &args);
+    ParseOutcome parse(std::vector<std::string> &args);
 
     void setOutput(CmdLineOutput *co) override;
 
@@ -392,23 +399,6 @@ public:
     [[nodiscard]] std::string getMessage() const override { return _message; }
     [[nodiscard]] bool hasHelpAndVersion() const override {
         return _helpAndVersion;
-    }
-
-    /**
-     * Disables or enables CmdLine's internal parsing exception handling.
-     *
-     * @param state Should CmdLine handle parsing exceptions internally?
-     */
-    void setExceptionHandling(const bool state);
-
-    /**
-     * Returns the current state of the internal exception handling.
-     *
-     * @retval true Parsing exceptions are handled internally.
-     * @retval false Parsing exceptions are propagated to the caller.
-     */
-    [[nodiscard]] bool hasExceptionHandling() const {
-        return _handleExceptions;
     }
 
     /**
@@ -483,7 +473,7 @@ inline CmdLine::CmdLine(CmdLineSpec spec)
       _deleteOnExit(),
       _defaultOutput(),
       _output(&_defaultOutput),
-      _handleExceptions(true),
+      _pendingOutcome(std::nullopt),
       _messageTranslator(nullptr),
       _ignoreArg(nullptr),
       _helpArg(nullptr),
@@ -526,7 +516,7 @@ inline void CmdLine::_constructor() {
             .onMatch =
                 [this] {
                     _output->usage(*this);
-                    throw ExitException(0);
+                    _pendingOutcome = Outcome::HelpRequested;
                 },
         });
         _helpArg = help;
@@ -542,7 +532,7 @@ inline void CmdLine::_constructor() {
             .onMatch =
                 [this] {
                     _output->version(*this);
-                    throw ExitException(0);
+                    _pendingOutcome = Outcome::VersionRequested;
                 },
         });
         _versionArg = vers;
@@ -631,17 +621,16 @@ ArgType &CmdLine::addOwned(typename ArgType::Spec spec) {
     return *arg;
 }
 
-inline void CmdLine::parse(int argc, const char *const *argv) {
+inline ParseOutcome CmdLine::parse(int argc, const char *const *argv) {
     // this step is necessary so that we have easy access to
     // mutable strings.
     std::vector<std::string> args(argv, argv + argc);
 
-    parse(args);
+    return parse(args);
 }
 
-inline void CmdLine::parse(std::vector<std::string> &args) {
-    bool shouldExit = false;
-    int estat = 0;
+inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
+    _pendingOutcome = std::nullopt;
 
     try {
         if (args.empty()) {
@@ -694,6 +683,11 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
                 }
             }
 
+            // --help/--version's onMatch (above) already printed via
+            // _output by the time processArg() returns; this is an
+            // ordinary early return, not an unwind.
+            if (_pendingOutcome) return ParseOutcome{.outcome = *_pendingOutcome};
+
             // checks to see if the argument is an empty combined
             // switch and if so, then we've actually matched it
             if (!matched && _emptyCombined(args[i])) matched = true;
@@ -722,29 +716,23 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
             throw(CmdLineParseException(
                 translateMessage("too_many_arguments", "Too many arguments!")));
         }
+    } catch (SpecificationException &) {
+        // A programmer error (e.g. two Args sharing a flag), not a
+        // user-input problem -- propagate rather than folding into a
+        // ParseOutcome. Not expected to be reachable from within this
+        // try block today (SpecificationException is thrown at
+        // add()/construction time, before parse() runs), but this
+        // makes that invariant structural rather than incidental.
+        throw;
     } catch (ArgException &e) {
-        // If we're not handling the exceptions, rethrow.
-        if (!_handleExceptions) {
-            throw;
-        }
-
-        try {
-            _output->failure(*this, e);
-        } catch (ExitException &ee) {
-            estat = ee.getExitStatus();
-            shouldExit = true;
-        }
-    } catch (ExitException &ee) {
-        // If we're not handling the exceptions, rethrow.
-        if (!_handleExceptions) {
-            throw;
-        }
-
-        estat = ee.getExitStatus();
-        shouldExit = true;
+        _output->failure(*this, e);
+        return ParseOutcome{
+            .outcome = Outcome::ParseError,
+            .error = ParseError{.message = e.error(), .argId = e.rawArgId()},
+        };
     }
 
-    if (shouldExit) exit(estat);
+    return ParseOutcome{.outcome = Outcome::Success};
 }
 
 inline bool CmdLine::_emptyCombined(const std::string &s) {
@@ -791,15 +779,12 @@ inline void CmdLine::missingArgsException(
 
 inline void CmdLine::setOutput(CmdLineOutput *co) { _output = co; }
 
-inline void CmdLine::setExceptionHandling(const bool state) {
-    _handleExceptions = state;
-}
-
 inline void CmdLine::reset() {
     // TODO: This is no longer correct (or perhaps we don't need "reset")
     for (Arg *arg : _argList) arg->reset();
 
     _progName.clear();
+    _pendingOutcome = std::nullopt;
 }
 
 inline void CmdLine::ignoreUnmatched(const bool ignore) {

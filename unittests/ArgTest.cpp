@@ -168,25 +168,21 @@ void TestArgFlaglessFormatting(Testing &t) {
         ERROR(t, "Arg: unexpected toString() for a flag-less arg: "
                      << longOnly.toString());
 
-    try {
+    {
         CmdLine cmd(CmdLineSpec{.message = "test",
                                 .dialect = {.delimiter = ' '},
                                 .version = "1.0",
                                 .helpAndVersion = false});
         cmd.add(longOnly);
-        cmd.setExceptionHandling(false);
 
         // A single-character token that happens to match the name isn't
         // a valid way to set a flag-less arg: only "--verbose" works.
         const char *argv[] = {"prog", "--verbose"};
         std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+        CheckParseSuccess(t, cmd.parse(args), "Arg");
 
         if (!longOnly.isSet())
             ERROR(t, "Arg: --verbose did not set a flag-less switch");
-    } catch (ArgException &e) {
-        ERROR(t, "Arg: unexpected exception for a flag-less switch: "
-                     << e.error());
     }
 }
 

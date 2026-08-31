@@ -26,31 +26,26 @@
 using namespace TCLAP;
 
 void TestSwitchArgDefault(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg verbose(SwitchArgSpec{
-            .flag = "v", .name = "verbose", .description = "be verbose"});
-        cmd.add(verbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg verbose(SwitchArgSpec{
+        .flag = "v", .name = "verbose", .description = "be verbose"});
+    cmd.add(verbose);
 
-        const char *argv[] = {"prog"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
 
-        if (verbose.isSet())
-            ERROR(t, "SwitchArg: isSet() true without being specified");
-        if (verbose.value() != false)
-            ERROR(t, "SwitchArg: getValue() true without being specified");
-    } catch (ArgException &e) {
-        ERROR(t, "SwitchArg: unexpected exception: " << e.error());
-    }
+    if (verbose.isSet())
+        ERROR(t, "SwitchArg: isSet() true without being specified");
+    if (verbose.value() != false)
+        ERROR(t, "SwitchArg: getValue() true without being specified");
 }
 
 void TestSwitchArgSetByFlagAndName(Testing &t) {
-    try {
+    {
         CmdLine cmd(CmdLineSpec{.message = "test",
                                 .dialect = {.delimiter = ' '},
                                 .version = "1.0",
@@ -58,19 +53,16 @@ void TestSwitchArgSetByFlagAndName(Testing &t) {
         SwitchArg verbose(SwitchArgSpec{
             .flag = "v", .name = "verbose", .description = "be verbose"});
         cmd.add(verbose);
-        cmd.setExceptionHandling(false);
 
         const char *argv[] = {"prog", "-v"};
         std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+        CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
 
         if (!verbose.isSet() || !verbose.value() || !bool(verbose))
             ERROR(t, "SwitchArg: -v did not set the switch");
-    } catch (ArgException &e) {
-        ERROR(t, "SwitchArg: unexpected exception: " << e.error());
     }
 
-    try {
+    {
         CmdLine cmd(CmdLineSpec{.message = "test",
                                 .dialect = {.delimiter = ' '},
                                 .version = "1.0",
@@ -78,201 +70,158 @@ void TestSwitchArgSetByFlagAndName(Testing &t) {
         SwitchArg verbose(SwitchArgSpec{
             .flag = "v", .name = "verbose", .description = "be verbose"});
         cmd.add(verbose);
-        cmd.setExceptionHandling(false);
 
         const char *argv[] = {"prog", "--verbose"};
         std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+        CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
 
         if (!verbose.isSet() || !verbose.value())
             ERROR(t, "SwitchArg: --verbose did not set the switch");
-    } catch (ArgException &e) {
-        ERROR(t, "SwitchArg: unexpected exception: " << e.error());
     }
 }
 
 void TestSwitchArgDefaultTrue(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg noVerbose(SwitchArgSpec{.flag = "q",
-                                          .name = "quiet",
-                                          .description = "be quiet",
-                                          .defaultValue = true});
-        cmd.add(noVerbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg noVerbose(SwitchArgSpec{.flag = "q",
+                                      .name = "quiet",
+                                      .description = "be quiet",
+                                      .defaultValue = true});
+    cmd.add(noVerbose);
 
-        const char *argv[] = {"prog", "-q"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-q"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
 
-        if (noVerbose.value() != false)
-            ERROR(t,
-                  "SwitchArg: setting a switch with default=true should "
-                  "toggle it to false");
-    } catch (ArgException &e) {
-        ERROR(t, "SwitchArg: unexpected exception: " << e.error());
-    }
+    if (noVerbose.value() != false)
+        ERROR(t,
+              "SwitchArg: setting a switch with default=true should "
+              "toggle it to false");
 }
 
 void TestSwitchArgCombined(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg a(SwitchArgSpec{
-            .flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{
-            .flag = "b", .name = "bbb", .description = "switch b"});
-        SwitchArg c(SwitchArgSpec{
-            .flag = "c", .name = "ccc", .description = "switch c"});
-        cmd.add(a);
-        cmd.add(b);
-        cmd.add(c);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{
+        .flag = "b", .name = "bbb", .description = "switch b"});
+    SwitchArg c(SwitchArgSpec{
+        .flag = "c", .name = "ccc", .description = "switch c"});
+    cmd.add(a);
+    cmd.add(b);
+    cmd.add(c);
 
-        const char *argv[] = {"prog", "-abc"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-abc"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
 
-        if (!a.value() || !b.value() || !c.value())
-            ERROR(t, "SwitchArg: combined -abc did not set all switches");
-    } catch (ArgException &e) {
-        ERROR(t, "SwitchArg: unexpected exception: " << e.error());
-    }
+    if (!a.value() || !b.value() || !c.value())
+        ERROR(t, "SwitchArg: combined -abc did not set all switches");
 }
 
 void TestSwitchArgAlreadySet(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg verbose(SwitchArgSpec{
-            .flag = "v", .name = "verbose", .description = "be verbose"});
-        cmd.add(verbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg verbose(SwitchArgSpec{
+        .flag = "v", .name = "verbose", .description = "be verbose"});
+    cmd.add(verbose);
 
-        const char *argv[] = {"prog", "--verbose", "--verbose"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "--verbose", "--verbose"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "SwitchArg: expected CmdLineParseException for a switch "
-              "specified twice, none thrown");
-    } catch (CmdLineParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t,
-              "SwitchArg: wrong exception type for a switch specified "
-              "twice: "
-                  << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "SwitchArg: expected ParseError for a switch specified "
+                  "twice");
 }
 
 void TestSwitchArgReset(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg verbose(SwitchArgSpec{
-            .flag = "v", .name = "verbose", .description = "be verbose"});
-        cmd.add(verbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg verbose(SwitchArgSpec{
+        .flag = "v", .name = "verbose", .description = "be verbose"});
+    cmd.add(verbose);
 
-        const char *argv[] = {"prog", "-v"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-v"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
 
-        verbose.reset();
+    verbose.reset();
 
-        if (verbose.isSet())
-            ERROR(t, "SwitchArg: reset() did not clear isSet()");
-        if (verbose.value() != false)
-            ERROR(t, "SwitchArg: reset() did not restore the default value");
-    } catch (ArgException &e) {
-        ERROR(t, "SwitchArg: unexpected exception: " << e.error());
-    }
+    if (verbose.isSet())
+        ERROR(t, "SwitchArg: reset() did not clear isSet()");
+    if (verbose.value() != false)
+        ERROR(t, "SwitchArg: reset() did not restore the default value");
 }
 
 void TestMultiSwitchArgCounts(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        MultiSwitchArg verbose(
-            MultiSwitchArgSpec{.flag = "v",
-                               .name = "verbose",
-                               .description = "be verbose, repeatedly"});
-        cmd.add(verbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    MultiSwitchArg verbose(
+        MultiSwitchArgSpec{.flag = "v",
+                           .name = "verbose",
+                           .description = "be verbose, repeatedly"});
+    cmd.add(verbose);
 
-        const char *argv[] = {"prog", "-v", "-v", "-v"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-v", "-v", "-v"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "MultiSwitchArg");
 
-        if (verbose.value() != 3)
-            ERROR(t, "MultiSwitchArg: expected 3 occurrences, got "
-                         << verbose.value());
-    } catch (ArgException &e) {
-        ERROR(t, "MultiSwitchArg: unexpected exception: " << e.error());
-    }
+    if (verbose.value() != 3)
+        ERROR(t, "MultiSwitchArg: expected 3 occurrences, got "
+                     << verbose.value());
 }
 
 void TestMultiSwitchArgCombined(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        MultiSwitchArg verbose(
-            MultiSwitchArgSpec{.flag = "v",
-                               .name = "verbose",
-                               .description = "be verbose, repeatedly"});
-        cmd.add(verbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    MultiSwitchArg verbose(
+        MultiSwitchArgSpec{.flag = "v",
+                           .name = "verbose",
+                           .description = "be verbose, repeatedly"});
+    cmd.add(verbose);
 
-        const char *argv[] = {"prog", "-vvv"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-vvv"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "MultiSwitchArg");
 
-        if (verbose.value() != 3)
-            ERROR(t, "MultiSwitchArg: expected 3 occurrences from -vvv, got "
-                         << verbose.value());
-    } catch (ArgException &e) {
-        ERROR(t, "MultiSwitchArg: unexpected exception: " << e.error());
-    }
+    if (verbose.value() != 3)
+        ERROR(t, "MultiSwitchArg: expected 3 occurrences from -vvv, got "
+                     << verbose.value());
 }
 
 void TestMultiSwitchArgDefault(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        MultiSwitchArg verbose(
-            MultiSwitchArgSpec{.flag = "v",
-                               .name = "verbose",
-                               .description = "be verbose, repeatedly",
-                               .initialValue = 2});
-        cmd.add(verbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    MultiSwitchArg verbose(
+        MultiSwitchArgSpec{.flag = "v",
+                           .name = "verbose",
+                           .description = "be verbose, repeatedly",
+                           .initialValue = 2});
+    cmd.add(verbose);
 
-        const char *argv[] = {"prog"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "MultiSwitchArg");
 
-        if (verbose.value() != 2)
-            ERROR(t, "MultiSwitchArg: expected default init value 2, got "
-                         << verbose.value());
-    } catch (ArgException &e) {
-        ERROR(t, "MultiSwitchArg: unexpected exception: " << e.error());
-    }
+    if (verbose.value() != 2)
+        ERROR(t, "MultiSwitchArg: expected default init value 2, got "
+                     << verbose.value());
 }
 
 void TestMultiSwitchArgIDs(Testing &t) {
@@ -294,34 +243,29 @@ void TestMultiSwitchArgIDs(Testing &t) {
 }
 
 void TestMultiSwitchArgReset(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        MultiSwitchArg verbose(
-            MultiSwitchArgSpec{.flag = "v",
-                               .name = "verbose",
-                               .description = "be verbose, repeatedly"});
-        cmd.add(verbose);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    MultiSwitchArg verbose(
+        MultiSwitchArgSpec{.flag = "v",
+                           .name = "verbose",
+                           .description = "be verbose, repeatedly"});
+    cmd.add(verbose);
 
-        const char *argv[] = {"prog", "-v", "-v"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-v", "-v"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "MultiSwitchArg");
 
-        verbose.reset();
+    verbose.reset();
 
-        if (verbose.isSet())
-            ERROR(t, "MultiSwitchArg: reset() did not clear isSet()");
-        if (verbose.value() != 0)
-            ERROR(t,
-                  "MultiSwitchArg: reset() did not restore the default "
-                  "count, got "
-                      << verbose.value());
-    } catch (ArgException &e) {
-        ERROR(t, "MultiSwitchArg: unexpected exception: " << e.error());
-    }
+    if (verbose.isSet())
+        ERROR(t, "MultiSwitchArg: reset() did not clear isSet()");
+    if (verbose.value() != 0)
+        ERROR(t,
+              "MultiSwitchArg: reset() did not restore the default "
+              "count, got "
+                  << verbose.value());
 }
 
 int main() {

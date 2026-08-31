@@ -62,8 +62,10 @@ public:
     void version(CmdLineInterface &c) override;
 
     /**
-     * Prints (to stderr) an error message, short usage
-     * Can be overridden to produce alternative behavior.
+     * Prints (to stderr) an error message, short usage. Purely reports
+     * -- does not throw or otherwise affect control flow; the caller
+     * (CmdLine::parse()) decides what happens next. Can be overridden
+     * to produce alternative behavior.
      * \param c - The CmdLine object the output is generated for.
      * \param e - The ArgException that caused the failure.
      */
@@ -143,8 +145,6 @@ inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
     } else {
         usage(_cmd);
     }
-
-    throw ExitException(1);
 }
 
 // TODO: Remove this

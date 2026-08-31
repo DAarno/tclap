@@ -69,7 +69,11 @@ public:
     virtual void version(CmdLineInterface &c) = 0;
 
     /**
-     * Generates some sort of output for a failure.
+     * Generates some sort of output for a failure. Purely reports --
+     * CmdLine::parse() decides what happens next (it returns a
+     * ParseOutcome; it never calls exit() or expects this to throw), so
+     * an override shouldn't rely on throwing here to affect control
+     * flow either.
      * \param c - The CmdLine object the output is generated for.
      * \param e - The ArgException that caused the failure.
      */

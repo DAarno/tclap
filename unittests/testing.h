@@ -23,6 +23,8 @@
 #ifndef __TESTING_H__
 #define __TESTING_H__
 
+#include "tclap/ParseOutcome.h"
+
 #include <cstddef>
 #include <iostream>
 #include <sstream>
@@ -68,5 +70,17 @@ private:
     int errors_;
     std::ostringstream msg_;
 };
+
+// ERROR()s if result isn't a successful parse -- shared by unittests that
+// used to setExceptionHandling(false) and catch ArgException around
+// parse(), now that parse() returns a ParseOutcome instead. `label`
+// prefixes the message, e.g. "SwitchArg".
+inline void CheckParseSuccess(Testing &t, const TCLAP::ParseOutcome &result,
+                              const char *label) {
+    if (result.outcome != TCLAP::Outcome::Success)
+        ERROR(t, label << ": unexpected parse failure: "
+                        << (result.error.has_value() ? result.error->message
+                                                      : std::string()));
+}
 
 #endif

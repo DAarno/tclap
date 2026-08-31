@@ -184,7 +184,6 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
 inline void DocBookOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
     static_cast<void>(_cmd);  // unused
     std::cout << e.what() << std::endl;
-    throw ExitException(1);
 }
 
 inline void DocBookOutput::substituteSpecialChars(std::string &s, char r,

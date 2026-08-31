@@ -27,92 +27,70 @@
 using namespace TCLAP;
 
 void TestEitherOfNoneSelected(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg a(SwitchArgSpec{
-            .flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{
-            .flag = "b", .name = "bbb", .description = "switch b"});
-        EitherOf group;
-        group.add(a);
-        group.add(b);
-        cmd.add(group);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{
+        .flag = "b", .name = "bbb", .description = "switch b"});
+    EitherOf group;
+    group.add(a);
+    group.add(b);
+    cmd.add(group);
 
-        const char *argv[] = {"prog"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "EitherOf");
 
-        if (a.isSet() || b.isSet())
-            ERROR(t, "EitherOf: no switch should be set");
-    } catch (ArgException &e) {
-        ERROR(t, "EitherOf: unexpected exception with none selected: "
-                     << e.error());
-    }
+    if (a.isSet() || b.isSet())
+        ERROR(t, "EitherOf: no switch should be set");
 }
 
 void TestEitherOfOneSelected(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg a(SwitchArgSpec{
-            .flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{
-            .flag = "b", .name = "bbb", .description = "switch b"});
-        EitherOf group;
-        group.add(a);
-        group.add(b);
-        cmd.add(group);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{
+        .flag = "b", .name = "bbb", .description = "switch b"});
+    EitherOf group;
+    group.add(a);
+    group.add(b);
+    cmd.add(group);
 
-        const char *argv[] = {"prog", "-a"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-a"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "EitherOf");
 
-        if (!a.isSet() || b.isSet())
-            ERROR(t, "EitherOf: exactly -a should be set");
-    } catch (ArgException &e) {
-        ERROR(t, "EitherOf: unexpected exception with one selected: "
-                     << e.error());
-    }
+    if (!a.isSet() || b.isSet())
+        ERROR(t, "EitherOf: exactly -a should be set");
 }
 
 void TestEitherOfTwoSelectedThrows(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg a(SwitchArgSpec{
-            .flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{
-            .flag = "b", .name = "bbb", .description = "switch b"});
-        EitherOf group;
-        group.add(a);
-        group.add(b);
-        cmd.add(group);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{
+        .flag = "b", .name = "bbb", .description = "switch b"});
+    EitherOf group;
+    group.add(a);
+    group.add(b);
+    cmd.add(group);
 
-        const char *argv[] = {"prog", "-a", "-b"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-a", "-b"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "EitherOf: expected CmdLineParseException with two "
-              "exclusive switches selected, none thrown");
-    } catch (CmdLineParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t,
-              "EitherOf: wrong exception type with two switches "
-              "selected: "
-                  << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "EitherOf: expected ParseError with two exclusive "
+                  "switches selected");
 }
 
 void TestEitherOfRejectsRequiredArg(Testing &t) {
@@ -142,90 +120,69 @@ void TestEitherOfRejectsRequiredArg(Testing &t) {
 }
 
 void TestOneOfMissingThrows(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg a(SwitchArgSpec{
-            .flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{
-            .flag = "b", .name = "bbb", .description = "switch b"});
-        OneOf group;
-        group.add(a);
-        group.add(b);
-        cmd.add(group);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{
+        .flag = "b", .name = "bbb", .description = "switch b"});
+    OneOf group;
+    group.add(a);
+    group.add(b);
+    cmd.add(group);
 
-        const char *argv[] = {"prog"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    ParseOutcome result = cmd.parse(args);
 
-        ERROR(t,
-              "OneOf: expected CmdLineParseException with nothing "
-              "selected, none thrown");
-    } catch (CmdLineParseException &) {
-        // Expected.
-    } catch (ArgException &e) {
-        ERROR(t, "OneOf: wrong exception type with nothing selected: "
-                     << e.typeDescription());
-    }
+    if (result.outcome != Outcome::ParseError)
+        ERROR(t, "OneOf: expected ParseError with nothing selected");
 }
 
 void TestOneOfExactlyOneSelected(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg a(SwitchArgSpec{
-            .flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{
-            .flag = "b", .name = "bbb", .description = "switch b"});
-        OneOf group;
-        group.add(a);
-        group.add(b);
-        cmd.add(group);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{
+        .flag = "b", .name = "bbb", .description = "switch b"});
+    OneOf group;
+    group.add(a);
+    group.add(b);
+    cmd.add(group);
 
-        const char *argv[] = {"prog", "-b"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-b"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "OneOf");
 
-        if (a.isSet() || !b.isSet())
-            ERROR(t, "OneOf: exactly -b should be set");
-    } catch (ArgException &e) {
-        ERROR(t,
-              "OneOf: unexpected exception with one selected: " << e.error());
-    }
+    if (a.isSet() || !b.isSet())
+        ERROR(t, "OneOf: exactly -b should be set");
 }
 
 void TestAnyOfAllowsAnyCombination(Testing &t) {
-    try {
-        CmdLine cmd(CmdLineSpec{.message = "test",
-                                .dialect = {.delimiter = ' '},
-                                .version = "1.0",
-                                .helpAndVersion = false});
-        SwitchArg a(SwitchArgSpec{
-            .flag = "a", .name = "aaa", .description = "switch a"});
-        SwitchArg b(SwitchArgSpec{
-            .flag = "b", .name = "bbb", .description = "switch b"});
-        AnyOf group;
-        group.add(a);
-        group.add(b);
-        cmd.add(group);
-        cmd.setExceptionHandling(false);
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(SwitchArgSpec{
+        .flag = "b", .name = "bbb", .description = "switch b"});
+    AnyOf group;
+    group.add(a);
+    group.add(b);
+    cmd.add(group);
 
-        const char *argv[] = {"prog", "-a", "-b"};
-        std::vector<std::string> args = MakeArgs(argv);
-        cmd.parse(args);
+    const char *argv[] = {"prog", "-a", "-b"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "AnyOf");
 
-        if (!a.isSet() || !b.isSet())
-            ERROR(t, "AnyOf: both -a and -b should be set");
-    } catch (ArgException &e) {
-        ERROR(t,
-              "AnyOf: unexpected exception with both selected: " << e.error());
-    }
+    if (!a.isSet() || !b.isSet())
+        ERROR(t, "AnyOf: both -a and -b should be set");
 }
 
 void TestGroupRejectsSecondParser(Testing &t) {

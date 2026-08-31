@@ -9,21 +9,27 @@ using namespace TCLAP;
 using namespace std;
 
 int main(int argc, char **argv) {
-    try {
-        CmdLine cmd({.message = "Command description message",
-                     .dialect = {.delimiter = ' '},
-                     .version = "0.9",
-                     .helpAndVersion = true});
+    CmdLine cmd({.message = "Command description message",
+                 .dialect = {.delimiter = ' '},
+                 .version = "0.9",
+                 .helpAndVersion = true});
 
-        cmd.setExceptionHandling(false);
+    ParseOutcome result = cmd.parse(argc, argv);
 
-        cmd.parse(argc, argv);
-
-    } catch (ArgException &e) {  // catch any exceptions
-        cerr << "error: " << e.error() << " for arg " << e.argId() << endl;
-        return 1;
-    } catch (ExitException &e) {  // catch any exceptions
-        cerr << "Exiting on ExitException." << endl;
-        return e.getExitStatus();
+    switch (result.outcome) {
+        case Outcome::Success:
+            break;
+        case Outcome::HelpRequested:
+        case Outcome::VersionRequested:
+            // Usage/version text was already printed via CmdLineOutput
+            // by the time parse() returns.
+            return 0;
+        case Outcome::ParseError:
+            // The failure message was already printed via
+            // CmdLineOutput::failure() by the time parse() returns; a
+            // caller that wants to react to it programmatically (rather
+            // than just letting the printed message stand, as here) can
+            // inspect result.error->message/argId directly.
+            return 1;
     }
 }

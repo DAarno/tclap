@@ -27,6 +27,7 @@
 
 #include <tclap/ArgContainer.h>
 #include <tclap/Dialect.h>
+#include <tclap/ParseOutcome.h>
 
 #include <algorithm>
 #include <iostream>
@@ -93,18 +94,15 @@ public:
     virtual void xorAdd(const std::vector<Arg *> &xors) = 0;
 
     /**
-     * Parses the command line.
+     * Parses the command line. Never throws for a malformed command
+     * line and never calls exit() -- see ParseOutcome's docs. A
+     * SpecificationException (a programmer error, e.g. two Args sharing
+     * a flag) is a different kind of problem and can still propagate
+     * out of this call.
      * \param argc - Number of arguments.
      * \param argv - Array of arguments.
      */
-    virtual void parse(int argc, const char *const *argv) = 0;
-
-    /**
-     * Parses the command line.
-     * \param args - A vector of strings representing the args.
-     * args[0] is still the program name.
-     */
-    void parse(std::vector<std::string> &args);
+    virtual ParseOutcome parse(int argc, const char *const *argv) = 0;
 
     /**
      * \param co - CmdLineOutput object that we want to use instead.

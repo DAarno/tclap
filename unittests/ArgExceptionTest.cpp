@@ -48,9 +48,22 @@ void TestArgExceptionCustom(Testing &t) {
     if (e.argId() != "Argument: --foo")
         ERROR(t, "ArgException: unexpected argId(): " << e.argId());
 
+    if (e.rawArgId() != "--foo")
+        ERROR(t, "ArgException: unexpected rawArgId(): " << e.rawArgId());
+
     std::string what(e.what());
     if (what != "--foo -- bad value")
         ERROR(t, "ArgException: unexpected what(): " << what);
+}
+
+void TestArgExceptionRawArgIdDefault(Testing &t) {
+    // rawArgId(), unlike argId(), is empty (not the "undefined"
+    // sentinel) when the exception isn't attributable to a single Arg.
+    ArgException e;
+
+    if (!e.rawArgId().empty())
+        ERROR(t, "ArgException: expected empty rawArgId(), got: "
+                     << e.rawArgId());
 }
 
 void TestArgParseException(Testing &t) {
@@ -88,21 +101,13 @@ void TestSpecificationException(Testing &t) {
                      << e.typeDescription());
 }
 
-void TestExitException(Testing &t) {
-    ExitException e(3);
-
-    if (e.getExitStatus() != 3)
-        ERROR(t, "ExitException: unexpected getExitStatus(): "
-                     << e.getExitStatus());
-}
-
 int main() {
     Testing t;
     TestArgExceptionDefaults(t);
     TestArgExceptionCustom(t);
+    TestArgExceptionRawArgIdDefault(t);
     TestArgParseException(t);
     TestCmdLineParseException(t);
     TestSpecificationException(t);
-    TestExitException(t);
     return t.errorCount();
 }

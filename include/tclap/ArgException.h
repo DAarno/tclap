@@ -73,6 +73,17 @@ public:
     }
 
     /**
+     * Returns the raw argument id, unlike argId() -- no "Argument: "
+     * prefix, and empty (rather than the "undefined" sentinel) when
+     * this exception isn't attributable to a single Arg. Used to
+     * populate ParseError::argId, which wants a clean identifier rather
+     * than argId()'s print-ready formatting.
+     */
+    [[nodiscard]] std::string rawArgId() const {
+        return _argId == "undefined" ? std::string() : _argId;
+    }
+
+    /**
      * Returns the arg id and error text.
      */
     [[nodiscard]] const char *what() const noexcept override {
@@ -170,28 +181,6 @@ public:
                        std::string("Exception found when an Arg object ") +
                            std::string("is improperly defined by the ") +
                            std::string("developer.")) {}
-};
-
-/**
- * Thrown when TCLAP thinks the program should exit.
- *
- * For example after parse error this exception will be thrown (and
- * normally caught). This allows any resource to be clened properly
- * before exit.
- *
- * If exception handling is disabled (CmdLine::setExceptionHandling),
- * this exception will propagate to the call site, allowing the
- * program to catch it and avoid program termination, or do it's own
- * cleanup. See for example, https://sourceforge.net/p/tclap/bugs/29.
- */
-class ExitException {
-public:
-    explicit ExitException(int estat) : _estat(estat) {}
-
-    [[nodiscard]] int getExitStatus() const noexcept { return _estat; }
-
-private:
-    int _estat;
 };
 
 }  // namespace TCLAP
