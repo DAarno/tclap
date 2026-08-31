@@ -123,8 +123,13 @@ public:
      * Returns the list of ArgGroups.
      */
     virtual std::list<ArgGroup *> getArgGroups() = 0;
-    [[nodiscard]] virtual std::list<Arg *> getArgList()
-        const = 0;  // TODO: get rid of this
+
+    /**
+     * Returns every Arg registered with this CmdLine, including the
+     * auto-added --help/--version/-- args. The returned reference is
+     * valid for as long as this CmdLine is alive.
+     */
+    [[nodiscard]] virtual const std::list<Arg *> &getArgList() const = 0;
 
     /**
      * Returns the delimiter string.

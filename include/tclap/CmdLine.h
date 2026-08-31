@@ -406,8 +406,7 @@ public:
         return _progName;
     }
 
-    // TOOD: Get rid of getArgList
-    [[nodiscard]] std::list<Arg *> getArgList() const override {
+    [[nodiscard]] const std::list<Arg *> &getArgList() const override {
         return _argList;
     }
     std::list<ArgGroup *> getArgGroups() override {
