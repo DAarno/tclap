@@ -116,10 +116,6 @@ migrating code that relied on that).
 int main(int argc, char** argv)
 {
 
-	// Wrap everything in a try block.  Do this every time,
-	// because exceptions will be thrown for problems.
-	try {
-
 	// Define the command line object, and insert a message
 	// that describes the program. The "Command description message"
 	// is printed last in the help text.  The CmdLine object parses
@@ -148,8 +144,12 @@ int main(int argc, char** argv)
 	                                .description = "Print name backwards"});
 	cmd.add( reverseSwitch );
 
-	// Parse the argv array.
-	cmd.parse( argc, argv );
+	// Parse the argv array. parseOrExit() prints an error/usage/version
+	// message and calls exit() for you on a malformed command line or
+	// --help/--version, the same way every Arg exception used to get
+	// turned into an exit() automatically before 2.0 -- there is no
+	// longer a try/catch block to write for that case.
+	cmd.parseOrExit(argc, argv);
 
 	// Get the value parsed by each arg.
 	std::string name = nameArg.value();
@@ -163,10 +163,6 @@ int main(int argc, char** argv)
 	}
 	else
 		std::cout &lt;&lt; "My name is: " &lt;&lt; name &lt;&lt; std::endl;
-
-
-	} catch (TCLAP::ArgException &amp;e)  // catch exceptions
-	{ std::cerr &lt;&lt; "error: " &lt;&lt; e.error() &lt;&lt; " for arg " &lt;&lt; e.argId() &lt;&lt; std::endl; }
 }
 </programlisting>
 
@@ -260,11 +256,20 @@ that if you prefer arguments of the style
 <parameter>-s=asdf</parameter> instead of
 <parameter>-s asdf</parameter>, you can do so.</listitem>
 
-<listitem><emphasis>Always wrap everything in a try block that catches
-ArgExceptions!</emphasis> Any problems found in constructing the
-<classname>CmdLine</classname>, constructing the <classname>Arg</classname>s,
-or parsing the command line will throw an
-<classname>ArgException</classname>.</listitem>
+<listitem>A malformed command line (a missing required argument, an
+unrecognized flag, a value that fails its type conversion or
+constraint) no longer throws in 2.0 -- see the note about
+<methodname>parseOrExit()</methodname> above. What still throws is a
+<emphasis>programmer</emphasis> error: constructing the
+<classname>CmdLine</classname> or an <classname>Arg</classname> with a
+malformed spec (a duplicate flag/name, a blank <code>.name</code>,
+and the like) throws a <classname>SpecificationException</classname>,
+since that's a bug in the calling program rather than a command-line
+parsing problem, and isn't something a user's bad input can trigger.
+There's normally nothing useful for your own code to do about a
+<classname>SpecificationException</classname> other than let it
+propagate and crash the program during development, the same way
+you'd want any other precondition violation to surface.</listitem>
 
 </itemizedlist>
 </para>
@@ -405,8 +410,11 @@ will attempt to parse an
 int, <classname>ValueArg&lt;float&gt;</classname> will attempt to
 parse a float, etc. If <methodname>operator&gt;&gt;</methodname>
 for the specified type doesn't
-recognize the string on the command line as its defined type, then
-an exception will be thrown.
+recognize the string on the command line as its defined type, that's
+a command-line parsing error like any other -- reported via the
+<classname>ParseOutcome</classname> that <methodname>parse()</methodname>
+returns (see the note about <methodname>parseOrExit()</methodname>
+<link linkend="EXAMPLE">above</link>), not an exception.
 </para>
 </sect1>
 
@@ -426,7 +434,7 @@ to search for libraries...
                 % fooCompiler -L /dir/num1 -L /dir/num2 file.foo
 </programlisting>
 <para>
-Exceptions will occur if you try to do this
+This will be reported as a parse error if you try to do this
 with a <classname>ValueArg</classname> or a <classname>SwitchArg</classname>.
 In situations like this, you will want to use a
 <classname>MultiArg</classname>. A
@@ -562,8 +570,8 @@ we provide the <classname>UnlabeledMultiArg</classname>.
 are declared much like everything else, but generally only a name
 and a description are needed. By default, if an
 <classname>UnlabeledMultiArg</classname>
-is specified, then at least one is required to be present or an
-exception will be thrown. The most important thing to remember is,
+is specified, then at least one is required to be present or it's a
+parse error. The most important thing to remember is,
 that like <classname>UnlabeledValueArg</classname>s: order matters!
 In fact, <emphasis>an UnlabeledMultiArg must be the last argument added to the
 CmdLine!</emphasis>. Here is what a declaration looks like:
@@ -576,7 +584,7 @@ CmdLine!</emphasis>. Here is what a declaration looks like:
                 UnlabeledMultiArg&lt;string&gt; multi({.name = "fileNames",
                                                  .description = "file names"});
                 cmd.add( multi );
-                cmd.parse(argc, argv);
+                cmd.parseOrExit(argc, argv);
 
                 vector&lt;string&gt;  fileNames = multi.value();
 
@@ -591,7 +599,7 @@ Arg that wasn't already processed by a
 <classname>UnlabeledMultiArg</classname> specified after the first
 <classname>UnlabeledMultiArg</classname> will be ignored, and if
 they are required,
-exceptions will be thrown. When you call the
+it's a parse error. When you call the
 <methodname>value()</methodname>
 method of the <classname>UnlabeledValueArg</classname> argument,
 a <classname>vector</classname>
@@ -667,7 +675,7 @@ using an argument group of type <classname>OneOf</classname>.
         OneOf input;
         input.add(fileArg).add(urlArg);
         cmd.add(input);
-        cmd.parse(argc, argv);
+        cmd.parseOrExit(argc, argv);
 
 </programlisting>
 
@@ -761,7 +769,7 @@ whether the value parsed is greater than 0 (done in the
 When the value for the <classname>Arg</classname> is parsed, it is
 checked against the list of values specified in the
 <classname>ValuesConstraint</classname>.  If the value is in the list
-then it is accepted. If not, then an exception is thrown. Here is a
+then it is accepted. If not, it's a parse error. Here is a
 simple example:
 
 <programlisting>
@@ -841,7 +849,7 @@ explicitly, as two separate statements:
         cmd.add(utest);
 
         // Parse the command line.
-        cmd.parse(argc,argv);
+        cmd.parseOrExit(argc, argv);
 
 </programlisting>
 
@@ -853,6 +861,34 @@ described <link linkend="ARG_PROPERTIES">above</link>): find every
 <parameter>cmd</parameter> object as a constructor argument, and split
 it into a construction statement followed by a separate
 <methodname>cmd.add(...)</methodname> call.
+</para>
+
+<para>
+If the only reason you want the <classname>Arg</classname> constructed
+and added in one step is convenience, not an independently-scoped
+local variable, <classname>CmdLine</classname> offers a one-statement
+alternative: <methodname>addOwned&lt;ArgType&gt;()</methodname>. It
+constructs the <classname>Arg</classname>, has the
+<classname>CmdLine</classname> heap-own it (destroyed alongside the
+<classname>CmdLine</classname>), registers it, and returns a reference
+bound to the <classname>CmdLine</classname>'s lifetime rather than the
+caller's scope:
+
+<programlisting>
+
+        // ArgType must be given explicitly -- it can't be deduced from
+        // the spec alone.
+        SwitchArg &amp;btest = cmd.addOwned&lt;SwitchArg&gt;(
+            {.flag = "B", .name = "existTestB", .description = "exist Test B"});
+
+</programlisting>
+
+This is most useful when you're building an unknown number of
+<classname>Arg</classname>s at runtime (e.g. in a loop) and don't need
+each one to be an independently-scoped local variable. For the common
+case of a fixed, known set of arguments, the two-statement
+<methodname>add()</methodname> form above remains the default most
+code uses.
 </para>
 </sect1>
 
@@ -908,9 +944,18 @@ See <filename>test4.cpp</filename> in the examples directory for the full
 example. <emphasis>NOTE</emphasis>: if you supply your own Output object, we
 will not delete it in the <classname>CmdLine</classname> destructor.  This
 could lead to a (very small) memory leak if you don't take care of the object
-yourself.  Also note that the <methodname>failure</methodname> method is
-now responsible for exiting the application (assuming that is the desired
-behavior).
+yourself. Also note that in 2.0, <methodname>failure</methodname> --
+whether it's <classname>StdOutput</classname>'s default implementation or
+your own override -- purely reports the error; it no longer exits the
+application itself. Exiting is <methodname>parseOrExit()</methodname>'s
+job (see <link linkend="EXAMPLE">above</link>), based on the
+<classname>ParseOutcome</classname> that <methodname>parse()</methodname>
+returns, not something <methodname>failure</methodname> triggers as a
+side effect. If you override <methodname>failure</methodname> and still
+want it to terminate the program directly -- as <filename>test4.cpp</filename>
+does, to preserve its original point of demonstrating a fully custom error
+path -- call <function>exit()</function> yourself at the end of your
+override, the same way the example does.
 </para>
 </sect1>
 
@@ -965,7 +1010,7 @@ See the <ulink url="html/index.html"> API Documentation</ulink> for details.
 <title>I want to ignore unmatched arguments...</title>
 <para>
 By default, if <emphasis>TCLAP</emphasis> sees an argument that doesn't
-match a specified <classname>Arg</classname>, it will produce an exception.
+match a specified <classname>Arg</classname>, it is a parse error.
 This strict handling provides some assurance that all input to a program
 is controlled. However, there are times when
 this strict handling of arguments might not be desirable.
@@ -995,7 +1040,7 @@ arguments on the command line. This is accomplished by calling the
 	cmd.add( nameArg );
 
     // Parse the args.
-    cmd.parse( argc, argv );
+    cmd.parseOrExit(argc, argv);
 
 </programlisting>
 
@@ -1042,8 +1087,6 @@ using namespace std;
 int main(int argc, char** argv)
 {
 
-	try {
-
 	CmdLine cmd({.message = "this is a message", .version = "0.99"});
 
 	ValueArg&lt;AutoBaseInt&lt;int&gt;&gt; itest({.flag = "i", .name = "intTest",
@@ -1054,16 +1097,13 @@ int main(int argc, char** argv)
 	//
 	// Parse the command line.
 	//
-	cmd.parse(argc,argv);
+	cmd.parseOrExit(argc, argv);
 
 	//
 	// Set variables
 	//
 	int _intTest = itest.value();
 	cout &lt;&lt; "found int: " &lt;&lt; _intTest &lt;&lt; endl;
-
-	} catch ( ArgException&amp; e )
-	{ cout &lt;&lt; "ERROR: " &lt;&lt; e.error() &lt;&lt; " " &lt;&lt; e.argId() &lt;&lt; endl; }
 }
 </programlisting>
 </para>
@@ -1131,7 +1171,7 @@ int main(int argc, char **argv) {
                                          .defaultValue = std::make_pair(0, 0.0),
                                          .typeDesc = "int,double"});
   cmd.add(parg);
-  cmd.parse(argc, argv);
+  cmd.parseOrExit(argc, argv);
   std::cout &lt;&lt; parg.value() &lt;&lt; std::endl;
 }
 
