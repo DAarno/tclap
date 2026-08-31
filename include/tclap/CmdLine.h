@@ -368,6 +368,27 @@ public:
      */
     ParseOutcome parse(std::vector<std::string> &args);
 
+    /**
+     * Parses argc/argv and, for the common `int main()` case, restores the
+     * pre-2.0 zero-ceremony behavior in one line: on success, returns
+     * normally so the caller's own logic can run; on --help/--version,
+     * exits 0 (the usage/version text was already printed via the
+     * installed CmdLineOutput by the time parse() returns); on a parse
+     * error, exits 1 (the failure message was likewise already printed).
+     *
+     * Only useful for exactly that case -- a throwaway `main()` that wants
+     * `parse(argc, argv)` to behave the way it always did on `1.4`/`1.6`.
+     * Anything long-lived (a test harness, a REPL, an embedder, a fuzz
+     * target) should call parse(...) directly and inspect the returned
+     * ParseOutcome instead -- calling this from such a context would tear
+     * down the whole process on the first --help/--version/parse error,
+     * exactly the problem ParseOutcome exists to avoid.
+     *
+     * \param argc - Number of arguments.
+     * \param argv - Array of arguments.
+     */
+    void parseOrExit(int argc, const char *const *argv);
+
     void setOutput(CmdLineOutput *co) override;
 
     [[nodiscard]] std::string getVersion() const override { return _version; }
@@ -794,6 +815,19 @@ inline void CmdLine::ignoreUnmatched(const bool ignore) {
 ///////////////////////////////////////////////////////////////////////////////
 // End CmdLine.cpp
 ///////////////////////////////////////////////////////////////////////////////
+
+inline void CmdLine::parseOrExit(int argc, const char *const *argv) {
+    ParseOutcome result = parse(argc, argv);
+    switch (result.outcome) {
+        case Outcome::Success:
+            return;
+        case Outcome::HelpRequested:
+        case Outcome::VersionRequested:
+            std::exit(EXIT_SUCCESS);
+        case Outcome::ParseError:
+            std::exit(EXIT_FAILURE);
+    }
+}
 
 }  // namespace TCLAP
 

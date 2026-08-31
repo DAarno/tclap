@@ -527,6 +527,38 @@ void TestAddOwned(Testing &t) {
         ERROR(t, "CmdLine: addOwned<SwitchArg> 'v' was not set");
 }
 
+// Only the success path is exercisable in-process: parseOrExit() calls
+// std::exit() on --help/--version/a parse error, which would terminate
+// this test binary. Those paths were verified manually via a standalone
+// scratch program instead (confirmed: --help/--version exit 0 without
+// running any code after the call, a bad argument exits 1 likewise, and
+// -- the case that actually matters here, since the design doc's first
+// sketch of this function got it wrong (unconditional std::exit(),
+// annotated [[noreturn]], which would have made a successful parse never
+// return either) -- a successful parse returns normally and lets the
+// caller's own code after the call run.
+void TestParseOrExitReturnsOnSuccess(Testing &t) {
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    cmd.add(a);
+
+    const char *argv[] = {"prog", "-a"};
+    std::vector<std::string> args = MakeArgs(argv);
+    int argc = static_cast<int>(args.size());
+    std::vector<const char *> cargv;
+    for (const std::string &s : args) cargv.push_back(s.c_str());
+
+    cmd.parseOrExit(argc, cargv.data());
+
+    // Reaching here at all is the point of the test: parseOrExit() must
+    // not have called exit() for a successful parse.
+    if (!a.isSet()) ERROR(t, "parseOrExit: -a should be set after parsing");
+}
+
 int main() {
     Testing t;
     TestUnmatchedArgThrows(t);
@@ -543,5 +575,6 @@ int main() {
     TestIndependentCmdLinesDoNotShareDialect(t);
     TestCustomDialectPrefixesCoexistWithDefault(t);
     TestAddOwned(t);
+    TestParseOrExitReturnsOnSuccess(t);
     return t.errorCount();
 }
