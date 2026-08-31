@@ -273,7 +273,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
         std::ranges::sort(switches, cmpSwitch);
     }
 
-    outp << " [" << switches << ']';
+    outp << std::format(" [{}]", switches);
 
     // Now do long switches (e.g., --version, but no -v)
     std::vector<Arg *> longSwitches;
@@ -287,7 +287,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
     std::ranges::sort(longSwitches, internal::CompareShortID);
     for (const Arg *arg : longSwitches) {
-        outp << " [" << arg->shortID() << ']';
+        outp << std::format(" [{}]", arg->shortID());
     }
 
     // Now do all exclusive groups
@@ -305,7 +305,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
         std::ranges::sort(args, internal::CompareShortID);
         std::string sep = "";
         for (const Arg *arg : args) {
-            outp << sep << arg->shortID();
+            outp << std::format("{}{}", sep, arg->shortID());
             sep = "|";
         }
 
