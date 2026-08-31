@@ -303,6 +303,37 @@ public:
      */
     ArgContainer &add(ArgGroup &args) override;
 
+    /**
+     * Constructs an ArgType from spec, takes ownership of it
+     * (heap-allocated, destroyed alongside this CmdLine), registers it
+     * via add(), and returns a reference to it -- all in one call,
+     * unlike the stack-declared `Type var(spec); cmd.add(var);` pattern
+     * the constructors above require. Prefer this when the Arg doesn't
+     * need to be an independent local variable; the returned reference's
+     * lifetime is bound to this CmdLine, not to the caller's scope.
+     *
+     * ArgType must always be given explicitly, e.g.
+     * `cmd.addOwned<SwitchArg>({.flag = "r", .name = "reverse", ...})`
+     * or `cmd.addOwned<ValueArg<std::string>>({.flag = "n", ...})` --
+     * it can't be deduced from the spec alone. This was tried (six
+     * overloads, one per Arg type, so only the spec's shape would
+     * decide which one applies) and rejected: several spec types --
+     * e.g. SwitchArgSpec and MultiSwitchArgSpec, which differ only in
+     * `.defaultValue` vs. `.initialValue` -- are structurally
+     * compatible with more than one Arg type whenever a call doesn't
+     * happen to mention the one field that would disambiguate them,
+     * making the overload set ambiguous in practice, not just in
+     * theory. Naming ArgType explicitly sidesteps that entirely: no
+     * overload resolution or template deduction is needed, since
+     * `typename ArgType::Spec` picks the one and only spec type ArgType
+     * accepts.
+     *
+     * @param spec - The spec for the Arg to construct, own, and add.
+     * @retval A reference to the newly constructed, owned Arg.
+     */
+    template <typename ArgType>
+    ArgType &addOwned(typename ArgType::Spec spec);
+
     // Internal, do not use
     void addToArgList(Arg *a) override;
 
@@ -590,6 +621,14 @@ inline ArgContainer &CmdLine::add(Arg *a) {
     _standaloneArgs.add(a);
 
     return *this;
+}
+
+template <typename ArgType>
+ArgType &CmdLine::addOwned(typename ArgType::Spec spec) {
+    auto *arg = new ArgType(std::move(spec));
+    _deleteOnExit(arg);
+    add(arg);
+    return *arg;
 }
 
 inline void CmdLine::parse(int argc, const char *const *argv) {

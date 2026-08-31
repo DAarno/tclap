@@ -88,6 +88,10 @@ class UnlabeledMultiArg : public MultiArg<T> {
     using MultiArg<T>::toString;
 
 public:
+    /// See SwitchArg::Spec. Shadows the inherited MultiArg<T>::Spec --
+    /// UnlabeledMultiArg<T> takes its own spec type, not MultiArg<T>'s.
+    using Spec = UnlabeledMultiArgSpec<T>;
+
     /**
      * Constructor.
      * \param spec - The name/description/required/typeDesc/constraint/

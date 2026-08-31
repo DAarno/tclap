@@ -80,6 +80,11 @@ protected:
     bool _default;
 
 public:
+    /// The spec type this Arg's constructor takes -- lets generic code
+    /// (e.g. CmdLine::addOwned<ArgType>()) name the right spec type
+    /// without the caller having to spell it out.
+    using Spec = SwitchArgSpec;
+
     /**
      * SwitchArg constructor.
      * \param spec - The flag/name/description/default value/onMatch

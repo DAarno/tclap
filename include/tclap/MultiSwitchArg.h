@@ -74,6 +74,9 @@ protected:
     int _default;
 
 public:
+    /// See SwitchArg::Spec.
+    using Spec = MultiSwitchArgSpec;
+
     /**
      * MultiSwitchArg constructor.
      * \param spec - The flag/name/description/initial value/onMatch

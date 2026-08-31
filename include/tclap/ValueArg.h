@@ -128,6 +128,9 @@ protected:
         requires Parseable<T>;
 
 public:
+    /// See SwitchArg::Spec.
+    using Spec = ValueArgSpec<T>;
+
     /**
      * Labeled ValueArg constructor.
      * \param spec - The flag/name/description/required/default value/

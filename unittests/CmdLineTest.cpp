@@ -495,6 +495,65 @@ void TestCustomDialectPrefixesCoexistWithDefault(Testing &t) {
     }
 }
 
+void TestAddOwned(Testing &t) {
+    // The motivating scenario from design doc Sec 5.6: a CLI whose
+    // argument set is only known at run time (e.g. read from a config
+    // file), so there's no way to declare each Arg as a named local --
+    // addOwned<ArgType>() constructs, owns, and registers each one in a
+    // single call, returning a reference with CmdLine's lifetime.
+    try {
+        CmdLine cmd(CmdLineSpec{.message = "test",
+                                .dialect = {.delimiter = ' '},
+                                .version = "1.0",
+                                .helpAndVersion = false});
+        cmd.setExceptionHandling(false);
+
+        struct RuntimeArgSpec {
+            std::string flag;
+            std::string name;
+        };
+        std::vector<RuntimeArgSpec> runtimeArgs = {{"a", "aaa"}, {"b", "bbb"}};
+
+        std::vector<ValueArg<std::string> *> owned;
+        for (const auto &spec : runtimeArgs) {
+            auto &arg =
+                cmd.addOwned<ValueArg<std::string>>({.flag = spec.flag,
+                                                     .name = spec.name,
+                                                     .description = "desc",
+                                                     .required = false,
+                                                     .defaultValue = ""});
+            owned.push_back(&arg);
+        }
+
+        // A non-templated Arg type needs ArgType named too -- this
+        // shape (only .flag/.name/.description set) used to be
+        // ambiguous between SwitchArgSpec and MultiSwitchArgSpec when
+        // addOwned() picked its overload from the spec's shape alone;
+        // naming ArgType explicitly removes that ambiguity entirely.
+        auto &verbose = cmd.addOwned<SwitchArg>(
+            {.flag = "v", .name = "verbose", .description = "be verbose"});
+
+        const char *argv[] = {"prog", "-a", "1", "-b", "2", "-v"};
+        std::vector<std::string> args = MakeArgs(argv);
+        cmd.parse(args);
+
+        if (owned[0]->value() != "1")
+            ERROR(t,
+                  "CmdLine: addOwned<ValueArg<string>> 'a' expected "
+                  "\"1\", got \""
+                      << owned[0]->value() << '"');
+        if (owned[1]->value() != "2")
+            ERROR(t,
+                  "CmdLine: addOwned<ValueArg<string>> 'b' expected "
+                  "\"2\", got \""
+                      << owned[1]->value() << '"');
+        if (!verbose.value())
+            ERROR(t, "CmdLine: addOwned<SwitchArg> 'v' was not set");
+    } catch (ArgException &e) {
+        ERROR(t, "CmdLine: unexpected exception: " << e.error());
+    }
+}
+
 int main() {
     Testing t;
     TestUnmatchedArgThrows(t);
@@ -510,5 +569,6 @@ int main() {
     TestMessageTranslatorRefreshesHelpAndVersion(t);
     TestIndependentCmdLinesDoNotShareDialect(t);
     TestCustomDialectPrefixesCoexistWithDefault(t);
+    TestAddOwned(t);
     return t.errorCount();
 }

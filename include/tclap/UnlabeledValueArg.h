@@ -97,6 +97,10 @@ class UnlabeledValueArg : public ValueArg<T> {
     using ValueArg<T>::toString;
 
 public:
+    /// See SwitchArg::Spec. Shadows the inherited ValueArg<T>::Spec --
+    /// UnlabeledValueArg<T> takes its own spec type, not ValueArg<T>'s.
+    using Spec = UnlabeledValueArgSpec<T>;
+
     /**
      * UnlabeledValueArg constructor.
      * \param spec - The name/description/required/default value/

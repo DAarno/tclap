@@ -117,6 +117,9 @@ protected:
     bool _allowMore;
 
 public:
+    /// See SwitchArg::Spec.
+    using Spec = MultiArgSpec<T>;
+
     /**
      * Constructor.
      * \param spec - The flag/name/description/required/typeDesc/
