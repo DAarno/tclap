@@ -1,0 +1,3 @@
+before parse()
+onMatch: --verbose matched (count=1)
+after parse(): verbose=true, matchCount=1

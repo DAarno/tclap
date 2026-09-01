@@ -106,12 +106,12 @@ void TestSwitchArgCombined(Testing &t) {
                             .dialect = {.delimiter = ' '},
                             .version = "1.0",
                             .helpAndVersion = false});
-    SwitchArg a(SwitchArgSpec{
-        .flag = "a", .name = "aaa", .description = "switch a"});
-    SwitchArg b(SwitchArgSpec{
-        .flag = "b", .name = "bbb", .description = "switch b"});
-    SwitchArg c(SwitchArgSpec{
-        .flag = "c", .name = "ccc", .description = "switch c"});
+    SwitchArg a(
+        SwitchArgSpec{.flag = "a", .name = "aaa", .description = "switch a"});
+    SwitchArg b(
+        SwitchArgSpec{.flag = "b", .name = "bbb", .description = "switch b"});
+    SwitchArg c(
+        SwitchArgSpec{.flag = "c", .name = "ccc", .description = "switch c"});
     cmd.add(a);
     cmd.add(b);
     cmd.add(c);
@@ -138,8 +138,58 @@ void TestSwitchArgAlreadySet(Testing &t) {
     ParseOutcome result = cmd.parse(args);
 
     if (result.outcome != Outcome::ParseError)
-        ERROR(t, "SwitchArg: expected ParseError for a switch specified "
-                  "twice");
+        ERROR(t,
+              "SwitchArg: expected ParseError for a switch specified "
+              "twice");
+}
+
+void TestSwitchArgOnMatch(Testing &t) {
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    int matchCount = 0;
+    SwitchArg verbose(
+        SwitchArgSpec{.flag = "v",
+                      .name = "verbose",
+                      .description = "be verbose",
+                      .onMatch = [&matchCount] { ++matchCount; }});
+    cmd.add(verbose);
+
+    const char *argv[] = {"prog", "-v"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
+
+    // onMatch runs synchronously inside processArg(), so by the time
+    // parse() has returned it must already have fired -- not deferred
+    // to some later point.
+    if (matchCount != 1)
+        ERROR(t, "SwitchArg: onMatch should have fired exactly once, fired "
+                     << matchCount << " times");
+}
+
+void TestSwitchArgOnMatchNotCalledWhenUnset(Testing &t) {
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    int matchCount = 0;
+    SwitchArg verbose(
+        SwitchArgSpec{.flag = "v",
+                      .name = "verbose",
+                      .description = "be verbose",
+                      .onMatch = [&matchCount] { ++matchCount; }});
+    cmd.add(verbose);
+
+    const char *argv[] = {"prog"};
+    std::vector<std::string> args = MakeArgs(argv);
+    CheckParseSuccess(t, cmd.parse(args), "SwitchArg");
+
+    if (matchCount != 0)
+        ERROR(t,
+              "SwitchArg: onMatch should not fire when the switch is "
+              "never matched, fired "
+                  << matchCount << " times");
 }
 
 void TestSwitchArgReset(Testing &t) {
@@ -157,8 +207,7 @@ void TestSwitchArgReset(Testing &t) {
 
     verbose.reset();
 
-    if (verbose.isSet())
-        ERROR(t, "SwitchArg: reset() did not clear isSet()");
+    if (verbose.isSet()) ERROR(t, "SwitchArg: reset() did not clear isSet()");
     if (verbose.value() != false)
         ERROR(t, "SwitchArg: reset() did not restore the default value");
 }
@@ -275,6 +324,8 @@ int main() {
     TestSwitchArgDefaultTrue(t);
     TestSwitchArgCombined(t);
     TestSwitchArgAlreadySet(t);
+    TestSwitchArgOnMatch(t);
+    TestSwitchArgOnMatchNotCalledWhenUnset(t);
     TestSwitchArgReset(t);
     TestMultiSwitchArgCounts(t);
     TestMultiSwitchArgCombined(t);
