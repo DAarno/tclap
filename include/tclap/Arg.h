@@ -224,12 +224,6 @@ public:
     }
 
     /**
-     * The char used as a place holder when SwitchArgs are combined.
-     * Currently set to the bell char (ASCII 7).
-     */
-    static constexpr char blankChar() noexcept { return '\a'; }
-
-    /**
      * The char that indicates the beginning of a flag. Derived from this
      * Arg's bound Dialect's flagPrefix (see _setDialect()); an Arg not
      * yet registered with any CmdLine reports the default '-'.
@@ -269,8 +263,21 @@ public:
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. What is
      * passed in from main.
+     * \param consumed - Per-character consumed-position tracking for
+     * `args[*i]`, sized to that token's length and reset to all-false by
+     * the caller (CmdLine::parse()) at the start of processing each
+     * token. Combined short switches (`-abc`) claim their own position
+     * here as they match, instead of mutating the token string itself;
+     * every Arg gets the same `consumed` for a given token across the
+     * full pass over the registered Arg list, so a SwitchArg claiming
+     * position 2 is visible to the next SwitchArg's match attempt on the
+     * same token. Most Arg subtypes never write to it, only check
+     * whether anything has been claimed yet (via _hasConsumedChars()) to
+     * tell a genuine value apart from a not-yet-fully-matched combined
+     * switch token.
      */
-    virtual bool processArg(int *i, std::vector<std::string> &args) = 0;
+    virtual bool processArg(int *i, std::vector<std::string> &args,
+                            std::vector<bool> &consumed) = 0;
 
     /**
      * Operator ==.
@@ -379,12 +386,15 @@ public:
     virtual void trimFlag(std::string &flag, std::string &value) const;
 
     /**
-     * Checks whether a given string has blank chars, indicating that
-     * it is a combined SwitchArg.  If so, return true, otherwise return
-     * false.
-     * \param s - string to be checked.
+     * Checks whether any position in a token's consumed-tracking (see
+     * processArg()) has already been claimed by a combined SwitchArg
+     * match, indicating that the token is (or was) a combined switch
+     * string rather than a value for this Arg.
+     * \param consumed - The current token's per-character
+     * consumed-position tracking.
      */
-    [[nodiscard]] bool _hasBlanks(const std::string &s) const;
+    [[nodiscard]] bool _hasConsumedChars(
+        const std::vector<bool> &consumed) const;
 
     /**
      * Used for MultiArgs to determine whether args can still be
@@ -557,10 +567,13 @@ inline void Arg::trimFlag(std::string &flag, std::string &value) const {
 }
 
 /**
- * Implementation of _hasBlanks.
+ * Implementation of _hasConsumedChars.
  */
-inline bool Arg::_hasBlanks(const std::string &s) const {
-    return s.find(Arg::blankChar(), 1) != std::string::npos;
+inline bool Arg::_hasConsumedChars(const std::vector<bool> &consumed) const {
+    for (std::size_t i = 1; i < consumed.size(); i++) {
+        if (consumed[i]) return true;
+    }
+    return false;
 }
 
 /**

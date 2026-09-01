@@ -91,8 +91,10 @@ public:
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. Passed
      * in from main().
+     * \param consumed - See Arg::processArg().
      */
-    bool processArg(int *i, std::vector<std::string> &args) override;
+    bool processArg(int *i, std::vector<std::string> &args,
+                    std::vector<bool> &consumed) override;
 
     /**
      * Returns int, the number of times the switch has been set.
@@ -123,7 +125,8 @@ inline MultiSwitchArg::MultiSwitchArg(MultiSwitchArgSpec spec)
       _value(spec.initialValue),
       _default(spec.initialValue) {}
 
-inline bool MultiSwitchArg::processArg(int *i, std::vector<std::string> &args) {
+inline bool MultiSwitchArg::processArg(int *i, std::vector<std::string> &args,
+                                       std::vector<bool> &consumed) {
     if (argMatches(args[*i])) {
         // so the isSet() method will work
         _alreadySet = true;
@@ -135,7 +138,7 @@ inline bool MultiSwitchArg::processArg(int *i, std::vector<std::string> &args) {
         _invokeOnMatch();
 
         return true;
-    } else if (combinedSwitchesMatch(args[*i])) {
+    } else if (combinedSwitchesMatch(args[*i], consumed)) {
         // so the isSet() method will work
         _alreadySet = true;
 
@@ -143,7 +146,7 @@ inline bool MultiSwitchArg::processArg(int *i, std::vector<std::string> &args) {
         ++_value;
 
         // Check for more in argument and increment value.
-        while (combinedSwitchesMatch(args[*i])) ++_value;
+        while (combinedSwitchesMatch(args[*i], consumed)) ++_value;
 
         _invokeOnMatch();
 

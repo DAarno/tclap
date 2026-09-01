@@ -87,7 +87,7 @@ class UnlabeledValueArg : public ValueArg<T> {
     // If compiler has two stage name lookup (as gcc >= 3.4 does)
     // this is required to prevent undef. symbols
     using ValueArg<T>::_ignoreable;
-    using ValueArg<T>::_hasBlanks;
+    using ValueArg<T>::_hasConsumedChars;
     using ValueArg<T>::_extractValue;
     using ValueArg<T>::_typeDesc;
     using ValueArg<T>::_name;
@@ -115,8 +115,10 @@ public:
      * unlabeled arguments.
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings.
+     * \param consumed - See Arg::processArg().
      */
-    bool processArg(int *i, std::vector<std::string> &args) override;
+    bool processArg(int *i, std::vector<std::string> &args,
+                    std::vector<bool> &consumed) override;
 
     /**
      * Overrides shortID for specific behavior.
@@ -168,10 +170,11 @@ UnlabeledValueArg<T>::UnlabeledValueArg(UnlabeledValueArgSpec<T> spec)
  * Implementation of processArg().
  */
 template <class T>
-bool UnlabeledValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
+bool UnlabeledValueArg<T>::processArg(int *i, std::vector<std::string> &args,
+                                      std::vector<bool> &consumed) {
     if (_alreadySet) return false;
 
-    if (_hasBlanks(args[*i])) return false;
+    if (_hasConsumedChars(consumed)) return false;
 
     // never ignore an unlabeled arg
 

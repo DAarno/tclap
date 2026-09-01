@@ -134,8 +134,10 @@ public:
      * between labeled and unlabeled.
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. Passed from main().
+     * \param consumed - See Arg::processArg().
      */
-    bool processArg(int *i, std::vector<std::string> &args) override;
+    bool processArg(int *i, std::vector<std::string> &args,
+                    std::vector<bool> &consumed) override;
 
     /**
      * Returns a vector of type T containing the values parsed from
@@ -197,8 +199,9 @@ MultiArg<T>::MultiArg(MultiArgSpec<T> spec)
 }
 
 template <class T>
-bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
-    if (_hasBlanks(args[*i])) return false;
+bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args,
+                             std::vector<bool> &consumed) {
+    if (_hasConsumedChars(consumed)) return false;
 
     std::string flag = args[*i];
     std::string value = "";

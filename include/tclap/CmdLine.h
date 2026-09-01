@@ -225,12 +225,18 @@ protected:
     void missingArgsException(const std::list<ArgGroup *> &missing);
 
     /**
-     * Checks whether a name/flag string matches entirely matches
-     * the Arg::blankChar.  Used when multiple switches are combined
-     * into a single argument.
-     * \param s - The message to be used in the usage.
+     * Checks whether a combined-switch token has been fully claimed --
+     * every position from 1 onward marked in `consumed` -- once the
+     * full pass over _argList for this token is done without any single
+     * Arg::processArg() call itself returning true (e.g. MultiSwitchArg,
+     * which always returns false for a combined match; see its
+     * processArg()).
+     * \param s - The token being checked.
+     * \param consumed - That token's per-character consumed-position
+     * tracking.
      */
-    bool _emptyCombined(const std::string &s);
+    bool _emptyCombined(const std::string &s,
+                        const std::vector<bool> &consumed);
 
 public:
     /**
@@ -693,6 +699,10 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
 
         for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
             bool matched = false;
+            // Per-character consumed-position tracking for args[i],
+            // threaded through every Arg's processArg() call below --
+            // see Arg::processArg()'s doc comment. Fresh for each token.
+            std::vector<bool> consumed(args[i].size(), false);
             for (Arg *argPtr : _argList) {
                 Arg &arg = *argPtr;
                 // We check if the argument was already set (e.g., for
@@ -705,7 +715,7 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
                 // remove this logic from here.
                 bool alreadySet = arg.isSet();
                 bool ignore = arg.isIgnoreable() && ignoreRest();
-                if (!ignore && arg.processArg(&i, args)) {
+                if (!ignore && arg.processArg(&i, args, consumed)) {
                     requiredCount += (!alreadySet && arg.isRequired()) ? 1 : 0;
                     matched = true;
                     break;
@@ -720,7 +730,7 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
 
             // checks to see if the argument is an empty combined
             // switch and if so, then we've actually matched it
-            if (!matched && _emptyCombined(args[i])) matched = true;
+            if (!matched && _emptyCombined(args[i], consumed)) matched = true;
 
             if (!matched && !ignoreRest() && !_ignoreUnmatched)
                 throw(
@@ -765,12 +775,16 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
     return ParseOutcome{.outcome = Outcome::Success};
 }
 
-inline bool CmdLine::_emptyCombined(const std::string &s) {
+inline bool CmdLine::_emptyCombined(const std::string &s,
+                                    const std::vector<bool> &consumed) {
     if (!s.empty() &&
         (_dialect.flagPrefix.empty() || s[0] != _dialect.flagPrefix.front()))
         return false;
 
-    return s.find_first_not_of(Arg::blankChar(), 1) == std::string::npos;
+    for (std::string::size_type i = 1; i < s.size(); i++) {
+        if (!consumed[i]) return false;
+    }
+    return true;
 }
 
 inline void CmdLine::missingArgsException(

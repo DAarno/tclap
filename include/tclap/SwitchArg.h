@@ -99,14 +99,19 @@ public:
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. Passed
      * in from main().
+     * \param consumed - See Arg::processArg().
      */
-    bool processArg(int *i, std::vector<std::string> &args) override;
+    bool processArg(int *i, std::vector<std::string> &args,
+                    std::vector<bool> &consumed) override;
 
     /**
      * Checks a string to see if any of the chars in the string
-     * match the flag for this Switch.
+     * match the flag for this Switch, skipping any position already
+     * claimed in `consumed`. Claims the matched position in `consumed`
+     * (does not modify `combined` itself) if found.
      */
-    bool combinedSwitchesMatch(std::string &combined);
+    bool combinedSwitchesMatch(const std::string &combined,
+                               std::vector<bool> &consumed);
 
     /**
      * Returns bool, whether or not the switch has been set.
@@ -125,9 +130,11 @@ public:
 private:
     /**
      * Checks to see if we've found the last match in
-     * a combined string.
+     * a combined string, i.e. every position from 1 onward is claimed
+     * in `consumed`.
      */
-    bool lastCombined(std::string &combined);
+    bool lastCombined(const std::string &combined,
+                      const std::vector<bool> &consumed);
 
     /**
      * Does the common processing of processArg.
@@ -144,12 +151,16 @@ inline SwitchArg::SwitchArg(SwitchArgSpec spec)
       _value(spec.defaultValue),
       _default(spec.defaultValue) {}
 
-inline bool SwitchArg::lastCombined(std::string &combinedSwitches) {
-    return combinedSwitches.find_first_not_of(Arg::blankChar(), 1) ==
-           std::string::npos;
+inline bool SwitchArg::lastCombined(const std::string &combinedSwitches,
+                                    const std::vector<bool> &consumed) {
+    for (std::string::size_type i = 1; i < combinedSwitches.size(); i++) {
+        if (!consumed[i]) return false;
+    }
+    return true;
 }
 
-inline bool SwitchArg::combinedSwitchesMatch(std::string &combinedSwitches) {
+inline bool SwitchArg::combinedSwitchesMatch(
+    const std::string &combinedSwitches, std::vector<bool> &consumed) {
     // make sure this is actually a combined switch
     if (!combinedSwitches.empty() &&
         combinedSwitches[0] != Arg::flagStartString()[0])
@@ -167,15 +178,15 @@ inline bool SwitchArg::combinedSwitchesMatch(std::string &combinedSwitches) {
     // ok, we're not specifying a ValueArg, so we know that we have
     // a combined switch list.
     if (!_flag.empty() && _flag[0] != Arg::flagStartString()[0]) {
-        std::string::size_type i = combinedSwitches.find(_flag[0], 1);
-        if (i != std::string::npos) {
-            // update the combined switches so this one is no longer
-            // present this is necessary so that no unlabeled args are
-            // matched later in the processing.
-            // combinedSwitches.erase(i,1);
-            _setBy = Arg::flagStartString() + combinedSwitches[i];
-            combinedSwitches[i] = Arg::blankChar();
-            return true;
+        for (std::string::size_type i = 1; i < combinedSwitches.size(); i++) {
+            if (!consumed[i] && combinedSwitches[i] == _flag[0]) {
+                // Claim this position so no other Arg's match attempt
+                // (SwitchArg combining further, or a ValueArg/MultiArg
+                // via _hasConsumedChars()) sees it as still available.
+                _setBy = Arg::flagStartString() + combinedSwitches[i];
+                consumed[i] = true;
+                return true;
+            }
         }
     }
 
@@ -193,18 +204,19 @@ inline void SwitchArg::commonProcessing() {
     _invokeOnMatch();
 }
 
-inline bool SwitchArg::processArg(int *i, std::vector<std::string> &args) {
+inline bool SwitchArg::processArg(int *i, std::vector<std::string> &args,
+                                  std::vector<bool> &consumed) {
     if (argMatches(args[*i])) {
         // The whole string matches the flag or name string
         _setBy = args[*i];
         commonProcessing();
 
         return true;
-    } else if (combinedSwitchesMatch(args[*i])) {
+    } else if (combinedSwitchesMatch(args[*i], consumed)) {
         // A substring matches the flag as part of a combination
         // check again to ensure we don't misinterpret
         // this as a MultiSwitchArg
-        if (combinedSwitchesMatch(args[*i]))
+        if (combinedSwitchesMatch(args[*i], consumed))
             throw(CmdLineParseException("Argument already set!", toString()));
 
         commonProcessing();
@@ -212,7 +224,7 @@ inline bool SwitchArg::processArg(int *i, std::vector<std::string> &args) {
         // We only want to return true if we've found the last combined
         // match in the string, otherwise we return true so that other
         // switches in the combination will have a chance to match.
-        return lastCombined(args[*i]);
+        return lastCombined(args[*i], consumed);
     }
 
     return false;

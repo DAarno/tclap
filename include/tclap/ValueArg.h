@@ -146,8 +146,10 @@ public:
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. Passed
      * in from main().
+     * \param consumed - See Arg::processArg().
      */
-    bool processArg(int *i, std::vector<std::string> &args) override;
+    bool processArg(int *i, std::vector<std::string> &args,
+                    std::vector<bool> &consumed) override;
 
     /**
      * Returns the value of the argument.
@@ -196,8 +198,9 @@ ValueArg<T>::ValueArg(ValueArgSpec<T> spec)
  * Implementation of processArg().
  */
 template <class T>
-bool ValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
-    if (_hasBlanks(args[*i])) return false;
+bool ValueArg<T>::processArg(int *i, std::vector<std::string> &args,
+                             std::vector<bool> &consumed) {
+    if (_hasConsumedChars(consumed)) return false;
 
     std::string flag = args[*i];
 

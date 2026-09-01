@@ -78,7 +78,7 @@ class UnlabeledMultiArg : public MultiArg<T> {
     // If compiler has two stage name lookup (as gcc >= 3.4 does)
     // this is required to prevent undef. symbols
     using MultiArg<T>::_ignoreable;
-    using MultiArg<T>::_hasBlanks;
+    using MultiArg<T>::_hasConsumedChars;
     using MultiArg<T>::_extractValue;
     using MultiArg<T>::_typeDesc;
     using MultiArg<T>::_name;
@@ -106,8 +106,10 @@ public:
      * between labeled and unlabeled.
      * \param i - Pointer the the current argument in the list.
      * \param args - Mutable list of strings. Passed from main().
+     * \param consumed - See Arg::processArg().
      */
-    bool processArg(int *i, std::vector<std::string> &args) override;
+    bool processArg(int *i, std::vector<std::string> &args,
+                    std::vector<bool> &consumed) override;
 
     /**
      * Returns the a short id string.  Used in the usage.
@@ -155,8 +157,9 @@ UnlabeledMultiArg<T>::UnlabeledMultiArg(UnlabeledMultiArgSpec<T> spec)
 }
 
 template <class T>
-bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
-    if (_hasBlanks(args[*i])) return false;
+bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args,
+                                      std::vector<bool> &consumed) {
+    if (_hasConsumedChars(consumed)) return false;
 
     // never ignore an unlabeled multi arg
 
