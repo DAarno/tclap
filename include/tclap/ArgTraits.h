@@ -38,7 +38,6 @@ namespace TCLAP {
  */
 struct ValueLike {
     using ValueCategory = ValueLike;
-    virtual ~ValueLike() = default;
 };
 
 /**
@@ -46,9 +45,7 @@ struct ValueLike {
  * operator=(string). Useful if the value type contains spaces which
  * will be broken up into individual tokens by operator>>.
  */
-struct StringLike {
-    virtual ~StringLike() = default;
-};
+struct StringLike {};
 
 /**
  * A class can inherit from this object to make it have string like
@@ -57,7 +54,6 @@ struct StringLike {
  */
 struct StringLikeTrait {
     using ValueCategory = StringLike;
-    virtual ~StringLikeTrait() = default;
 };
 
 /**
@@ -67,7 +63,6 @@ struct StringLikeTrait {
  */
 struct ValueLikeTrait {
     using ValueCategory = ValueLike;
-    virtual ~ValueLikeTrait() = default;
 };
 
 namespace detail {

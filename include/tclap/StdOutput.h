@@ -147,14 +147,6 @@ inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
     }
 }
 
-// TODO: Remove this
-inline void removeChar(std::string &s, char r) {
-    size_t p;
-    while ((p = s.find_first_of(r)) != std::string::npos) {
-        s.erase(p, 1);
-    }
-}
-
 inline bool cmpSwitch(const char &a, const char &b) {
     int lowa = std::tolower(a);
     int lowb = std::tolower(b);
