@@ -9,5 +9,5 @@ using namespace std;
 int main() {
     CmdLine cmd({.message = "test empty argv"});
     std::vector<string> args;
-    cmd.parse(args);
+    cmd.parseOrExit(args);
 }

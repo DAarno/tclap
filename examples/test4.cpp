@@ -46,51 +46,46 @@ int main(int argc, char **argv) {
 }
 
 void parseOptions(int argc, char **argv) {
-    try {
-        CmdLine cmd({.message = "this is a message",
-                     .dialect = {.delimiter = ' '},
-                     .version = "0.99"});
+    CmdLine cmd({.message = "this is a message",
+                 .dialect = {.delimiter = ' '},
+                 .version = "0.99"});
 
-        // set the output
-        MyOutput my;
-        cmd.setOutput(&my);
+    // set the output
+    MyOutput my;
+    cmd.setOutput(&my);
 
-        //
-        // Define arguments
-        //
+    //
+    // Define arguments
+    //
 
-        SwitchArg btest({.flag = "B",
-                         .name = "sB",
-                         .description = "exist Test B",
-                         .defaultValue = false});
-        SwitchArg atest({.flag = "A",
-                         .name = "sA",
-                         .description = "exist Test A",
-                         .defaultValue = false});
+    SwitchArg btest({.flag = "B",
+                     .name = "sB",
+                     .description = "exist Test B",
+                     .defaultValue = false});
+    SwitchArg atest({.flag = "A",
+                     .name = "sA",
+                     .description = "exist Test A",
+                     .defaultValue = false});
 
-        ValueArg<string> stest({.flag = "s",
-                                .name = "Bs",
-                                .description = "string test",
-                                .required = true,
-                                .defaultValue = "homer",
-                                .typeDesc = "string"});
-        cmd.add(stest);
-        cmd.add(btest);
-        cmd.add(atest);
+    ValueArg<string> stest({.flag = "s",
+                            .name = "Bs",
+                            .description = "string test",
+                            .required = true,
+                            .defaultValue = "homer",
+                            .typeDesc = "string"});
+    cmd.add(stest);
+    cmd.add(btest);
+    cmd.add(atest);
 
-        //
-        // Parse the command line.
-        //
-        cmd.parse(argc, argv);
+    //
+    // Parse the command line.
+    //
+    cmd.parseOrExit(argc, argv);
 
-        //
-        // Set variables
-        //
-        _stringTest = stest.value();
-        _boolTestB = btest.value();
-        _boolTestA = atest.value();
-
-    } catch (ArgException &e) {
-        cout << "ERROR: " << e.error() << " " << e.argId() << endl;
-    }
+    //
+    // Set variables
+    //
+    _stringTest = stest.value();
+    _boolTestB = btest.value();
+    _boolTestA = atest.value();
 }

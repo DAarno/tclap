@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
                                 .typeDesc = "string"});
         cmd.xorAdd(atest, btest);
 
-        cmd.parse(argc, argv);
+        cmd.parseOrExit(argc, argv);
     } catch (SpecificationException &e) {
         std::cout << "Caught SpecificationException: " << e.what() << std::endl;
         return 0;

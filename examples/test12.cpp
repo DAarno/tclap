@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     cmd.add(vec);
 
     try {
-        cmd.parse(argc, argv);
+        cmd.parseOrExit(argc, argv);
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
         return EXIT_FAILURE;

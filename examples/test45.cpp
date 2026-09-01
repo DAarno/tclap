@@ -24,5 +24,5 @@ int main(int argc, char *argv[]) {
              "long we use multiple lines.\nBut these are so far apart.\nEven "
              "though "
              "I want only one line break"});
-    cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
 }

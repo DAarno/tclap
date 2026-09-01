@@ -24,7 +24,7 @@ int main() {
         first_argv[0] = "/nowhere";
         first_argv[1] = "--first";
         first_argv[2] = "--";
-        cmd.parse(first_argc, first_argv);
+        cmd.parseOrExit(first_argc, first_argv);
         delete[] first_argv;
 
         std::cout << "First example: first=" << first_arg.value()
@@ -47,7 +47,7 @@ int main() {
         second_argv[0] = "/nowhere";
         second_argv[1] = "--second";
         second_argv[2] = "--";
-        cmd.parse(second_argc, second_argv);
+        cmd.parseOrExit(second_argc, second_argv);
         delete[] second_argv;
 
         std::cout << "Second example: first=" << first_arg.value()

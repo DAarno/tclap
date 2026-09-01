@@ -1,1 +1,9 @@
-error: Couldn't find match for argument for arg Argument: --bob
+PARSE ERROR: Argument: --bob
+             Couldn't find match for argument
+
+Brief USAGE: 
+   test18  [-h] [--version]
+
+For complete USAGE and HELP type: 
+   test18 --help
+

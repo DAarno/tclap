@@ -1,7 +1,10 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
 // Test only makes sure we can use different argv types for the
-// parser. Don't run, just compile.
+// parser. Don't run, just compile. The ParseOutcome each call returns is
+// deliberately discarded (cast to void, not checked/exited on) -- an
+// empty args vector fails to parse, and the point here is exercising
+// each argv pointer-constness overload, not stopping after the first.
 
 #include "tclap/CmdLine.h"
 
@@ -18,11 +21,11 @@ int main() {
     CmdLine cmd({.message = "Command description message",
                  .dialect = {.delimiter = ' '},
                  .version = "0.9"});
-    cmd.parse(0, argv1);
-    cmd.parse(0, argv2);
-    cmd.parse(0, argv3);
-    cmd.parse(0, argv4);
-    cmd.parse(0, argv5);
-    cmd.parse(0, argv6);
-    cmd.parse(0, argv7);
+    (void)cmd.parse(0, argv1);
+    (void)cmd.parse(0, argv2);
+    (void)cmd.parse(0, argv3);
+    (void)cmd.parse(0, argv4);
+    (void)cmd.parse(0, argv5);
+    (void)cmd.parse(0, argv6);
+    (void)cmd.parse(0, argv7);
 }

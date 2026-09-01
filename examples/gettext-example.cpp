@@ -44,6 +44,6 @@ int main(int argc, char **argv) {
          .typeDesc = translate("NAME")});
     cmd.add(name);
 
-    cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
     return 0;
 }

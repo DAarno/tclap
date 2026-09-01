@@ -35,5 +35,5 @@ int main(int argc, char **argv) {
     cmd.xorAdd(stest, btest);
     cmd.add(atest);
 
-    cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
 }

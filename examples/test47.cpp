@@ -33,6 +33,6 @@ int main(int argc, char **argv) {
          .defaultValue = std::make_pair(0, 0.0),
          .typeDesc = "int,double"});
     cmd.add(parg);
-    cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
     std::cout << parg.value() << std::endl;
 }

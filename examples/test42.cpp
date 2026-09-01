@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
                                      .typeDesc = "int"});
         cmd.add(req1);
 
-        cmd.parse(argc, argv);
+        cmd.parseOrExit(argc, argv);
 
     } catch (SpecificationException &e) {
         // Expected

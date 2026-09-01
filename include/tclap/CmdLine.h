@@ -389,6 +389,15 @@ public:
      */
     void parseOrExit(int argc, const char *const *argv);
 
+    /**
+     * Same as the argc/argv overload above, for the
+     * `std::vector<std::string>&` form of parse().
+     *
+     * \param args - A vector of strings representing the args. args[0] is
+     * still the program name.
+     */
+    void parseOrExit(std::vector<std::string> &args);
+
     void setOutput(CmdLineOutput *co) override;
 
     [[nodiscard]] std::string getVersion() const override { return _version; }
@@ -707,7 +716,8 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
             // --help/--version's onMatch (above) already printed via
             // _output by the time processArg() returns; this is an
             // ordinary early return, not an unwind.
-            if (_pendingOutcome) return ParseOutcome{.outcome = *_pendingOutcome};
+            if (_pendingOutcome)
+                return ParseOutcome{.outcome = *_pendingOutcome};
 
             // checks to see if the argument is an empty combined
             // switch and if so, then we've actually matched it
@@ -816,8 +826,8 @@ inline void CmdLine::ignoreUnmatched(const bool ignore) {
 // End CmdLine.cpp
 ///////////////////////////////////////////////////////////////////////////////
 
-inline void CmdLine::parseOrExit(int argc, const char *const *argv) {
-    ParseOutcome result = parse(argc, argv);
+namespace internal {
+inline void ExitOnOutcome(const ParseOutcome &result) {
     switch (result.outcome) {
         case Outcome::Success:
             return;
@@ -827,6 +837,15 @@ inline void CmdLine::parseOrExit(int argc, const char *const *argv) {
         case Outcome::ParseError:
             std::exit(EXIT_FAILURE);
     }
+}
+}  // namespace internal
+
+inline void CmdLine::parseOrExit(int argc, const char *const *argv) {
+    internal::ExitOnOutcome(parse(argc, argv));
+}
+
+inline void CmdLine::parseOrExit(std::vector<std::string> &args) {
+    internal::ExitOnOutcome(parse(args));
 }
 
 }  // namespace TCLAP

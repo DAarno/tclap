@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
                           .typeDesc = "integer"});
     cmd.add(intArg);
 
-    cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
 
     string s = strArg.value();
     int i = intArg.value();

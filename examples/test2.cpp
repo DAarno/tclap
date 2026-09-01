@@ -30,91 +30,86 @@ int main(int argc, char **argv) {
 }
 
 void parseOptions(int argc, char **argv) {
-    try {
-        CmdLine cmd({.message = "this is a message",
-                     .dialect = {.delimiter = ' '},
-                     .version = "0.99"});
+    CmdLine cmd({.message = "this is a message",
+                 .dialect = {.delimiter = ' '},
+                 .version = "0.99"});
 
-        //
-        // Define arguments
-        //
+    //
+    // Define arguments
+    //
 
-        SwitchArg btest({.flag = "B",
-                         .name = "existTestB",
-                         .description = "tests for the existence of B",
-                         .defaultValue = false});
-        cmd.add(btest);
+    SwitchArg btest({.flag = "B",
+                     .name = "existTestB",
+                     .description = "tests for the existence of B",
+                     .defaultValue = false});
+    cmd.add(btest);
 
-        SwitchArg ctest({.flag = "C",
-                         .name = "existTestC",
-                         .description = "tests for the existence of C",
-                         .defaultValue = false});
-        cmd.add(ctest);
+    SwitchArg ctest({.flag = "C",
+                     .name = "existTestC",
+                     .description = "tests for the existence of C",
+                     .defaultValue = false});
+    cmd.add(ctest);
 
-        SwitchArg atest({.flag = "A",
-                         .name = "existTestA",
-                         .description = "tests for the existence of A",
-                         .defaultValue = false});
-        cmd.add(atest);
+    SwitchArg atest({.flag = "A",
+                     .name = "existTestA",
+                     .description = "tests for the existence of A",
+                     .defaultValue = false});
+    cmd.add(atest);
 
-        ValueArg<string> stest({.flag = "s",
-                                .name = "stringTest",
-                                .description = "string test",
-                                .required = true,
-                                .defaultValue = "homer",
-                                .typeDesc = "string"});
-        cmd.add(stest);
+    ValueArg<string> stest({.flag = "s",
+                            .name = "stringTest",
+                            .description = "string test",
+                            .required = true,
+                            .defaultValue = "homer",
+                            .typeDesc = "string"});
+    cmd.add(stest);
 
-        ValueArg<int> itest({.flag = "i",
-                             .name = "intTest",
-                             .description = "integer test",
-                             .required = true,
-                             .defaultValue = 5,
-                             .typeDesc = "int"});
-        cmd.add(itest);
+    ValueArg<int> itest({.flag = "i",
+                         .name = "intTest",
+                         .description = "integer test",
+                         .required = true,
+                         .defaultValue = 5,
+                         .typeDesc = "int"});
+    cmd.add(itest);
 
-        ValueArg<double> ftest({.flag = "f",
-                                .name = "floatTest",
-                                .description = "float test",
-                                .required = false,
-                                .defaultValue = 3.7,
-                                .typeDesc = "float"});
-        cmd.add(ftest);
+    ValueArg<double> ftest({.flag = "f",
+                            .name = "floatTest",
+                            .description = "float test",
+                            .required = false,
+                            .defaultValue = 3.7,
+                            .typeDesc = "float"});
+    cmd.add(ftest);
 
-        UnlabeledValueArg<string> utest({.name = "unTest",
-                                         .description = "unlabeld test",
-                                         .required = true,
-                                         .defaultValue = "default",
-                                         .typeDesc = "string"});
-        cmd.add(utest);
+    UnlabeledValueArg<string> utest({.name = "unTest",
+                                     .description = "unlabeld test",
+                                     .required = true,
+                                     .defaultValue = "default",
+                                     .typeDesc = "string"});
+    cmd.add(utest);
 
-        UnlabeledMultiArg<string> mtest({.name = "fileName",
-                                         .description = "file names",
-                                         .required = false,
-                                         .typeDesc = "string"});
-        cmd.add(mtest);
+    UnlabeledMultiArg<string> mtest({.name = "fileName",
+                                     .description = "file names",
+                                     .required = false,
+                                     .typeDesc = "string"});
+    cmd.add(mtest);
 
-        //
-        // Parse the command line.
-        //
-        cmd.parse(argc, argv);
+    //
+    // Parse the command line.
+    //
+    cmd.parseOrExit(argc, argv);
 
-        //
-        // Set variables
-        //
-        _intTest = itest.value();
-        _floatTest = ftest.value();
-        _stringTest = stest.value();
-        _boolTestB = btest.value();
-        _boolTestC = ctest.value();
-        _boolTestA = atest.value();
-        _utest = utest.value();
+    //
+    // Set variables
+    //
+    _intTest = itest.value();
+    _floatTest = ftest.value();
+    _stringTest = stest.value();
+    _boolTestB = btest.value();
+    _boolTestC = ctest.value();
+    _boolTestA = atest.value();
+    _utest = utest.value();
 
-        vector<string> v = mtest.value();
-        for (int i = 0; static_cast<unsigned int>(i) < v.size(); i++)
-            cout << i << "  " << v[i] << endl;
-
-    } catch (ArgException &e) {
-        cout << "ERROR: " << e.error() << " " << e.argId() << endl;
-    }
+    vector<string> v = mtest.value();
+    for (int i = 0; static_cast<unsigned int>(i) < v.size(); i++)
+        cout << i << "  " << v[i] << endl;
 }

@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     input.add(arg0).add(arg1).add(arg2);
 
     cmd.add(input);
-    cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
 
     if (arg0.isSet()) {
         std::cout << "a_int was set to: " << arg0.value() << std::endl;

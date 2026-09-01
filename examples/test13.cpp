@@ -21,39 +21,32 @@ using namespace TCLAP;
 // Contributed by Nico Lugil.
 //
 int main() {
-    try {
-        CmdLine cmd({.message = "Test",
-                     .dialect = {.delimiter = ' '},
-                     .version = "not versioned",
-                     .helpAndVersion = true});
+    CmdLine cmd({.message = "Test",
+                 .dialect = {.delimiter = ' '},
+                 .version = "not versioned",
+                 .helpAndVersion = true});
 
-        MultiArg<std::string> Arg({.flag = "X",
-                                   .name = "fli",
-                                   .description = "fli module",
-                                   .required = false,
-                                   .typeDesc = "string"});
-        cmd.add(Arg);
-        MultiSwitchArg ArgMultiSwitch(
-            {.flag = "d", .name = "long_d", .description = "example"});
-        cmd.add(ArgMultiSwitch);
+    MultiArg<std::string> Arg({.flag = "X",
+                               .name = "fli",
+                               .description = "fli module",
+                               .required = false,
+                               .typeDesc = "string"});
+    cmd.add(Arg);
+    MultiSwitchArg ArgMultiSwitch(
+        {.flag = "d", .name = "long_d", .description = "example"});
+    cmd.add(ArgMultiSwitch);
 
-        std::vector<std::string> in;
-        in.push_back("prog name");
-        in.push_back("-X module");
-        cmd.parse(in);
+    std::vector<std::string> in;
+    in.push_back("prog name");
+    in.push_back("-X module");
+    cmd.parseOrExit(in);
 
-        std::vector<std::string> s = Arg.value();
-        for (unsigned int i = 0; i < s.size(); i++) {
-            std::cout << s[i] << "\n";
-        }
-        std::cout << "MultiSwtichArg was found " << ArgMultiSwitch.value()
-                  << " times.\n";
-
-    } catch (ArgException &e)  // catch any exceptions
-    {
-        std::cerr << "error: " << e.error() << " for arg " << e.argId()
-                  << std::endl;
+    std::vector<std::string> s = Arg.value();
+    for (unsigned int i = 0; i < s.size(); i++) {
+        std::cout << s[i] << "\n";
     }
+    std::cout << "MultiSwtichArg was found " << ArgMultiSwitch.value()
+              << " times.\n";
 
     std::cout << "done...\n";
 

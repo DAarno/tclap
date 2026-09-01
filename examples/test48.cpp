@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     cmd.add(verbose);
 
     try {
-        cmd.parse(argc, argv);
+        cmd.parseOrExit(argc, argv);
     } catch (TCLAP::ArgException &e) {
         std::cerr << e.error() << std::endl;
         return 1;

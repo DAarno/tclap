@@ -13,30 +13,25 @@ using namespace TCLAP;
 using namespace std;
 
 int main(int argc, char **argv) {
-    try {
-        CmdLine cmd({.message = "this is a message",
-                     .dialect = {.delimiter = ' '},
-                     .version = "0.99"});
+    CmdLine cmd({.message = "this is a message",
+                 .dialect = {.delimiter = ' '},
+                 .version = "0.99"});
 
-        ValueArg<AutoBaseInt<int>> itest({.flag = "i",
-                                          .name = "intTest",
-                                          .description = "integer test",
-                                          .required = true,
-                                          .defaultValue = 5});
-        cmd.add(itest);
+    ValueArg<AutoBaseInt<int>> itest({.flag = "i",
+                                      .name = "intTest",
+                                      .description = "integer test",
+                                      .required = true,
+                                      .defaultValue = 5});
+    cmd.add(itest);
 
-        //
-        // Parse the command line.
-        //
-        cmd.parse(argc, argv);
+    //
+    // Parse the command line.
+    //
+    cmd.parseOrExit(argc, argv);
 
-        //
-        // Set variables
-        //
-        int _intTest = itest.value();
-        cout << "found int: " << _intTest << endl;
-
-    } catch (ArgException &e) {
-        cout << "ERROR: " << e.error() << " " << e.argId() << endl;
-    }
+    //
+    // Set variables
+    //
+    int _intTest = itest.value();
+    cout << "found int: " << _intTest << endl;
 }

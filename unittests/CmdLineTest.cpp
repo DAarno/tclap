@@ -559,6 +559,24 @@ void TestParseOrExitReturnsOnSuccess(Testing &t) {
     if (!a.isSet()) ERROR(t, "parseOrExit: -a should be set after parsing");
 }
 
+// Same as above, for the std::vector<std::string>& overload.
+void TestParseOrExitVectorOverloadReturnsOnSuccess(Testing &t) {
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    cmd.add(a);
+
+    const char *argv[] = {"prog", "-a"};
+    std::vector<std::string> args = MakeArgs(argv);
+
+    cmd.parseOrExit(args);
+
+    if (!a.isSet()) ERROR(t, "parseOrExit: -a should be set after parsing");
+}
+
 int main() {
     Testing t;
     TestUnmatchedArgThrows(t);
@@ -576,5 +594,6 @@ int main() {
     TestCustomDialectPrefixesCoexistWithDefault(t);
     TestAddOwned(t);
     TestParseOrExitReturnsOnSuccess(t);
+    TestParseOrExitVectorOverloadReturnsOnSuccess(t);
     return t.errorCount();
 }

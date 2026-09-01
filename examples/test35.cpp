@@ -61,5 +61,5 @@ int main(int argc, char **argv) {
     }
 
     cmd.xorAdd(arg2, arg3);
-    cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
 }

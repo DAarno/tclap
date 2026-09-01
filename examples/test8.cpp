@@ -35,87 +35,80 @@ int main(int argc, char **argv) {
 }
 
 void parseOptions(int argc, char **argv) {
-    try {
-        CmdLine cmd({.message = "this is a message",
-                     .dialect = {.delimiter = '='},
-                     .version = "0.99"});
+    CmdLine cmd({.message = "this is a message",
+                 .dialect = {.delimiter = '='},
+                 .version = "0.99"});
 
-        //
-        // Define arguments
-        //
+    //
+    // Define arguments
+    //
 
-        auto &btest = cmd.addOwned<SwitchArg>({.flag = "B",
-                                               .name = "existTestB",
-                                               .description = "exist Test B",
-                                               .defaultValue = false});
+    auto &btest = cmd.addOwned<SwitchArg>({.flag = "B",
+                                           .name = "existTestB",
+                                           .description = "exist Test B",
+                                           .defaultValue = false});
 
-        auto &stest =
-            cmd.addOwned<ValueArg<string>>({.flag = "s",
-                                            .name = "stringTest",
-                                            .description = "string test",
-                                            .required = true,
-                                            .defaultValue = "homer",
-                                            .typeDesc = "string"});
+    auto &stest = cmd.addOwned<ValueArg<string>>({.flag = "s",
+                                                  .name = "stringTest",
+                                                  .description = "string test",
+                                                  .required = true,
+                                                  .defaultValue = "homer",
+                                                  .typeDesc = "string"});
 
-        auto &utest = cmd.addOwned<UnlabeledValueArg<string>>(
-            {.name = "unTest1",
-             .description = "unlabeled test one",
-             .required = true,
-             .defaultValue = "default",
-             .typeDesc = "string"});
+    auto &utest = cmd.addOwned<UnlabeledValueArg<string>>(
+        {.name = "unTest1",
+         .description = "unlabeled test one",
+         .required = true,
+         .defaultValue = "default",
+         .typeDesc = "string"});
 
-        auto &ztest = cmd.addOwned<UnlabeledValueArg<string>>(
-            {.name = "unTest2",
-             .description = "unlabeled test two",
-             .required = true,
-             .defaultValue = "default",
-             .typeDesc = "string"});
+    auto &ztest = cmd.addOwned<UnlabeledValueArg<string>>(
+        {.name = "unTest2",
+         .description = "unlabeled test two",
+         .required = true,
+         .defaultValue = "default",
+         .typeDesc = "string"});
 
-        auto &itest =
-            cmd.addOwned<MultiArg<int>>({.flag = "i",
-                                         .name = "intTest",
-                                         .description = "multi int test",
-                                         .required = false,
-                                         .typeDesc = "int"});
+    auto &itest = cmd.addOwned<MultiArg<int>>({.flag = "i",
+                                               .name = "intTest",
+                                               .description = "multi int test",
+                                               .required = false,
+                                               .typeDesc = "int"});
 
-        auto &ftest =
-            cmd.addOwned<MultiArg<float>>({.flag = "f",
-                                           .name = "floatTest",
-                                           .description = "multi float test",
-                                           .required = false,
-                                           .typeDesc = "float"});
+    auto &ftest =
+        cmd.addOwned<MultiArg<float>>({.flag = "f",
+                                       .name = "floatTest",
+                                       .description = "multi float test",
+                                       .required = false,
+                                       .typeDesc = "float"});
 
-        auto &mtest = cmd.addOwned<UnlabeledMultiArg<string>>(
-            {.name = "fileName",
-             .description = "file names",
-             .required = false,
-             .typeDesc = "fileNameString"});
-        //
-        // Parse the command line.
-        //
-        cmd.parse(argc, argv);
+    auto &mtest =
+        cmd.addOwned<UnlabeledMultiArg<string>>({.name = "fileName",
+                                                 .description = "file names",
+                                                 .required = false,
+                                                 .typeDesc = "fileNameString"});
+    //
+    // Parse the command line.
+    //
+    cmd.parseOrExit(argc, argv);
 
-        //
-        // Set variables
-        //
-        _stringTest = stest.value();
-        _boolTestB = btest.value();
-        _utest = utest.value();
-        _ztest = ztest.value();
+    //
+    // Set variables
+    //
+    _stringTest = stest.value();
+    _boolTestB = btest.value();
+    _utest = utest.value();
+    _ztest = ztest.value();
 
-        vector<int> vi = itest.value();
-        for (int i = 0; static_cast<unsigned int>(i) < vi.size(); i++)
-            cout << "[-i] " << i << "  " << vi[i] << endl;
+    vector<int> vi = itest.value();
+    for (int i = 0; static_cast<unsigned int>(i) < vi.size(); i++)
+        cout << "[-i] " << i << "  " << vi[i] << endl;
 
-        vector<float> vf = ftest.value();
-        for (int i = 0; static_cast<unsigned int>(i) < vf.size(); i++)
-            cout << "[-f] " << i << "  " << vf[i] << endl;
+    vector<float> vf = ftest.value();
+    for (int i = 0; static_cast<unsigned int>(i) < vf.size(); i++)
+        cout << "[-f] " << i << "  " << vf[i] << endl;
 
-        vector<string> v = mtest.value();
-        for (int i = 0; static_cast<unsigned int>(i) < v.size(); i++)
-            cout << "[  ] " << i << "  " << v[i] << endl;
-
-    } catch (ArgException &e) {
-        cout << "ERROR: " << e.error() << " " << e.argId() << endl;
-    }
+    vector<string> v = mtest.value();
+    for (int i = 0; static_cast<unsigned int>(i) < v.size(); i++)
+        cout << "[  ] " << i << "  " << v[i] << endl;
 }

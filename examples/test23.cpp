@@ -22,73 +22,68 @@ int main(int argc, char **argv) {
 }
 
 void parseOptions(int argc, char **argv) {
-    try {
-        CmdLine cmd({.message = "this is a message",
-                     .dialect = {.delimiter = '='},
-                     .version = "0.99"});
-        cmd.ignoreUnmatched(true);
+    CmdLine cmd({.message = "this is a message",
+                 .dialect = {.delimiter = '='},
+                 .version = "0.99"});
+    cmd.ignoreUnmatched(true);
 
-        //
-        // Define arguments
-        //
+    //
+    // Define arguments
+    //
 
-        SwitchArg btest({.flag = "B",
-                         .name = "existTestB",
-                         .description = "exist Test B",
-                         .defaultValue = false});
-        cmd.add(btest);
+    SwitchArg btest({.flag = "B",
+                     .name = "existTestB",
+                     .description = "exist Test B",
+                     .defaultValue = false});
+    cmd.add(btest);
 
-        ValueArg<string> stest({.flag = "s",
-                                .name = "stringTest",
-                                .description = "string test",
-                                .required = true,
-                                .defaultValue = "homer",
-                                .typeDesc = "string"});
-        cmd.add(stest);
+    ValueArg<string> stest({.flag = "s",
+                            .name = "stringTest",
+                            .description = "string test",
+                            .required = true,
+                            .defaultValue = "homer",
+                            .typeDesc = "string"});
+    cmd.add(stest);
 
-        MultiArg<int> itest({.flag = "i",
-                             .name = "intTest",
-                             .description = "multi int test",
-                             .required = false,
-                             .typeDesc = "int"});
-        cmd.add(itest);
+    MultiArg<int> itest({.flag = "i",
+                         .name = "intTest",
+                         .description = "multi int test",
+                         .required = false,
+                         .typeDesc = "int"});
+    cmd.add(itest);
 
-        MultiArg<float> ftest({.flag = "f",
-                               .name = "floatTest",
-                               .description = "multi float test",
-                               .required = false,
-                               .typeDesc = "float"});
-        cmd.add(ftest);
+    MultiArg<float> ftest({.flag = "f",
+                           .name = "floatTest",
+                           .description = "multi float test",
+                           .required = false,
+                           .typeDesc = "float"});
+    cmd.add(ftest);
 
-        UnlabeledMultiArg<string> mtest({.name = "fileName",
-                                         .description = "file names",
-                                         .required = false,
-                                         .typeDesc = "fileNameString"});
-        cmd.add(mtest);
-        //
-        // Parse the command line.
-        //
-        cmd.parse(argc, argv);
+    UnlabeledMultiArg<string> mtest({.name = "fileName",
+                                     .description = "file names",
+                                     .required = false,
+                                     .typeDesc = "fileNameString"});
+    cmd.add(mtest);
+    //
+    // Parse the command line.
+    //
+    cmd.parseOrExit(argc, argv);
 
-        //
-        // Set variables
-        //
-        _stringTest = stest.value();
-        _boolTestB = btest.value();
+    //
+    // Set variables
+    //
+    _stringTest = stest.value();
+    _boolTestB = btest.value();
 
-        vector<int> vi = itest.value();
-        for (int i = 0; static_cast<unsigned int>(i) < vi.size(); i++)
-            cout << "[-i] " << i << "  " << vi[i] << endl;
+    vector<int> vi = itest.value();
+    for (int i = 0; static_cast<unsigned int>(i) < vi.size(); i++)
+        cout << "[-i] " << i << "  " << vi[i] << endl;
 
-        vector<float> vf = ftest.value();
-        for (int i = 0; static_cast<unsigned int>(i) < vf.size(); i++)
-            cout << "[-f] " << i << "  " << vf[i] << endl;
+    vector<float> vf = ftest.value();
+    for (int i = 0; static_cast<unsigned int>(i) < vf.size(); i++)
+        cout << "[-f] " << i << "  " << vf[i] << endl;
 
-        vector<string> v = mtest.value();
-        for (int i = 0; static_cast<unsigned int>(i) < v.size(); i++)
-            cout << "[  ] " << i << "  " << v[i] << endl;
-
-    } catch (ArgException &e) {
-        cout << "ERROR: " << e.error() << " " << e.argId() << endl;
-    }
+    vector<string> v = mtest.value();
+    for (int i = 0; static_cast<unsigned int>(i) < v.size(); i++)
+        cout << "[  ] " << i << "  " << v[i] << endl;
 }

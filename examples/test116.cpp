@@ -31,24 +31,20 @@ using namespace TCLAP;
 using namespace std;
 
 int main(int argc, char **argv) {
-    try {
-        CmdLine cmd({.message = "MultiSwitchArg::reset() regression test"});
+    CmdLine cmd({.message = "MultiSwitchArg::reset() regression test"});
 
-        MultiSwitchArg verbose({.flag = "v",
-                                .name = "verbose",
-                                .description = "be verbose, repeatedly"});
-        cmd.add(verbose);
+    MultiSwitchArg verbose({.flag = "v",
+                            .name = "verbose",
+                            .description = "be verbose, repeatedly"});
+    cmd.add(verbose);
 
-        cmd.parse(argc, argv);
+    cmd.parseOrExit(argc, argv);
 
-        cout << "before reset: isSet=" << verbose.isSet()
-             << " value=" << verbose.value() << endl;
+    cout << "before reset: isSet=" << verbose.isSet()
+         << " value=" << verbose.value() << endl;
 
-        verbose.reset();
+    verbose.reset();
 
-        cout << "after reset:  isSet=" << verbose.isSet()
-             << " value=" << verbose.value() << endl;
-    } catch (ArgException &e) {
-        cout << "ERROR: " << e.error() << " " << e.argId() << endl;
-    }
+    cout << "after reset:  isSet=" << verbose.isSet()
+         << " value=" << verbose.value() << endl;
 }
