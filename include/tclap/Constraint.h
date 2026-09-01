@@ -28,11 +28,22 @@
 #include <iomanip>
 #include <iostream>
 #include <list>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace TCLAP {
+
+namespace detail {
+// Satisfied iff T can be written to an ostream via operator<< -- used by
+// Constraint implementations (ValuesConstraint, RangeConstraint) that
+// build their description()/shortID() text from the values/bounds T
+// holds.
+template <typename T>
+concept OStreamInsertable =
+    requires(std::ostream &os, const T &val) { os << val; };
+}  // namespace detail
 
 /**
  * The interface that defines the interaction between the Arg and Constraint.

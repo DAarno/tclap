@@ -34,14 +34,6 @@
 
 namespace TCLAP {
 
-namespace detail {
-// Satisfied iff T can be written to an ostream via operator<< (what the
-// ValuesConstraint constructor, below, uses to build its description).
-template <typename T>
-concept OStreamInsertable =
-    requires(std::ostream &os, const T &val) { os << val; };
-}  // namespace detail
-
 /**
  * A Constraint that constrains the Arg to only those values specified
  * in the constraint.

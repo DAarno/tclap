@@ -20,10 +20,13 @@
  *
  *****************************************************************************/
 
+#include "tclap/PredicateConstraint.h"
+#include "tclap/RangeConstraint.h"
 #include "tclap/ValuesConstraint.h"
 #include "testing.h"
 
 #include <stdexcept>
+#include <type_traits>
 
 using namespace TCLAP;
 
@@ -60,7 +63,8 @@ void TestCustomConstraint(Testing &t) {
     PositiveConstraint positive;
     const Constraint<int> &c = positive;
 
-    if (!c.check(5)) ERROR(t, "Constraint: 5 should satisfy PositiveConstraint");
+    if (!c.check(5))
+        ERROR(t, "Constraint: 5 should satisfy PositiveConstraint");
     if (c.check(-5))
         ERROR(t, "Constraint: -5 should not satisfy PositiveConstraint");
     if (c.description() != "a positive integer")
@@ -72,11 +76,57 @@ void TestCustomConstraint(Testing &t) {
 void TestConstraintShortIDNullThrows(Testing &t) {
     try {
         Constraint<int>::shortID(NULL);
-        ERROR(t, "Constraint::shortID: expected std::logic_error for a "
-                 "NULL constraint, none thrown");
+        ERROR(t,
+              "Constraint::shortID: expected std::logic_error for a "
+              "NULL constraint, none thrown");
     } catch (std::logic_error &) {
         // Expected.
     }
+}
+
+void TestPredicateConstraint(Testing &t) {
+    PredicateConstraint<int> positive("must be positive", "positive",
+                                      [](const int &v) { return v > 0; });
+    const Constraint<int> &c = positive;
+
+    if (!c.check(5)) ERROR(t, "PredicateConstraint: 5 should pass");
+    if (c.check(0)) ERROR(t, "PredicateConstraint: 0 should not pass");
+    if (c.check(-5)) ERROR(t, "PredicateConstraint: -5 should not pass");
+    if (c.description() != "must be positive")
+        ERROR(t, "PredicateConstraint: unexpected description(): "
+                     << c.description());
+    if (c.shortID() != "positive")
+        ERROR(t, "PredicateConstraint: unexpected shortID(): " << c.shortID());
+}
+
+void TestMakeConstraint(Testing &t) {
+    auto even = MakeConstraint<int>("must be even", "even",
+                                    [](int v) { return v % 2 == 0; });
+    static_assert(std::is_same_v<decltype(even), PredicateConstraint<int>>);
+
+    if (!even.check(4)) ERROR(t, "MakeConstraint: 4 should pass");
+    if (even.check(3)) ERROR(t, "MakeConstraint: 3 should not pass");
+    if (even.description() != "must be even")
+        ERROR(t, "MakeConstraint: unexpected description(): "
+                     << even.description());
+    if (even.shortID() != "even")
+        ERROR(t, "MakeConstraint: unexpected shortID(): " << even.shortID());
+}
+
+void TestRangeConstraint(Testing &t) {
+    RangeConstraint<int> range(1, 10);
+    const Constraint<int> &c = range;
+
+    if (!c.check(1)) ERROR(t, "RangeConstraint: lower bound 1 should pass");
+    if (!c.check(10)) ERROR(t, "RangeConstraint: upper bound 10 should pass");
+    if (!c.check(5)) ERROR(t, "RangeConstraint: 5 should pass");
+    if (c.check(0)) ERROR(t, "RangeConstraint: 0 should not pass");
+    if (c.check(11)) ERROR(t, "RangeConstraint: 11 should not pass");
+    if (c.shortID() != "[1-10]")
+        ERROR(t, "RangeConstraint: unexpected shortID(): " << c.shortID());
+    if (c.description() != "value must be between 1 and 10 (inclusive)")
+        ERROR(t,
+              "RangeConstraint: unexpected description(): " << c.description());
 }
 
 int main() {
@@ -84,5 +134,8 @@ int main() {
     TestValuesConstraint(t);
     TestCustomConstraint(t);
     TestConstraintShortIDNullThrows(t);
+    TestPredicateConstraint(t);
+    TestMakeConstraint(t);
+    TestRangeConstraint(t);
     return t.errorCount();
 }
