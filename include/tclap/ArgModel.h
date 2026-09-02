@@ -55,17 +55,17 @@ struct ArgModel {
 /**
  * Builds an ArgModel for every Arg registered with `cmd` -- including the
  * auto-added --help/--version/-- args -- in the same order as
- * CmdLineInterface::getArgList().
+ * CmdLineInterface::argList().
  * \param cmd - The CmdLine to snapshot.
  */
 [[nodiscard]] inline std::vector<ArgModel> BuildArgModels(
     const CmdLineInterface &cmd) {
     std::vector<ArgModel> models;
-    for (const Arg *arg : cmd.getArgList()) {
+    for (const Arg *arg : cmd.argList()) {
         models.push_back(ArgModel{
-            .flag = arg->getFlag(),
-            .name = arg->getName(),
-            .description = arg->getDescription(),
+            .flag = arg->flag(),
+            .name = arg->name(),
+            .description = arg->description(),
             .required = arg->isRequired(),
             .valueRequired = arg->isValueRequired(),
             .hasLabel = arg->hasLabel(),

@@ -289,18 +289,18 @@ public:
     /**
      * Returns the argument flag.
      */
-    [[nodiscard]] const std::string &getFlag() const noexcept;
+    [[nodiscard]] const std::string &flag() const noexcept;
 
     /**
      * Returns the argument name.
      */
-    [[nodiscard]] const std::string &getName() const noexcept;
+    [[nodiscard]] const std::string &name() const noexcept;
 
     /**
      * Returns the argument description.
      */
-    [[nodiscard]] std::string getDescription() const {
-        return getDescription(_required);
+    [[nodiscard]] std::string description() const {
+        return description(_required);
     }
 
     /**
@@ -316,7 +316,7 @@ public:
      * @param required if the argument should be treated as
      * required when described.
      */
-    [[nodiscard]] std::string getDescription(bool required) const {
+    [[nodiscard]] std::string description(bool required) const {
         return (required ? "(" + _requireLabel + ") " : "") + _description;
     }
 
@@ -523,9 +523,9 @@ inline bool Arg::operator==(const Arg &a) const {
     return (!_flag.empty() && _flag == a._flag) || _name == a._name;
 }
 
-inline const std::string &Arg::getFlag() const noexcept { return _flag; }
+inline const std::string &Arg::flag() const noexcept { return _flag; }
 
-inline const std::string &Arg::getName() const noexcept { return _name; }
+inline const std::string &Arg::name() const noexcept { return _name; }
 
 inline bool Arg::isRequired() const { return _required; }
 

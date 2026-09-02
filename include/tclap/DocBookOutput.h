@@ -84,7 +84,7 @@ protected:
 };
 
 inline void DocBookOutput::version(CmdLineInterface &_cmd) {
-    std::cout << _cmd.getVersion() << std::endl;
+    std::cout << _cmd.version() << std::endl;
 }
 
 namespace internal {
@@ -102,10 +102,10 @@ const char *GroupChoice(const ArgGroup &group) {
 }  // namespace internal
 
 inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
-    std::list<ArgGroup *> argSets = _cmd.getArgGroups();
-    std::string progName = _cmd.getProgramName();
-    std::string xversion = _cmd.getVersion();
-    theDelimiter = _cmd.getDelimiter();
+    std::list<ArgGroup *> argSets = _cmd.argGroups();
+    std::string progName = _cmd.programName();
+    std::string xversion = _cmd.version();
+    theDelimiter = _cmd.delimiter();
 
     std::cout << "<?xml version='1.0'?>\n";
     std::cout
@@ -122,7 +122,7 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
 
     std::cout << "<refnamediv>\n";
     std::cout << "<refname>" << progName << "</refname>\n";
-    std::cout << "<refpurpose>" << _cmd.getMessage() << "</refpurpose>\n";
+    std::cout << "<refpurpose>" << _cmd.message() << "</refpurpose>\n";
     std::cout << "</refnamediv>\n";
 
     std::cout << "<refsynopsisdiv>\n";
@@ -155,7 +155,7 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
     std::cout << "<refsect1>\n";
     std::cout << "<title>Description</title>\n";
     std::cout << "<para>\n";
-    std::cout << _cmd.getMessage() << '\n';
+    std::cout << _cmd.message() << '\n';
     std::cout << "</para>\n";
     std::cout << "</refsect1>\n";
 
@@ -221,10 +221,10 @@ inline void DocBookOutput::printShortArg(Arg *a, bool required) {
     if (a->acceptsMultipleValues()) std::cout << " rep='repeat'";
 
     std::cout << '>';
-    if (!a->getFlag().empty())
-        std::cout << a->flagStartChar() << a->getFlag();
+    if (!a->flag().empty())
+        std::cout << a->flagStartChar() << a->flag();
     else
-        std::cout << a->nameStartString() << a->getName();
+        std::cout << a->nameStartString() << a->name();
     if (a->isValueRequired()) {
         std::string arg = a->shortID();
         removeChar(arg, '[');
@@ -250,23 +250,23 @@ inline void DocBookOutput::printLongArg(const ArgGroup &group) const {
             continue;
         }
 
-        std::string desc = a.getDescription(forceRequired || a.isRequired());
+        std::string desc = a.description(forceRequired || a.isRequired());
         substituteSpecialChars(desc, '<', lt);
         substituteSpecialChars(desc, '>', gt);
 
         std::cout << "<varlistentry>\n";
 
-        if (!a.getFlag().empty()) {
+        if (!a.flag().empty()) {
             std::cout << "<term>\n";
             std::cout << "<option>";
-            std::cout << a.flagStartChar() << a.getFlag();
+            std::cout << a.flagStartChar() << a.flag();
             std::cout << "</option>\n";
             std::cout << "</term>\n";
         }
 
         std::cout << "<term>\n";
         std::cout << "<option>";
-        std::cout << a.nameStartString() << a.getName();
+        std::cout << a.nameStartString() << a.name();
         if (a.isValueRequired()) {
             std::string arg = a.shortID();
             removeChar(arg, '[');

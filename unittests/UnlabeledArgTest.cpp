@@ -75,7 +75,7 @@ void TestUnlabeledValueArgPositional(Testing &t) {
 
     if (count.hasLabel())
         ERROR(t, "UnlabeledValueArg: hasLabel() should be false");
-    if (count.shortID("val") != count.getName())
+    if (count.shortID("val") != count.name())
         ERROR(t, "UnlabeledValueArg: shortID() should be the arg name");
 }
 
@@ -148,7 +148,7 @@ void TestUnlabeledValueArgEquality(Testing &t) {
               "UnlabeledValueArg: operator== should not match distinct "
               "name and description");
 
-    if (a.longID("val").find(a.getName()) == std::string::npos)
+    if (a.longID("val").find(a.name()) == std::string::npos)
         ERROR(t, "UnlabeledValueArg: longID() should mention the arg name: "
                      << a.longID("val"));
 }

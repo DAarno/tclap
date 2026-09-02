@@ -57,7 +57,7 @@ void TestArgModelMatchesArgAccessors(Testing &t) {
     cmd.add(file);
 
     std::vector<ArgModel> models = BuildArgModels(cmd);
-    std::list<Arg *> args = cmd.getArgList();
+    std::list<Arg *> args = cmd.argList();
     if (models.size() != args.size()) {
         ERROR(t, "BuildArgModels() returned "
                      << models.size() << " models, want " << args.size());
@@ -67,14 +67,14 @@ void TestArgModelMatchesArgAccessors(Testing &t) {
     auto modelIt = models.begin();
     for (const Arg *arg : args) {
         const ArgModel &model = *modelIt;
-        if (model.flag != arg->getFlag() || model.name != arg->getName() ||
-            model.description != arg->getDescription() ||
+        if (model.flag != arg->flag() || model.name != arg->name() ||
+            model.description != arg->description() ||
             model.required != arg->isRequired() ||
             model.valueRequired != arg->isValueRequired() ||
             model.hasLabel != arg->hasLabel() ||
             model.visibleInHelp != arg->visibleInHelp() ||
             model.shortID != arg->shortID() || model.longID != arg->longID()) {
-            ERROR(t, "ArgModel for \"" << arg->getName()
+            ERROR(t, "ArgModel for \"" << arg->name()
                                        << "\" disagrees with its source Arg");
         }
         ++modelIt;

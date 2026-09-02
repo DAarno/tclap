@@ -19,9 +19,9 @@ public:
 
     virtual void usage(CmdLineInterface &c) {
         cout << "my usage message:" << endl;
-        list<Arg *> args = c.getArgList();
+        list<Arg *> args = c.argList();
         for (ArgListIterator it = args.begin(); it != args.end(); it++)
-            cout << (*it)->longID() << "  (" << (*it)->getDescription() << ")"
+            cout << (*it)->longID() << "  (" << (*it)->description() << ")"
                  << endl;
     }
 

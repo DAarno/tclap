@@ -173,16 +173,16 @@ void TestGetters(Testing &t) {
         ERROR(t, "CmdLine: unexpected parse failure: "
                      << (result.error.has_value() ? result.error->message
                                                    : std::string()));
-    if (cmd.getProgramName() != "prog")
+    if (cmd.programName() != "prog")
         ERROR(t, "CmdLine: expected program name \"prog\", got \""
-                     << cmd.getProgramName() << '"');
-    if (cmd.getMessage() != "a test message")
-        ERROR(t, "CmdLine: unexpected getMessage(): " << cmd.getMessage());
-    if (cmd.getVersion() != "3.2.1")
-        ERROR(t, "CmdLine: unexpected getVersion(): " << cmd.getVersion());
-    if (cmd.getDelimiter() != ',')
+                     << cmd.programName() << '"');
+    if (cmd.message() != "a test message")
+        ERROR(t, "CmdLine: unexpected message(): " << cmd.message());
+    if (cmd.version() != "3.2.1")
+        ERROR(t, "CmdLine: unexpected version(): " << cmd.version());
+    if (cmd.delimiter() != ',')
         ERROR(t,
-              "CmdLine: unexpected getDelimiter(): " << cmd.getDelimiter());
+              "CmdLine: unexpected delimiter(): " << cmd.delimiter());
     if (cmd.hasHelpAndVersion())
         ERROR(t, "CmdLine: hasHelpAndVersion() should be false");
 }
@@ -308,30 +308,30 @@ void TestMessageTranslatorRefreshesHelpAndVersion(Testing &t) {
                     .version = "1.0"});  // helpAndVersion defaults to true.
     cmd.setMessageTranslator(UppercaseTranslator());
 
-    std::list<Arg *> args = cmd.getArgList();
+    std::list<Arg *> args = cmd.argList();
     bool sawHelp = false, sawVersion = false;
     for (ArgListIterator it = args.begin(); it != args.end(); ++it) {
-        if ((*it)->getName() == "help") {
+        if ((*it)->name() == "help") {
             sawHelp = true;
-            if ((*it)->getDescription() != "SHOW HELP")
+            if ((*it)->description() != "SHOW HELP")
                 ERROR(t,
                       "CmdLine: --help description was not refreshed by "
                       "setMessageTranslator(), got \""
-                          << (*it)->getDescription() << '"');
+                          << (*it)->description() << '"');
         }
-        if ((*it)->getName() == "version") {
+        if ((*it)->name() == "version") {
             sawVersion = true;
-            if ((*it)->getDescription() != "SHOW VERSION")
+            if ((*it)->description() != "SHOW VERSION")
                 ERROR(t,
                       "CmdLine: --version description was not refreshed "
                       "by setMessageTranslator(), got \""
-                          << (*it)->getDescription() << '"');
+                          << (*it)->description() << '"');
         }
     }
     if (!sawHelp || !sawVersion)
         ERROR(t,
               "CmdLine: expected both --help and --version in "
-              "getArgList()");
+              "argList()");
 }
 
 void TestIndependentCmdLinesDoNotShareDialect(Testing &t) {
@@ -396,13 +396,13 @@ void TestIndependentCmdLinesDoNotShareDialect(Testing &t) {
               "\"-n=9\", got "
                   << equalsArg.value());
 
-    if (spaceCmd.getDialect().delimiter != ' ')
+    if (spaceCmd.dialect().delimiter != ' ')
         ERROR(t,
               "CmdLine: spaceCmd's Dialect delimiter changed after "
               "constructing equalsCmd");
-    if (equalsCmd.getDialect().delimiter != '=')
+    if (equalsCmd.dialect().delimiter != '=')
         ERROR(t, "CmdLine: unexpected equalsCmd Dialect delimiter: "
-                     << equalsCmd.getDialect().delimiter);
+                     << equalsCmd.dialect().delimiter);
 }
 
 void TestCustomDialectPrefixesCoexistWithDefault(Testing &t) {

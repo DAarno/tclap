@@ -61,7 +61,7 @@ public:
     StandaloneArgs() = default;
 
     ArgContainer &add(Arg *arg) override {
-        // std::cerr << "Adding " << arg->getName() << " to StandaloneArgs\n";
+        // std::cerr << "Adding " << arg->name() << " to StandaloneArgs\n";
         if (std::ranges::any_of(*this, [arg](const Arg *existing) {
                 return *arg == *existing;
             })) {
@@ -408,32 +408,32 @@ public:
 
     void setOutput(CmdLineOutput *co) override;
 
-    [[nodiscard]] std::string getVersion() const override { return _version; }
+    [[nodiscard]] std::string version() const override { return _version; }
 
-    [[nodiscard]] std::string getProgramName() const override {
+    [[nodiscard]] std::string programName() const override {
         return _progName;
     }
 
-    [[nodiscard]] const std::list<Arg *> &getArgList() const override {
+    [[nodiscard]] const std::list<Arg *> &argList() const override {
         return _argList;
     }
-    std::list<ArgGroup *> getArgGroups() override {
+    std::list<ArgGroup *> argGroups() override {
         std::list<ArgGroup *> groups = _argGroups;
         groups.push_back(&_autoArgs);
         return groups;
     }
 
-    [[nodiscard]] char getDelimiter() const override { return _delimiter; }
+    [[nodiscard]] char delimiter() const override { return _delimiter; }
 
     /**
      * Returns the Dialect (delimiter, flag/name prefixes) this CmdLine
      * uses. Every Arg registered with this CmdLine shares this Dialect.
      */
-    [[nodiscard]] const Dialect &getDialect() const override {
+    [[nodiscard]] const Dialect &dialect() const override {
         return _dialect;
     }
 
-    [[nodiscard]] std::string getMessage() const override { return _message; }
+    [[nodiscard]] std::string message() const override { return _message; }
     [[nodiscard]] bool hasHelpAndVersion() const override {
         return _helpAndVersion;
     }
@@ -796,14 +796,14 @@ inline void CmdLine::missingArgsException(
     std::string missingArgList;
     for (Arg *arg : _argList) {
         if (arg->isRequired() && !arg->isSet()) {
-            missingArgList += arg->getName();
+            missingArgList += arg->name();
             missingArgList += ", ";
             count++;
         }
     }
 
     for (const ArgGroup *group : missing) {
-        missingArgList += group->getName();
+        missingArgList += group->name();
         missingArgList += ", ";
         count++;
     }

@@ -112,40 +112,40 @@ public:
     /**
      * Returns the version string.
      */
-    [[nodiscard]] virtual std::string getVersion() const = 0;
+    [[nodiscard]] virtual std::string version() const = 0;
 
     /**
      * Returns the program name string.
      */
-    [[nodiscard]] virtual std::string getProgramName() const = 0;
+    [[nodiscard]] virtual std::string programName() const = 0;
 
     /**
      * Returns the list of ArgGroups.
      */
-    virtual std::list<ArgGroup *> getArgGroups() = 0;
+    virtual std::list<ArgGroup *> argGroups() = 0;
 
     /**
      * Returns every Arg registered with this CmdLine, including the
      * auto-added --help/--version/-- args. The returned reference is
      * valid for as long as this CmdLine is alive.
      */
-    [[nodiscard]] virtual const std::list<Arg *> &getArgList() const = 0;
+    [[nodiscard]] virtual const std::list<Arg *> &argList() const = 0;
 
     /**
      * Returns the delimiter string.
      */
-    [[nodiscard]] virtual char getDelimiter() const = 0;
+    [[nodiscard]] virtual char delimiter() const = 0;
 
     /**
      * Returns the Dialect (delimiter, flag/name prefixes) this CmdLine
      * uses. Every Arg registered with this CmdLine shares this Dialect.
      */
-    [[nodiscard]] virtual const Dialect &getDialect() const = 0;
+    [[nodiscard]] virtual const Dialect &dialect() const = 0;
 
     /**
      * Returns the message string.
      */
-    [[nodiscard]] virtual std::string getMessage() const = 0;
+    [[nodiscard]] virtual std::string message() const = 0;
 
     /**
      * Translates a built-in message using the current translator.

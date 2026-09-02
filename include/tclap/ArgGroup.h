@@ -105,7 +105,7 @@ public:
     [[nodiscard]] virtual bool showAsGroup() const { return true; }
 
     /// Returns the argument group's name.
-    [[nodiscard]] const std::string getName() const;
+    [[nodiscard]] const std::string name() const;
 
     iterator begin() noexcept { return _args.begin(); }
     iterator end() noexcept { return _args.end(); }
@@ -228,16 +228,16 @@ inline bool ExclusiveArgGroup::validate() {
     return isRequired() && !arg;
 }
 
-inline const std::string ArgGroup::getName() const {
-    std::string name;
+inline const std::string ArgGroup::name() const {
+    std::string result;
     std::string sep = "{";  // TODO: this should change for
                             // non-exclusive arg groups
     for (const Arg *arg : *this) {
-        name += sep + arg->getName();
+        result += sep + arg->name();
         sep = " | ";
     }
 
-    return name + '}';
+    return result + '}';
 }
 
 /// @internal

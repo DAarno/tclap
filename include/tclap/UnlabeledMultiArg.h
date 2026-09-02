@@ -115,7 +115,7 @@ public:
      * Returns the a short id string.  Used in the usage.
      */
     [[nodiscard]] std::string shortID(const std::string &) const override {
-        return Arg::getName() + " ...";
+        return Arg::name() + " ...";
     }
 
     /**
@@ -123,7 +123,7 @@ public:
      * \param val - value to be used.
      */
     [[nodiscard]] std::string longID(const std::string &) const override {
-        return Arg::getName() + " (accepted multiple times) <" + _typeDesc +
+        return Arg::name() + " (accepted multiple times) <" + _typeDesc +
                ">";
     }
 
@@ -182,7 +182,7 @@ bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args,
 
 template <class T>
 bool UnlabeledMultiArg<T>::operator==(const Arg &a) const {
-    return _name == a.getName() || this->getDescription() == a.getDescription();
+    return _name == a.name() || this->description() == a.description();
 }
 
 template <class T>

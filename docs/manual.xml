@@ -954,10 +954,10 @@ class MyOutput : public StdOutput
 		virtual void usage(CmdLineInterface&amp; c)
 		{
 			cout &lt;&lt; "my usage message:" &lt;&lt; endl;
-			list&lt;Arg*&gt; args = c.getArgList();
+			list&lt;Arg*&gt; args = c.argList();
 			for (ArgListIterator it = args.begin(); it != args.end(); it++)
 				cout &lt;&lt; (*it)-&gt;longID()
-					 &lt;&lt; "  (" &lt;&lt; (*it)-&gt;getDescription() &lt;&lt; ")" &lt;&lt; endl;
+					 &lt;&lt; "  (" &lt;&lt; (*it)-&gt;description() &lt;&lt; ")" &lt;&lt; endl;
 		}
 
 		virtual void version(CmdLineInterface&amp; c)

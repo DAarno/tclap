@@ -155,8 +155,8 @@ void TestArgFlaglessFormatting(Testing &t) {
     SwitchArg longOnly(SwitchArgSpec{
         .flag = "", .name = "verbose", .description = "be verbose"});
 
-    if (longOnly.getFlag() != "")
-        ERROR(t, "Arg: expected an empty flag, got \"" << longOnly.getFlag()
+    if (longOnly.flag() != "")
+        ERROR(t, "Arg: expected an empty flag, got \"" << longOnly.flag()
                                                        << '"');
     if (longOnly.shortID() != "--verbose")
         ERROR(t, "Arg: unexpected shortID() for a flag-less arg: "

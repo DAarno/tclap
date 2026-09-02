@@ -124,14 +124,14 @@ public:
      * Overrides shortID for specific behavior.
      */
     [[nodiscard]] std::string shortID(const std::string &) const override {
-        return Arg::getName();
+        return Arg::name();
     }
 
     /**
      * Overrides longID for specific behavior.
      */
     [[nodiscard]] std::string longID(const std::string &) const override {
-        return Arg::getName() + " <" + _typeDesc + ">";
+        return Arg::name() + " <" + _typeDesc + ">";
     }
 
     /**
@@ -190,7 +190,7 @@ bool UnlabeledValueArg<T>::processArg(int *i, std::vector<std::string> &args,
  */
 template <class T>
 bool UnlabeledValueArg<T>::operator==(const Arg &a) const {
-    return _name == a.getName() || this->getDescription() == a.getDescription();
+    return _name == a.name() || this->description() == a.description();
 }
 
 template <class T>

@@ -22,7 +22,7 @@
 
 // Regression test for UnlabeledValueArg::operator==: it used to compare
 // this object's raw (unformatted) description against the other
-// object's formatted getDescription(), which prepends "(required) "
+// object's formatted description(), which prepends "(required) "
 // for required args -- so the description half of the "match by name
 // OR description" check silently never fired between two required
 // args. Both arguments here are required, so this only demonstrates

@@ -103,9 +103,9 @@ protected:
 };
 
 inline void StdOutput::version(CmdLineInterface &_cmd) {
-    std::cout << std::format("\n{}  {} {}\n\n", _cmd.getProgramName(),
+    std::cout << std::format("\n{}  {} {}\n\n", _cmd.programName(),
                               _cmd.translateMessage("version_label", "version:"),
-                              _cmd.getVersion())
+                              _cmd.version())
               << std::flush;
 }
 
@@ -140,7 +140,7 @@ inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
                           _cmd.translateMessage(
                               "complete_usage_hint",
                               "For complete USAGE and HELP type: "),
-                          _cmd.getProgramName(), _cmd.getDialect().namePrefix)
+                          _cmd.programName(), _cmd.dialect().namePrefix)
                   << std::flush;
     } else {
         usage(_cmd);
@@ -160,27 +160,27 @@ inline bool cmpSwitch(const char &a, const char &b) {
 
 namespace internal {
 inline bool IsVisibleShortSwitch(const Arg &arg) {
-    return !(arg.getName() == Arg::ignoreNameString() ||
-             arg.isValueRequired() || arg.getFlag() == "") &&
+    return !(arg.name() == Arg::ignoreNameString() ||
+             arg.isValueRequired() || arg.flag() == "") &&
            arg.visibleInHelp();
 }
 
 inline bool IsVisibleLongSwitch(const Arg &arg) {
-    return (arg.getName() != Arg::ignoreNameString() &&
-            !arg.isValueRequired() && arg.getFlag() == "" &&
+    return (arg.name() != Arg::ignoreNameString() &&
+            !arg.isValueRequired() && arg.flag() == "" &&
             arg.visibleInHelp());
 }
 
 inline bool IsVisibleOption(const Arg &arg) {
-    return (arg.getName() != Arg::ignoreNameString() && arg.isValueRequired() &&
+    return (arg.name() != Arg::ignoreNameString() && arg.isValueRequired() &&
             arg.hasLabel() && arg.visibleInHelp());
 }
 
 inline bool CompareShortID(const Arg *a, const Arg *b) {
-    if (a->getFlag() == "" && b->getFlag() != "") {
+    if (a->flag() == "" && b->flag() != "") {
         return false;
     }
-    if (b->getFlag() == "" && a->getFlag() != "") {
+    if (b->flag() == "" && a->flag() != "") {
         return true;
     }
 
@@ -219,12 +219,12 @@ inline bool CompareOptions(std::pair<const Arg *, bool> a,
  */
 inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
                                    std::ostream &os) const {
-    std::list<ArgGroup *> argSets = _cmd.getArgGroups();
+    std::list<ArgGroup *> argSets = _cmd.argGroups();
 
     std::ostringstream outp;
-    outp << _cmd.getProgramName() + " ";
+    outp << _cmd.programName() + " ";
 
-    std::string switches = _cmd.getDialect().flagPrefix;
+    std::string switches = _cmd.dialect().flagPrefix;
 
     std::list<ArgGroup *> exclusiveGroups;
     std::list<ArgGroup *> nonExclusiveGroups;
@@ -258,7 +258,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     for (ArgGroup *group : nonExclusiveGroups) {
         for (Arg *arg : *group) {
             if (internal::IsVisibleShortSwitch(*arg)) {
-                switches += arg->getFlag();
+                switches += arg->flag();
             }
         }
 
@@ -331,7 +331,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     // Next do argsuments ("unlabled") in order of definition
     for (ArgGroup *group : nonExclusiveGroups) {
         for (Arg *arg : *group) {
-            if (arg->getName() == Arg::ignoreNameString()) {
+            if (arg->name() == Arg::ignoreNameString()) {
                 continue;
             }
 
@@ -345,7 +345,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     }
 
     // if the program name is too long, then adjust the second line offset
-    int secondLineOffset = static_cast<int>(_cmd.getProgramName().length()) + 2;
+    int secondLineOffset = static_cast<int>(_cmd.programName().length()) + 2;
     if (secondLineOffset > 75 / 2) secondLineOffset = static_cast<int>(75 / 2);
 
     spacePrint(os, outp.str(), 75, 3, secondLineOffset);
@@ -353,8 +353,8 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
 inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
                                   std::ostream &os) const {
-    std::string message = _cmd.getMessage();
-    std::list<ArgGroup *> argSets = _cmd.getArgGroups();
+    std::string message = _cmd.message();
+    std::list<ArgGroup *> argSets = _cmd.argGroups();
 
     std::list<Arg *> unlabled;
     for (ArgGroup *group : argSets) {
@@ -388,10 +388,10 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
             bool required = arg.isRequired() || forceRequired;
             if (exclusive) {
                 spacePrint(os, arg.longID(), 75, 6, 3);
-                spacePrint(os, arg.getDescription(required), 75, 8, 0);
+                spacePrint(os, arg.description(required), 75, 8, 0);
             } else {
                 spacePrint(os, arg.longID(), 75, 3, 3);
-                spacePrint(os, arg.getDescription(required), 75, 5, 0);
+                spacePrint(os, arg.description(required), 75, 5, 0);
             }
             os << '\n';
         }
@@ -400,7 +400,7 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
     for (const Arg *argPtr : unlabled) {
         const Arg &arg = *argPtr;
         spacePrint(os, arg.longID(), 75, 3, 3);
-        spacePrint(os, arg.getDescription(), 75, 5, 0);
+        spacePrint(os, arg.description(), 75, 5, 0);
         os << '\n';
     }
 
