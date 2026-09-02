@@ -166,6 +166,37 @@ int main(int argc, char** argv)
 }
 </programlisting>
 
+<warning id="SPEC_EXCEPTION_WARNING">
+<para>
+This example never wraps anything in a try block, and that's
+deliberate: as of 2.0, a malformed command line no longer throws (see
+<methodname>parseOrExit()</methodname>'s comment above), and every
+<classname>Arg</classname> here is constructed with a fixed,
+hardcoded spec, so the one exception that
+<emphasis>could</emphasis> still be thrown --
+<classname>SpecificationException</classname>, for a duplicate
+flag/name or a blank <code>.name</code> -- can only happen here as a
+result of a bug in this file, not from anything a user types. Left
+uncaught, it crashes the program with an unhandled-exception message
+(which does include <methodname>what()</methodname>'s
+<quote>argId -- errorText</quote> text, just not a nicely formatted
+one) -- which is the point: it surfaces loudly during development,
+the same way you'd want any other precondition violation to.
+</para>
+<para>
+That reasoning stops applying the moment your <classname>Arg</classname>
+specs aren't all fixed at compile time -- e.g. flags built from a
+config file, a plugin registering its own options, or any other
+runtime-determined spec. There, a duplicate name is something your
+own input data can trigger, not just a coding mistake, and it deserves
+the same treatment as a parse error: catch
+<classname>SpecificationException</classname> yourself around the
+<classname>CmdLine</classname>/<classname>Arg</classname> construction
+code and report it the way you'd report bad input, rather than letting
+it crash the whole program.
+</para>
+</warning>
+
 The output should look like:
 
 <programlisting>
@@ -259,17 +290,23 @@ that if you prefer arguments of the style
 <listitem>A malformed command line (a missing required argument, an
 unrecognized flag, a value that fails its type conversion or
 constraint) no longer throws in 2.0 -- see the note about
-<methodname>parseOrExit()</methodname> above. What still throws is a
-<emphasis>programmer</emphasis> error: constructing the
-<classname>CmdLine</classname> or an <classname>Arg</classname> with a
-malformed spec (a duplicate flag/name, a blank <code>.name</code>,
-and the like) throws a <classname>SpecificationException</classname>,
-since that's a bug in the calling program rather than a command-line
-parsing problem, and isn't something a user's bad input can trigger.
-There's normally nothing useful for your own code to do about a
-<classname>SpecificationException</classname> other than let it
-propagate and crash the program during development, the same way
-you'd want any other precondition violation to surface.</listitem>
+<methodname>parseOrExit()</methodname> above. What still throws is
+constructing the <classname>CmdLine</classname> or an
+<classname>Arg</classname> with a malformed spec (a duplicate
+flag/name, a blank <code>.name</code>, and the like): that always
+throws a <classname>SpecificationException</classname>, uncaught, and
+is never turned into a <classname>ParseOutcome</classname>. When every
+<classname>Arg</classname> is constructed with a fixed, hardcoded spec
+-- as in every example in this manual -- that exception can only fire
+as a result of a bug in your code, so letting it propagate and crash
+the program during development is normally the right thing to do, the
+same way you'd want any other precondition violation to surface. If
+your specs are instead built from something runtime-determined (a
+config file, a plugin registering its own options), that assumption
+stops holding and you should catch
+<classname>SpecificationException</classname> yourself -- see the
+warning in the <link linkend="EXAMPLE">Example</link>
+section.</listitem>
 
 </itemizedlist>
 </para>
