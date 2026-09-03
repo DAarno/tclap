@@ -1,5 +1,6 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 
+#include "tclap/ArgModel.h"
 #include "tclap/CmdLine.h"
 #include <iostream>
 #include <string>
@@ -19,10 +20,19 @@ public:
 
     virtual void usage(CmdLineInterface &c) {
         cout << "my usage message:" << endl;
-        list<Arg *> args = c.argList();
-        for (ArgListIterator it = args.begin(); it != args.end(); it++)
-            cout << (*it)->longID() << "  (" << (*it)->description() << ")"
-                 << endl;
+        // This example doesn't care about ArgGroup structure, so it
+        // just flattens every group's members into one list -- see
+        // ArgModel.h for the group-aware ArgGroupModel this is built
+        // from, needed for output that distinguishes exclusive groups
+        // the way StdOutput's own usage() does.
+        for (const ArgGroupModel &group : BuildArgGroupModels(c)) {
+            for (const ArgModel &arg : group.members) {
+                const string &description =
+                    arg.required ? arg.descriptionWhenRequired
+                                 : arg.description;
+                cout << arg.longID << "  (" << description << ")" << endl;
+            }
+        }
     }
 
     virtual void version(CmdLineInterface &c) {

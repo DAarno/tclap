@@ -954,10 +954,14 @@ class MyOutput : public StdOutput
 		virtual void usage(CmdLineInterface&amp; c)
 		{
 			cout &lt;&lt; "my usage message:" &lt;&lt; endl;
-			list&lt;Arg*&gt; args = c.argList();
-			for (ArgListIterator it = args.begin(); it != args.end(); it++)
-				cout &lt;&lt; (*it)-&gt;longID()
-					 &lt;&lt; "  (" &lt;&lt; (*it)-&gt;description() &lt;&lt; ")" &lt;&lt; endl;
+			for (const ArgGroupModel&amp; group : BuildArgGroupModels(c)) {
+				for (const ArgModel&amp; arg : group.members) {
+					const string&amp; description =
+						arg.required ? arg.descriptionWhenRequired
+									 : arg.description;
+					cout &lt;&lt; arg.longID &lt;&lt; "  (" &lt;&lt; description &lt;&lt; ")" &lt;&lt; endl;
+				}
+			}
 		}
 
 		virtual void version(CmdLineInterface&amp; c)
@@ -993,6 +997,47 @@ want it to terminate the program directly -- as <filename>test4.cpp</filename>
 does, to preserve its original point of demonstrating a fully custom error
 path -- call <function>exit()</function> yourself at the end of your
 override, the same way the example does.
+</para>
+<para>
+The example above reads argument metadata through
+<classname>ArgModel</classname>/<classname>ArgGroupModel</classname>
+(<filename>ArgModel.h</filename>) rather than through
+<classname>Arg</classname>/<classname>ArgGroup</classname> directly --
+this is the recommended starting point for a custom
+<classname>CmdLineOutput</classname> that doesn't need to distinguish
+exclusive argument groups in its rendering (see
+<link linkend="ARG_GROUP">the section on argument groups</link>).
+<methodname>BuildArgGroupModels()</methodname> returns one
+<classname>ArgGroupModel</classname> per registered
+<classname>ArgGroup</classname> -- including the
+<classname>CmdLine</classname>'s own built-in groups for plainly
+<methodname>add()</methodname>'d arguments and for the auto-added
+<parameter>--help</parameter>/<parameter>--version</parameter>/
+<parameter>--</parameter> switches -- each holding an
+<classname>ArgModel</classname> per member with plain-data fields
+(<code>flag</code>, <code>name</code>, <code>description</code>,
+<code>shortID</code>, <code>longID</code>, and the like) instead of
+requiring you to call into <classname>Arg</classname>'s virtual
+interface. A consumer that doesn't care about grouping at all, like
+the example above, can just iterate every group's members in a
+nested loop, as shown.
+</para>
+<para>
+If you need output that distinguishes exclusive groups the way
+<classname>StdOutput</classname>'s own <parameter>usage()</parameter>
+does -- rendering an <classname>EitherOf</classname>/
+<classname>OneOf</classname> group as <code>{a|b}</code> rather than
+listing its members individually -- use
+<classname>ArgGroupModel</classname>'s <code>isExclusive</code>/
+<code>isRequired</code>/<code>showAsGroup</code> fields to detect and
+render that case specially; see <filename>StdOutput.h</filename>'s own
+<parameter>_shortUsage()</parameter> for the reference implementation
+of that logic (it reads directly from
+<methodname>CmdLineInterface::argList()</methodname>/
+<methodname>argGroups()</methodname>, the same lower-level accessors
+<classname>ArgGroupModel</classname> itself is built from, still
+available directly if you need something
+<classname>ArgGroupModel</classname> doesn't expose).
 </para>
 </sect1>
 
