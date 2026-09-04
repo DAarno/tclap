@@ -1,8 +1,8 @@
-name: Build 2.0
+name: Build 1.6
 
 on:
   push:
-    branches: [ "2.0" ]
+    branches: [ "1.6" ]
 
 jobs:
   build-linux:
@@ -54,7 +54,7 @@ jobs:
       # Visual Studio's CMake generator is multi-config, so the repo's
       # own test_runner.py (see CLAUDE.md) is used here instead of the
       # plain cmake/ctest invocations above, since it already knows to
-      # pass --config through to both the build and ctest.
+      # pass --config through to both the build and ctest invocations.
       - name: Create build directory
         run: mkdir build
 
