@@ -35,10 +35,12 @@ namespace TCLAP {
 
 /**
  * A plain-data snapshot of one registered Arg's help-relevant metadata.
- * Lets a consumer (e.g. a shell-completion generator, or a custom
- * CmdLineOutput) read an argument's flag/name/description and how it
- * prints without depending on Arg's virtual interface directly, the way
- * StdOutput and DocBookOutput do today.
+ * Lets a consumer (e.g. a shell-completion generator -- see
+ * examples/test127.cpp for one that generates a bash completion script
+ * this way -- or a custom CmdLineOutput) read an argument's
+ * flag/name/description and how it prints without depending on Arg's
+ * virtual interface directly, the way StdOutput and DocBookOutput do
+ * today.
  */
 struct ArgModel {
     std::string flag;

@@ -1,0 +1,7 @@
+_test127_completions() {
+    local cur words
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    words="-v --verbose -n --name --print-bash-completion -- --ignore_rest --version -h --help"
+    COMPREPLY=($(compgen -W "${words}" -- "${cur}"))
+}
+complete -F _test127_completions test127
