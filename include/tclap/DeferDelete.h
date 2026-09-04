@@ -40,17 +40,22 @@ class DeferDelete {
         virtual ~DeletableBase() = default;
     };
 
+    // Wraps a std::unique_ptr<T> rather than a bare T* so the only way
+    // to hand DeferDelete an object is to give up ownership of it at the
+    // call site -- a caller that keeps using a raw pointer obtained
+    // before the operator()() call (e.g. via unique_ptr<T>::get()) is
+    // relying on DeferDelete's own lifetime, same as before, but can no
+    // longer accidentally pass a pointer it still thinks it owns.
     template <typename T>
     class Deletable : public DeletableBase {
     public:
-        Deletable(T *o) : _o(o) {}
-        ~Deletable() override { delete _o; }
+        explicit Deletable(std::unique_ptr<T> o) : _o(std::move(o)) {}
 
         Deletable(const Deletable<T> &) = delete;
         Deletable<T> &operator=(const Deletable<T> &) = delete;
 
     private:
-        T *_o;
+        std::unique_ptr<T> _o;
     };
 
     std::vector<std::unique_ptr<DeletableBase>> _toBeDeleted;
@@ -59,8 +64,9 @@ public:
     DeferDelete() : _toBeDeleted() {}
 
     template <typename T>
-    void operator()(T *toDelete) {
-        _toBeDeleted.push_back(std::make_unique<Deletable<T>>(toDelete));
+    void operator()(std::unique_ptr<T> toDelete) {
+        _toBeDeleted.push_back(
+            std::make_unique<Deletable<T>>(std::move(toDelete)));
     }
 };
 

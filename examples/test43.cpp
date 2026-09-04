@@ -1,6 +1,6 @@
 // -*- Mode: c++; c-basic-offset: 4; tab-width: 4; -*-
 //
-// Test that xor args can't be required
+// Test that an exclusive ArgGroup (OneOf/EitherOf) rejects a required Arg
 
 #include "tclap/CmdLine.h"
 
@@ -25,7 +25,9 @@ int main(int argc, char **argv) {
                                 .required = false,
                                 .defaultValue = "homer",
                                 .typeDesc = "string"});
-        cmd.xorAdd(atest, btest);
+        OneOf abGroup;
+        abGroup.add(atest).add(btest);
+        cmd.add(abGroup);
 
         cmd.parseOrExit(argc, argv);
     } catch (SpecificationException &e) {

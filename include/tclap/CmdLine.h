@@ -254,6 +254,11 @@ private:
      */
     void _constructor();
 
+    // Shared by both (deprecated) xorAdd() overloads, so the two-Arg
+    // overload doesn't have to call the other deprecated overload --
+    // that would trigger its own deprecation warning at the call site.
+    void _xorAddImpl(const std::vector<Arg *> &args);
+
     /**
      * Whether or not to automatically create help and version switches.
      */
@@ -355,12 +360,14 @@ public:
     /**
      * \deprecated Use OneOf instead.
      */
-    void xorAdd(Arg &a, Arg &b) override;
+    [[deprecated("Use ArgGroup/OneOf instead.")]] void xorAdd(
+        Arg &a, Arg &b) override;
 
     /**
      * \deprecated Use OneOf instead.
      */
-    void xorAdd(const std::vector<Arg *> &xors) override;
+    [[deprecated("Use ArgGroup/OneOf instead.")]] void xorAdd(
+        const std::vector<Arg *> &xors) override;
 
     /**
      * Parses the command line.
@@ -526,7 +533,7 @@ inline void CmdLine::_constructor() {
     _autoArgs.setParser(*this);
     // add(_autoArgs);
 
-    auto *ignore = new SwitchArg(SwitchArgSpec{
+    auto ignoreOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
         .flag = _dialect.flagPrefix,
         .name = Arg::ignoreNameString(),
         .description = translateMessage(
@@ -535,8 +542,9 @@ inline void CmdLine::_constructor() {
         .defaultValue = false,
         .onMatch = [this] { beginIgnoring(); },
     });
+    auto *ignore = ignoreOwned.get();
     _ignoreArg = ignore;
-    _deleteOnExit(ignore);
+    _deleteOnExit(std::move(ignoreOwned));
     _autoArgs.add(ignore);
     CmdLine::addToArgList(ignore);
 
@@ -544,7 +552,7 @@ inline void CmdLine::_constructor() {
         // Captures `this` rather than a CmdLineOutput* snapshot, so it
         // always sees whatever _output currently is -- including a
         // setOutput() call made after this Arg was constructed.
-        auto *help = new SwitchArg(SwitchArgSpec{
+        auto helpOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
             .flag = "h",
             .name = "help",
             .description = translateMessage(
@@ -556,10 +564,11 @@ inline void CmdLine::_constructor() {
                     _pendingOutcome = Outcome::HelpRequested;
                 },
         });
+        auto *help = helpOwned.get();
         _helpArg = help;
-        _deleteOnExit(help);
+        _deleteOnExit(std::move(helpOwned));
 
-        auto *vers = new SwitchArg(SwitchArgSpec{
+        auto versOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
             .flag = "",
             .name = "version",
             .description =
@@ -572,8 +581,9 @@ inline void CmdLine::_constructor() {
                     _pendingOutcome = Outcome::VersionRequested;
                 },
         });
+        auto *vers = versOwned.get();
         _versionArg = vers;
-        _deleteOnExit(vers);
+        _deleteOnExit(std::move(versOwned));
 
         // A bit of a hack on the order to make tests easier to fix,
         // to be reverted
@@ -584,20 +594,25 @@ inline void CmdLine::_constructor() {
     }
 }
 
-inline void CmdLine::xorAdd(const std::vector<Arg *> &args) {
-    auto *group = new OneOf(*this);
-    _deleteOnExit(group);
+inline void CmdLine::_xorAddImpl(const std::vector<Arg *> &args) {
+    auto group = std::make_unique<OneOf>(*this);
+    OneOf *groupPtr = group.get();
+    _deleteOnExit(std::move(group));
 
     for (Arg *arg : args) {
-        group->add(*arg);
+        groupPtr->add(*arg);
     }
+}
+
+inline void CmdLine::xorAdd(const std::vector<Arg *> &args) {
+    _xorAddImpl(args);
 }
 
 inline void CmdLine::xorAdd(Arg &a, Arg &b) {
     std::vector<Arg *> ors;
     ors.push_back(&a);
     ors.push_back(&b);
-    xorAdd(ors);
+    _xorAddImpl(ors);
 }
 
 inline ArgContainer &CmdLine::add(ArgGroup &args) {
@@ -652,8 +667,9 @@ inline ArgContainer &CmdLine::add(Arg *a) {
 
 template <typename ArgType>
 ArgType &CmdLine::addOwned(typename ArgType::Spec spec) {
-    auto *arg = new ArgType(std::move(spec));
-    _deleteOnExit(arg);
+    auto owned = std::make_unique<ArgType>(std::move(spec));
+    auto *arg = owned.get();
+    _deleteOnExit(std::move(owned));
     add(arg);
     return *arg;
 }

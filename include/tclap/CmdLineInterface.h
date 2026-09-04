@@ -86,12 +86,14 @@ public:
     /**
      * \deprecated Use OneOf instead.
      */
-    virtual void xorAdd(Arg &a, Arg &b) = 0;
+    [[deprecated("Use ArgGroup/OneOf instead.")]] virtual void xorAdd(
+        Arg &a, Arg &b) = 0;
 
     /**
      * \deprecated Use OneOf instead.
      */
-    virtual void xorAdd(const std::vector<Arg *> &xors) = 0;
+    [[deprecated("Use ArgGroup/OneOf instead.")]] virtual void xorAdd(
+        const std::vector<Arg *> &xors) = 0;
 
     /**
      * Parses the command line. Never throws for a malformed command

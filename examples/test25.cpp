@@ -32,7 +32,9 @@ int main(int argc, char **argv) {
                             .defaultValue = "homer",
                             .typeDesc = "string"});
 
-    cmd.xorAdd(stest, btest);
+    OneOf sbGroup;
+    sbGroup.add(stest).add(btest);
+    cmd.add(sbGroup);
     cmd.add(atest);
 
     cmd.parseOrExit(argc, argv);

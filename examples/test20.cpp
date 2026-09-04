@@ -22,7 +22,9 @@ int main(int argc, char **argv) {
                           .name = "btmc",
                           .description = "bDiscrete time semantics",
                           .defaultValue = false});
-    cmd.xorAdd(atmcSwitch, btmcSwitch);
+    OneOf timeSemanticsGroup;
+    timeSemanticsGroup.add(atmcSwitch).add(btmcSwitch);
+    cmd.add(timeSemanticsGroup);
 
     // Parse the args.
     cmd.parseOrExit(argc, argv);

@@ -63,6 +63,8 @@ int main(int argc, char **argv) {
         arg2.hideFromHelp(false);
     }
 
-    cmd.xorAdd(arg2, arg3);
+    OneOf cdGroup;
+    cdGroup.add(arg2).add(arg3);
+    cmd.add(cdGroup);
     cmd.parseOrExit(argc, argv);
 }

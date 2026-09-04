@@ -44,7 +44,9 @@ void parseOptions(int argc, char **argv) {
                             .required = false,
                             .defaultValue = "homer",
                             .typeDesc = "string"});
-    cmd.xorAdd(atest, btest);
+    OneOf abGroup;
+    abGroup.add(atest).add(btest);
+    cmd.add(abGroup);
 
     ValueArg<string> ctest({.flag = "c",
                             .name = "ccc",
@@ -78,11 +80,9 @@ void parseOptions(int argc, char **argv) {
                             .required = false,
                             .defaultValue = "homer",
                             .typeDesc = "string"});
-    vector<Arg *> xorlist;
-    xorlist.push_back(&etest);
-    xorlist.push_back(&ftest);
-    xorlist.push_back(&gtest);
-    cmd.xorAdd(xorlist);
+    OneOf efgGroup;
+    efgGroup.add(etest).add(ftest).add(gtest);
+    cmd.add(efgGroup);
 
     MultiArg<string> itest({.flag = "i",
                             .name = "iii",
@@ -94,7 +94,9 @@ void parseOptions(int argc, char **argv) {
                             .description = "or test j",
                             .required = false,
                             .typeDesc = "string"});
-    cmd.xorAdd(itest, jtest);
+    OneOf ijGroup;
+    ijGroup.add(itest).add(jtest);
+    cmd.add(ijGroup);
 
     //
     // Parse the command line.

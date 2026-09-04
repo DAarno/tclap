@@ -89,6 +89,12 @@ void TestIgnoreRest(Testing &t) {
         ERROR(t, "CmdLine: -a should not be matched after \"--\"");
 }
 
+// The three TestXorAdd* functions below deliberately keep calling the
+// now-deprecated xorAdd() directly (triggering -Wdeprecated-declarations)
+// rather than migrating to OneOf like examples/*.cpp did: xorAdd() is
+// deprecated-in-place, not removed, and these are the regression tests
+// verifying it still behaves correctly. OneOf's own equivalent behavior
+// is covered separately by ArgGroupTest.cpp.
 void TestXorAddBothSelectedThrows(Testing &t) {
     CmdLine cmd(CmdLineSpec{.message = "test",
                             .dialect = {.delimiter = ' '},
