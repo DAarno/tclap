@@ -82,12 +82,20 @@ private:
     // zero-copy `const std::string&` to the result because both operands
     // share the exact same type -- a const char* here would make the
     // ternary's common type std::string by conversion, turning that
-    // reference bind into a fresh string construction on every call. Safe
-    // to keep as std::string (unlike TypeName.h's TCLAP_DEFINE_TYPE_NAME,
-    // see its comment) since these are fixed 1-2 char literals by design
-    // and will never approach any implementation's SSO capacity.
-    static constexpr std::string kDefaultFlagPrefix = "-";
-    static constexpr std::string kDefaultNamePrefix = "--";
+    // reference bind into a fresh string construction on every call.
+    // `inline const`, not `constexpr`, despite these being fixed 1-2 char
+    // literals well within any implementation's SSO capacity: MSVC's
+    // std::string does not support constant-initialization of a `static
+    // constexpr` std::string even at SSO sizes -- it routes construction
+    // through the allocator during constant evaluation regardless of
+    // length, which C2131 rejects for an object that has to outlive the
+    // transient-allocation window ("(sub-)object points to memory which
+    // was heap allocated during constant evaluation"). GCC/Clang's
+    // libstdc++/libc++ don't share this restriction, which is why this
+    // compiled cleanly everywhere except MSVC. `inline` keeps this
+    // header-only-safe (single definition across TUs) without constexpr.
+    static inline const std::string kDefaultFlagPrefix = "-";
+    static inline const std::string kDefaultNamePrefix = "--";
 
 protected:
     /**
