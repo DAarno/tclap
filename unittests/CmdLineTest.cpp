@@ -218,6 +218,47 @@ void TestReset(Testing &t) {
         ERROR(t, "CmdLine: reset() should clear isSet() on its args");
 }
 
+// Regression test: reset() used to leave _ignoring set after a parse()
+// that saw "--", so a second parse() (without "--" this time) would
+// silently ignore every token.
+void TestResetClearsIgnoring(Testing &t) {
+    CmdLine cmd(CmdLineSpec{.message = "test",
+                            .dialect = {.delimiter = ' '},
+                            .version = "1.0",
+                            .helpAndVersion = false});
+    SwitchArg a(SwitchArgSpec{
+        .flag = "a", .name = "aaa", .description = "switch a"});
+    cmd.add(a);
+
+    const char *firstArgv[] = {"prog", "--", "-a"};
+    std::vector<std::string> firstArgs = MakeArgs(firstArgv);
+    ParseOutcome firstResult = cmd.parse(firstArgs);
+
+    if (firstResult.outcome != Outcome::Success)
+        ERROR(t, "CmdLine: unexpected parse failure with \"--\": "
+                     << (firstResult.error.has_value()
+                             ? firstResult.error->message
+                             : std::string()));
+    if (a.isSet())
+        ERROR(t, "CmdLine: -a should not be matched after \"--\"");
+
+    cmd.reset();
+
+    const char *secondArgv[] = {"prog", "-a"};
+    std::vector<std::string> secondArgs = MakeArgs(secondArgv);
+    ParseOutcome secondResult = cmd.parse(secondArgs);
+
+    if (secondResult.outcome != Outcome::Success)
+        ERROR(t, "CmdLine: unexpected parse failure after reset(): "
+                     << (secondResult.error.has_value()
+                             ? secondResult.error->message
+                             : std::string()));
+    if (!a.isSet())
+        ERROR(t,
+              "CmdLine: -a should be matched after reset() even though a "
+              "prior parse() saw \"--\"");
+}
+
 void TestDuplicateArgThrows(Testing &t) {
     try {
         CmdLine cmd(CmdLineSpec{.message = "test",
@@ -593,6 +634,7 @@ int main() {
     TestXorAddOneSelected(t);
     TestGetters(t);
     TestReset(t);
+    TestResetClearsIgnoring(t);
     TestDuplicateArgThrows(t);
     TestMessageTranslator(t);
     TestMessageTranslatorRefreshesHelpAndVersion(t);

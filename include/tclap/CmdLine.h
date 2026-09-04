@@ -724,13 +724,11 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
             for (Arg *argPtr : _argList) {
                 Arg &arg = *argPtr;
                 // We check if the argument was already set (e.g., for
-                // a Multi-Arg) since then we don't want to count it
-                // as required again. This is a hack/workaround to
-                // make isRequired() imutable so it can be used to
-                // display help correctly (also it's a good idea).
-                //
-                // TODO: This logic should probably be refactored to
-                // remove this logic from here.
+                // a Multi-Arg) since then we don't want to count it as
+                // required again -- this is what keeps isRequired()
+                // immutable (a pure reflection of the Arg's own spec),
+                // so it stays safe to use for help/usage display rather
+                // than something parse() mutates.
                 bool alreadySet = arg.isSet();
                 bool ignore = arg.isIgnoreable() && ignoreRest();
                 if (!ignore && arg.processArg(&i, args, consumed)) {
@@ -842,11 +840,14 @@ inline void CmdLine::missingArgsException(
 inline void CmdLine::setOutput(CmdLineOutput *co) { _output = co; }
 
 inline void CmdLine::reset() {
-    // TODO: This is no longer correct (or perhaps we don't need "reset")
     for (Arg *arg : _argList) arg->reset();
 
     _progName.clear();
     _pendingOutcome = std::nullopt;
+    // Without this, a CmdLine that saw "--" in one parse() call would
+    // stay stuck ignoring every token on the next parse() after
+    // reset(), even without "--" present the second time.
+    _ignoring = false;
 }
 
 inline void CmdLine::ignoreUnmatched(const bool ignore) {
