@@ -19,10 +19,11 @@ def build(build_dir, config):
         # Try again, it could be due to cmake not supporting -j
         return subprocess.run(['cmake', '--build', '.', '--config', config])
 
-def run_tests(build_dir, config):
-    test_dir = os.path.join(build_dir, 'tests')
-    os.chdir(test_dir)
-    return subprocess.run(['ctest', '-C', config, '-V']).returncode
+def run_tests(build_dir, config, tests_regex=None):
+    command = ['ctest', '-C', config, '-V']
+    if tests_regex is not None:
+        command.extend(['-R', tests_regex])
+    return subprocess.run(command, cwd=build_dir).returncode
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -35,6 +36,11 @@ if __name__ == '__main__':
     parser.add_argument('--config', dest='config', action='store',
                         default='Debug', type=str,
                         help='CMake build config (Debug, Release, etc)')
+    parser.add_argument('--tests', '-R', dest='tests_regex', metavar='REGEX',
+                        help='Run only tests whose names match this CTest '
+                             'regular expression (default: run all tests; '
+                             'examples: "^TypeNameTest$", "^fuzz_", '
+                             '"^(test1|test2)$")')
     args = parser.parse_args()
     cwd = os.getcwd()
     if args.build:
@@ -43,4 +49,4 @@ if __name__ == '__main__':
             sys.exit(ret)
 
     os.chdir(cwd)
-    sys.exit(run_tests(args.build_dir, args.config))
+    sys.exit(run_tests(args.build_dir, args.config, args.tests_regex))
