@@ -88,7 +88,7 @@ inline void DocBookOutput::version(CmdLineInterface &_cmd) {
 }
 
 namespace internal {
-const char *GroupChoice(const ArgGroup &group) {
+inline const char *GroupChoice(const ArgGroup &group) {
     if (!group.showAsGroup()) {
         return "plain";
     }
