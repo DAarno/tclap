@@ -171,7 +171,11 @@ void TestGetters(Testing &t) {
         .flag = "a", .name = "aaa", .description = "switch a"});
     cmd.add(a);
 
+#ifdef _WIN32
+    const char *argv[] = {"C:\\bin\\prog.exe", "-a"};
+#else
     const char *argv[] = {"/usr/bin/prog", "-a"};
+#endif
     std::vector<std::string> args = MakeArgs(argv);
     ParseOutcome result = cmd.parse(args);
 
