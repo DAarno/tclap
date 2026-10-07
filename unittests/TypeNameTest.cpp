@@ -24,22 +24,23 @@
 #include "testing.h"
 
 #include <string>
+#include <string_view>
 
 using namespace TCLAP;
 
 struct UserDefinedType {};
 
 void TestBuiltinSpecializations(Testing &t) {
-    if (TypeName<int>::value != "int")
+    if (std::string_view(TypeName<int>::value) != "int")
         ERROR(t, "TypeName<int>: expected \"int\", got \""
                      << TypeName<int>::value << '"');
-    if (TypeName<double>::value != "double")
+    if (std::string_view(TypeName<double>::value) != "double")
         ERROR(t, "TypeName<double>: expected \"double\", got \""
                      << TypeName<double>::value << '"');
-    if (TypeName<bool>::value != "bool")
+    if (std::string_view(TypeName<bool>::value) != "bool")
         ERROR(t, "TypeName<bool>: expected \"bool\", got \""
                      << TypeName<bool>::value << '"');
-    if (TypeName<std::string>::value != "string")
+    if (std::string_view(TypeName<std::string>::value) != "string")
         ERROR(t, "TypeName<std::string>: expected \"string\", got \""
                      << TypeName<std::string>::value << '"');
 }
