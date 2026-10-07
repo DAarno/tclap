@@ -161,7 +161,11 @@ void TestGetters(Testing &t) {
         cmd.add(a);
         cmd.setExceptionHandling(false);
 
+#ifdef _WIN32
+        const char *argv[] = {"C:\\bin\\prog.exe", "-a"};
+#else
         const char *argv[] = {"/usr/bin/prog", "-a"};
+#endif
         std::vector<std::string> args = MakeArgs(argv);
         cmd.parse(args);
 
