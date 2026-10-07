@@ -40,6 +40,8 @@ namespace TCLAP {
  * EitherOf or OneOf derived classes are used.
  */
 class ArgGroup : public ArgContainer {
+    friend class CmdLine;
+
 public:
     using Container = std::list<Arg *>;
     using iterator = Container::iterator;
@@ -47,7 +49,7 @@ public:
 
     ~ArgGroup() override = default;
 
-    /// Add an argument to this arg group
+    /// Add an argument; failed registration leaves membership unchanged.
     ArgContainer &add(Arg &arg) override { return add(&arg); }
 
     /// Add an argument to this arg group
@@ -79,25 +81,6 @@ public:
      * arguments cannot be selected at the same time.
      */
     [[nodiscard]] virtual bool isExclusive() const = 0;
-
-    /**
-     * Used by the parser to connect itself to this arg group.
-     *
-     * @internal
-     * This is needed so that existing and subsequently added args (in
-     * this arg group) are also added to the parser (and checked for
-     * consistency with other args).
-     */
-    void setParser(CmdLineInterface &parser) {
-        if (_parser) {
-            throw SpecificationException("Arg group can have only one parser");
-        }
-
-        _parser = &parser;
-        for (Arg *arg : *this) {
-            parser.addToArgList(arg);
-        }
-    }
 
     /**
      * If arguments in this group should show up as grouped in help.
@@ -198,9 +181,10 @@ inline ArgContainer &ArgGroup::add(Arg *arg) {
             "Argument with same flag/name already exists!", arg->longID());
     }
 
-    _args.push_back(arg);
     if (_parser) {
-        _parser->addToArgList(arg);
+        _parser->registerGroupMember(*this, *arg);
+    } else {
+        _args.push_back(arg);
     }
 
     return *this;

@@ -34,7 +34,7 @@ namespace TCLAP {
  *
  * Each CmdLine owns exactly one Dialect, and every Arg registered with it
  * (directly or through an ArgGroup) is bound to a pointer to that Dialect
- * when it's registered (see CmdLine::addToArgList). This means two
+ * when it's registered (see CmdLine::Registration::add). This means two
  * independent CmdLine instances -- even two live at once in the same
  * process -- can use different delimiters or flag/name prefixes (e.g. one
  * "-x"/"--xray" parser and one "/x"/"/xray" parser) without interfering

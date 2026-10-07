@@ -46,6 +46,17 @@ class CmdLineOutput;
  * along the parsing to the appropriate Arg classes.
  */
 class CmdLineInterface : public ArgContainer {
+    friend class ArgGroup;
+
+protected:
+    /**
+     * Registers a member of an attached group, updating both the parser
+     * and group membership. ArgGroup checks its local rules first.
+     * Failure must leave registration and membership unchanged.
+     * @internal
+     */
+    virtual void registerGroupMember(ArgGroup &group, Arg &arg) = 0;
+
 public:
     /**
      * Destructor
@@ -65,11 +76,6 @@ public:
      * @retval A reference to this so that add calls can be chained
      */
     ArgContainer &add(Arg *a) override = 0;
-
-    // TODO: Rename this to something smarter or refactor this logic so
-    // it's not needed.
-    // Internal - do not use
-    virtual void addToArgList(Arg *a) = 0;
 
     /**
      * Adds an argument group to the list of arguments to be parsed.
@@ -130,6 +136,7 @@ public:
      * Returns every Arg registered with this CmdLine, including the
      * auto-added --help/--version/-- args. The returned reference is
      * valid for as long as this CmdLine is alive.
+     * Successful registration may invalidate iterators into this list.
      */
     [[nodiscard]] virtual const std::list<Arg *> &argList() const = 0;
 

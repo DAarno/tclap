@@ -20,12 +20,12 @@
  *
  *****************************************************************************/
 
-// NOTE: CmdLine::addToArgList() tracks, per-CmdLine, whether an optional
+// NOTE: CmdLine::Registration::add() tracks, per-CmdLine, whether an optional
 // (non-required) unlabeled arg has been *added to that CmdLine* yet:
 // once one has, no further unlabeled arg of any kind may be added to the
 // same CmdLine, since its position on the command line would be
 // ambiguous. (UnlabeledMultiArg never itself sets this -- see
-// CmdLine::addToArgList()'s use of acceptsMultipleValues() -- since it
+// CmdLine::Registration::add()'s use of acceptsMultipleValues() -- since it
 // always slurps up everything remaining regardless of its own
 // required-ness, but it still refuses to be *added* after the flag has
 // already been set by an earlier optional unlabeled arg on the same

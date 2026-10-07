@@ -60,20 +60,6 @@ class StandaloneArgs : public AnyOf {
 public:
     StandaloneArgs() = default;
 
-    ArgContainer &add(Arg *arg) override {
-        // std::cerr << "Adding " << arg->name() << " to StandaloneArgs\n";
-        if (std::ranges::any_of(*this, [arg](const Arg *existing) {
-                return *arg == *existing;
-            })) {
-            throw SpecificationException(
-                "Argument with same flag/name already exists!", arg->longID());
-        }
-
-        _args.push_back(arg);
-
-        return *this;
-    }
-
     [[nodiscard]] bool showAsGroup() const override { return false; }
 };
 
@@ -146,7 +132,7 @@ protected:
     /**
      * The parsing conventions (delimiter, flag/name prefixes) this
      * CmdLine uses. Every Arg registered with this CmdLine is bound to
-     * this Dialect (see addToArgList()), so independent CmdLine
+     * this Dialect (see Registration), so independent CmdLine
      * instances never interfere with each other the way the pre-2.0
      * global delimiter/prefix state used to.
      */
@@ -156,7 +142,7 @@ protected:
      * Whether an optional (non-required) unlabeled Arg has been added to
      * this CmdLine yet. Once true, no further unlabeled Arg of any kind
      * may be added (its position on the command line would be
-     * ambiguous) -- checked and set in addToArgList(). This used to be
+     * ambiguous) -- checked and set during registration. This used to be
      * OptionalUnlabeledTracker's process-wide static bool, shared (and
      * corrupted) across every CmdLine in the program; it is now scoped
      * to this CmdLine alone.
@@ -248,6 +234,9 @@ public:
     CmdLine &operator=(const CmdLine &rhs) = delete;
 
 private:
+    // Stages parser state and restores dialect bindings on failure.
+    class Registration;
+
     /**
      * Encapsulates the code common to the constructors
      * (which is all of it).
@@ -274,6 +263,9 @@ private:
      */
     bool _ignoring;
 
+protected:
+    void registerGroupMember(ArgGroup &group, Arg &arg) override;
+
 public:
     /**
      * Command line constructor. Defines how the arguments will be
@@ -297,6 +289,7 @@ public:
 
     /**
      * Adds an argument to the list of arguments to be parsed.
+     * A failed registration leaves the parser's definition unchanged.
      *
      * @param a - Argument to be added.
      * @retval A reference to this so that add calls can be chained
@@ -317,6 +310,8 @@ public:
      * All arguments in the group are added and the ArgGroup
      * object will validate that the input matches its
      * constraints.
+     * If registration fails, no members are registered and the group
+     * remains unattached. Already attached groups cannot be added again.
      *
      * @param args - Argument group to be added.
      * @retval A reference to this so that add calls can be chained
@@ -353,9 +348,6 @@ public:
      */
     template <typename ArgType>
     ArgType &addOwned(typename ArgType::Spec spec);
-
-    // Internal, do not use
-    void addToArgList(Arg *a) override;
 
     /**
      * \deprecated Use OneOf instead.
@@ -530,8 +522,8 @@ inline CmdLine::CmdLine(CmdLineSpec spec)
 
 inline void CmdLine::_constructor() {
     CmdLine::add(_standaloneArgs);
-    _autoArgs.setParser(*this);
-    // add(_autoArgs);
+    // argGroups() appends the built-ins last, after all user groups.
+    _autoArgs._parser = this;
 
     auto ignoreOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
         .flag = _dialect.flagPrefix,
@@ -546,7 +538,6 @@ inline void CmdLine::_constructor() {
     _ignoreArg = ignore;
     _deleteOnExit(std::move(ignoreOwned));
     _autoArgs.add(ignore);
-    CmdLine::addToArgList(ignore);
 
     if (_helpAndVersion) {
         // Captures `this` rather than a CmdLineOutput* snapshot, so it
@@ -585,12 +576,9 @@ inline void CmdLine::_constructor() {
         _versionArg = vers;
         _deleteOnExit(std::move(versOwned));
 
-        // A bit of a hack on the order to make tests easier to fix,
-        // to be reverted
+        // Preserve the existing parsing and help order of the built-ins.
         _autoArgs.add(vers);
-        CmdLine::addToArgList(vers);
         _autoArgs.add(help);
-        CmdLine::addToArgList(help);
     }
 }
 
@@ -615,51 +603,107 @@ inline void CmdLine::xorAdd(Arg &a, Arg &b) {
     _xorAddImpl(ors);
 }
 
-inline ArgContainer &CmdLine::add(ArgGroup &args) {
-    args.setParser(*this);
-    _argGroups.push_back(&args);
+// Registration may call user-defined comparison and insertion hooks and
+// allocate list nodes. Work on a private copy until all of that succeeds.
+// Only dialect bindings change temporarily: hooks must see the parser's
+// dialect, and the destructor restores the original pointers on failure.
+class CmdLine::Registration {
+public:
+    explicit Registration(CmdLine &cmd)
+        : _cmd(cmd),
+          _args(cmd._argList),
+          _numRequired(cmd._numRequired),
+          _hasOptionalUnlabeledArg(cmd._hasOptionalUnlabeledArg),
+          _bindings() {}
 
+    Registration(const Registration &) = delete;
+    Registration &operator=(const Registration &) = delete;
+
+    ~Registration() {
+        for (auto it = _bindings.rbegin(); it != _bindings.rend(); ++it) {
+            it->first->_setDialect(it->second);
+        }
+    }
+
+    void add(Arg &arg) {
+        if (std::ranges::any_of(_args, [&arg](const Arg *existing) {
+                return arg == *existing;
+            })) {
+            throw SpecificationException(
+                "Argument with same flag/name already exists!", arg.longID());
+        }
+
+        if (!arg.hasLabel()) {
+            if (_hasOptionalUnlabeledArg) {
+                throw SpecificationException(
+                    "You can't specify ANY Unlabeled Arg following an optional "
+                    "Unlabeled Arg",
+                    arg.longID());
+            }
+
+            // UnlabeledMultiArg consumes the remaining input but has never
+            // set this flag itself, regardless of whether it is required.
+            if (!arg.isRequired() && !arg.acceptsMultipleValues()) {
+                _hasOptionalUnlabeledArg = true;
+            }
+        }
+
+        // Record the previous binding before changing it; vector growth
+        // can throw too. Keep all bindings until the whole batch succeeds.
+        _bindings.emplace_back(&arg, arg._dialect);
+        arg._setDialect(&_cmd._dialect);
+        arg.addToList(_args);
+        if (arg.isRequired()) ++_numRequired;
+    }
+
+    void commit() noexcept {
+        _cmd._argList.swap(_args);
+        _cmd._numRequired = _numRequired;
+        _cmd._hasOptionalUnlabeledArg = _hasOptionalUnlabeledArg;
+        _bindings.clear();  // Retain the successful dialect bindings.
+    }
+
+private:
+    CmdLine &_cmd;
+    std::list<Arg *> _args;
+    int _numRequired;
+    bool _hasOptionalUnlabeledArg;
+    std::vector<std::pair<Arg *, const Dialect *>> _bindings;
+};
+
+inline ArgContainer &CmdLine::add(ArgGroup &group) {
+    if (group._parser) {
+        throw SpecificationException("Arg group can have only one parser");
+    }
+
+    std::list<ArgGroup *> addedGroup{&group};
+    Registration registration(*this);
+    for (Arg *arg : group) registration.add(*arg);
+
+    // No group-policy virtual calls here: OneOf/EitherOf can attach while
+    // their base constructor is running. Members were checked by add().
+    registration.commit();
+    _argGroups.splice(_argGroups.end(), addedGroup);
+    group._parser = this;
     return *this;
+}
+
+inline void CmdLine::registerGroupMember(ArgGroup &group, Arg &arg) {
+    if (group._parser != this) {
+        throw SpecificationException("Arg group is not attached to this parser");
+    }
+
+    std::list<Arg *> addedMember{&arg};
+    Registration registration(*this);
+    registration.add(arg);
+
+    registration.commit();
+    group._args.splice(group._args.end(), addedMember);
 }
 
 inline ArgContainer &CmdLine::add(Arg &a) { return add(&a); }
 
-// TODO: Rename this to something smarter or refactor this logic so
-// it's not needed.
-inline void CmdLine::addToArgList(Arg *a) {
-    if (std::ranges::any_of(
-            _argList, [a](const Arg *existing) { return *a == *existing; })) {
-        throw SpecificationException(
-            "Argument with same flag/name already exists!", a->longID());
-    }
-
-    if (!a->hasLabel()) {
-        // Unlabeled (positional) Arg: no further unlabeled Arg may follow
-        // an optional one, since its position would be ambiguous.
-        if (_hasOptionalUnlabeledArg) {
-            throw SpecificationException(
-                "You can't specify ANY Unlabeled Arg following an optional "
-                "Unlabeled Arg",
-                a->longID());
-        }
-
-        // An UnlabeledMultiArg slurps up everything remaining regardless
-        // of its own required-ness, so (matching the pre-Dialect
-        // OptionalUnlabeledTracker behavior) it never itself poisons this
-        // flag for whatever might be added after it.
-        if (!a->isRequired() && !a->acceptsMultipleValues()) {
-            _hasOptionalUnlabeledArg = true;
-        }
-    }
-
-    a->_setDialect(&_dialect);
-    a->addToList(_argList);
-
-    if (a->isRequired()) _numRequired++;
-}
-
 inline ArgContainer &CmdLine::add(Arg *a) {
-    addToArgList(a);
     _standaloneArgs.add(a);
 
     return *this;

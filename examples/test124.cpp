@@ -26,7 +26,7 @@
 // arg to that same CmdLine afterwards. This is checked when the Arg is
 // added to the CmdLine, not merely constructed: an UnlabeledValueArg that
 // is never added to any CmdLine doesn't affect anything (see
-// CmdLine::addToArgList).
+// CmdLine::Registration::add).
 
 #include "tclap/CmdLine.h"
 #include <iostream>

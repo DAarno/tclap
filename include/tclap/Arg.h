@@ -55,6 +55,8 @@ namespace TCLAP {
  * anything.
  */
 class Arg {
+    friend class CmdLine;
+
 public:
     /**
      * The type of callback an Arg can invoke as soon as it's matched
@@ -173,9 +175,9 @@ protected:
 
     /**
      * The Dialect (delimiter, flag/name prefixes) this Arg uses. Bound
-     * once, by CmdLine::addToArgList(), when this Arg is registered with
-     * a CmdLine (directly or through an ArgGroup); nullptr, and treated
-     * as the default Dialect{}, until then. Non-owning: the pointed-to
+     * during CmdLine registration (directly or through an ArgGroup);
+     * nullptr, and treated as the default Dialect{}, until then. Failed
+     * registration restores the previous pointer. Non-owning: the
      * Dialect is owned by the CmdLine this Arg is registered with.
      */
     const Dialect *_dialect;
@@ -211,6 +213,9 @@ public:
 
     /**
      * Adds this to the specified list of Args.
+     * Registration supplies a staging list and binds the parser's dialect
+     * before calling this hook. Overrides must only modify the supplied
+     * list, without retaining it or re-entering parser registration.
      * \param argList - The list to add this to.
      */
     virtual void addToList(std::list<Arg *> &argList) const;
@@ -218,7 +223,7 @@ public:
     /**
      * Binds this Arg to the Dialect (delimiter and flag/name prefix
      * conventions) of the CmdLine it is being registered with.
-     * @internal Called by CmdLine::addToArgList(); not for direct use.
+     * @internal Used during CmdLine registration; not for direct use.
      */
     void _setDialect(const Dialect *dialect) noexcept { _dialect = dialect; }
 
