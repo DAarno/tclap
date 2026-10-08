@@ -25,14 +25,14 @@
 <head>
 <meta name="generator" content=
 "HTML Tidy for Mac OS X (vers 1st August 2004), see www.w3.org" />
-<title>tclap -- Templatized C++ Command Line Parser Library (v1.4)</title>
+<title>tclap -- Templatized C++ Command Line Parser Library</title>
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body>
 <table summary="Title and Sourceforge logo.">
 <tr>
 <td align="left">
-<h1>Templatized C++ Command Line Parser Library (v1.4)</h1>
+<h1>Templatized C++ Command Line Parser Library</h1>
 </td>
 <td align="right">
 <a href="http://sourceforge.net/projects/tclap"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=76645&amp;type=15" width="150" height="40" alt="Get Templatized C++ Command Line Parser at SourceForge.net. Fast, secure and Free Open Source software downloads" /></a>
@@ -82,8 +82,8 @@ close.
 </p>
 
 <p>
-<em>TCLAP</em> is written in ANSI C++ and is meant to be compatible with any 
-standards-compliant C++ compiler.  It is known to work on Linux, MacOS X,
+<em>TCLAP</em> supports C++98 and later with version 1.4, and C++20 and
+later with version 1.6. It is known to work on Linux, MacOS X,
 Windows, and Solaris platforms.  The library is implemented 
 entirely in header files making it easy to use and distribute with other 
 software.  It is licensed under the 
@@ -104,14 +104,18 @@ send us your feedback</a>!
 <em>Happy coding!</em>
 </p>
 
-<p style="background-color:powderblue;">
-	<b>NOTE: </b>The current development version of TCLAP is <b>1.4</b>, it is
-	recommended for use by new projects.
-	
-	The stable version of TCLAP is <b>1.2</b> and it will only receive critical
-	bug fixes. You can find the
-	<A HREF="http://tclap.sourceforge.net/v1.2/index.html">
-		documentation for v1.2 here.</A>
+<h2>Choosing a version</h2>
+<ul>
+<li><b>TCLAP 1.4</b> is recommended for projects requiring C++98
+compatibility. It is a maintenance version with no new feature development.</li>
+<li><b>TCLAP 1.6</b> is recommended for projects using C++20 or later.
+It has modernized internals and an API mostly source compatible with 1.4.</li>
+</ul>
+<p>
+Choose the version that matches your project's C++ requirements.
+The legacy <b>1.2</b> branch receives only critical bug fixes; its
+<a href="http://tclap.sourceforge.net/v1.2/index.html">documentation is
+available here</a>.
 </p>
 </div>
   
