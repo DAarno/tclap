@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 TCLAP_DIR=$1
 DEST=$2
 
@@ -17,10 +19,11 @@ fi
 
 if [ ! -f "$TCLAP_DIR/test_runner.py" ]; then
     echo "$TCLAP_DIR doesn't look like a TCLAP dir"
+    exit 1
 fi
 
 FILES="AUTHORS ChangeLog CMakeLists.txt config.h.in COPYING docs examples include INSTALL NEWS README tests \
-      unittests packaging"
+      unittests packaging fuzz test_runner.py"
 
 for FIL in $FILES; do
     rsync -r --chmod=ugo+r,go-w --exclude "__*__" "$TCLAP_DIR/$FIL" "$DEST/"
