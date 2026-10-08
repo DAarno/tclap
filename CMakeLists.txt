@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.12)
 
 project(TCLAP VERSION 1.4.0 LANGUAGES CXX)
 set("PROJECT_DESCRIPTION" "A header-only templatized C++ command line parser library")
@@ -29,6 +29,7 @@ cpack_add_component(lib
 )
 
 add_library(TCLAP INTERFACE)
+target_compile_features(TCLAP INTERFACE cxx_std_20)
 target_include_directories(TCLAP INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
