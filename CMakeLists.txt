@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(TCLAP VERSION 1.4.0 LANGUAGES CXX)
+project(TCLAP VERSION 2.0.0 LANGUAGES CXX)
 set("PROJECT_DESCRIPTION" "A header-only templatized C++ command line parser library")
 set("PROJECT_HOMEPAGE_URL" "https://sourceforge.net/projects/tclap/")
 
@@ -135,7 +135,7 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.14")
 endif()
 
 write_basic_package_version_file("${CMAKE_CONFIG_VERSION_FILE_NAME}"
-    COMPATIBILITY AnyNewerVersion
+    COMPATIBILITY SameMajorVersion
     ${OPTIONAL_ARCH_INDEPENDENT}
 )
 
