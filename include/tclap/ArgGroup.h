@@ -214,8 +214,10 @@ inline bool ExclusiveArgGroup::validate() {
 
 inline const std::string ArgGroup::name() const {
     std::string result;
-    std::string sep = "{";  // TODO: this should change for
-                            // non-exclusive arg groups
+    // Missing-group diagnostics use this alternatives format: among the
+    // built-in groups, only OneOf can report a missing required group.
+    // AnyOf never reports missing requirements, so it needs no other format.
+    std::string sep = "{";
     for (const Arg *arg : *this) {
         result += sep + arg->name();
         sep = " | ";
