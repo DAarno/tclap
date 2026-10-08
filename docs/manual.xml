@@ -605,10 +605,12 @@ To handle situations where multiple, unlabeled arguments are needed,
 we provide the <classname>UnlabeledMultiArg</classname>.
 <classname>UnlabeledMultiArg</classname>s
 are declared much like everything else, but generally only a name
-and a description are needed. By default, if an
-<classname>UnlabeledMultiArg</classname>
-is specified, then at least one is required to be present or it's a
-parse error. The most important thing to remember is,
+and a description are needed. By default, an
+<classname>UnlabeledMultiArg</classname> is optional: omitting its values
+is allowed, and <methodname>value()</methodname> returns an empty vector.
+Set <parameter>.required = true</parameter> to require at least one value;
+omitting all values then produces a parse error.
+The most important thing to remember is,
 that like <classname>UnlabeledValueArg</classname>s: order matters!
 In fact, <emphasis>an UnlabeledMultiArg must be the last argument added to the
 CmdLine!</emphasis>. Here is what a declaration looks like:
