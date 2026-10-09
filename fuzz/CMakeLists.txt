@@ -9,8 +9,6 @@ set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-enable_testing()
-
 file(GLOB FUZZ_TARGET_FILES fuzz_*.cpp)
 
 # Portable regression runners: each fuzz_*.cpp is also linked against
@@ -33,13 +31,15 @@ if(BUILD_FUZZ_REGRESSION)
 		add_executable(${regress_target} ${file} StandaloneFuzzTargetMain.cpp)
 		target_include_directories(${regress_target} PUBLIC ../include/ ${PROJECT_BINARY_DIR})
 
-		file(GLOB seed_files "${CMAKE_CURRENT_SOURCE_DIR}/seeds/${target_name}/*")
-		foreach(seed_file ${seed_files})
-			get_filename_component(seed_name ${seed_file} NAME)
-			set(test_name "fuzz_${target_name}_regress_${seed_name}")
-			add_test(NAME "${test_name}" COMMAND ${regress_target} ${seed_file})
-			set_tests_properties("${test_name}" PROPERTIES TIMEOUT 15)
-		endforeach()
+		if(BUILD_TESTING)
+			file(GLOB seed_files "${CMAKE_CURRENT_SOURCE_DIR}/seeds/${target_name}/*")
+			foreach(seed_file ${seed_files})
+				get_filename_component(seed_name ${seed_file} NAME)
+				set(test_name "fuzz_${target_name}_regress_${seed_name}")
+				add_test(NAME "${test_name}" COMMAND ${regress_target} ${seed_file})
+				set_tests_properties("${test_name}" PROPERTIES TIMEOUT 15)
+			endforeach()
+		endif()
 	endforeach()
 endif()
 
