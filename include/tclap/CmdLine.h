@@ -689,7 +689,7 @@ inline void CmdLine::setExceptionHandling(const bool state) {
 }
 
 inline void CmdLine::reset() {
-    // TODO: This is no longer correct (or perhaps we don't need "reset")
+    _ignoring = false;
     for (ArgListIterator it = _argList.begin(); it != _argList.end(); it++)
         (*it)->reset();
 
