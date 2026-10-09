@@ -1,4 +1,4 @@
-AC_INIT([tclap],[1.2.5])
+AC_INIT([tclap], m4_esyscmd_s([cat VERSION]))
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR([examples/test1.cpp])
 AM_CONFIG_HEADER(config/config.h)

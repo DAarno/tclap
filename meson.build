@@ -1,7 +1,13 @@
 project(
   'tclap',
   'cpp',
-  version: '1.2.5',
+  # Meson 0.56 cannot read a version file directly; use its Python runtime.
+  version: run_command(
+    find_program('python3', 'python'),
+    '-c', 'import sys; print(open(sys.argv[1]).read().strip())',
+    files('VERSION'),
+    check: true,
+  ).stdout().strip(),
   license: 'MIT',
   meson_version: '>=0.56.0',
 )
