@@ -441,6 +441,12 @@ void ExtractValue(T &destVal, const std::string &strVal, ValueLike vl) {
     istringstream is(strVal.c_str());
 
     int valuesRead = 0;
+    // Let the extractor decide whether an explicitly empty input is valid.
+    // Built-in numeric extraction fails; a custom extractor may accept it.
+    if (strVal.empty()) {
+        is >> destVal;
+        ++valuesRead;
+    }
     while (is.good()) {
         if (is.peek() != EOF)
 #ifdef TCLAP_SETBASE_ZERO

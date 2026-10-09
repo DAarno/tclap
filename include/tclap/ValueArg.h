@@ -283,17 +283,18 @@ bool ValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
 
     std::string value = "";
     trimFlag(flag, value);
+    const bool hasAttachedValue = flag != args[*i];
 
     if (argMatches(flag)) {
         if (_alreadySet) {
             throw(CmdLineParseException("Argument already set!", toString()));
         }
 
-        if (this->getDelimiter() != ' ' && value.empty())
+        if (this->getDelimiter() != ' ' && !hasAttachedValue)
             throw(ArgParseException(
                 "Couldn't find delimiter for this argument!", toString()));
 
-        if (value.empty()) {
+        if (!hasAttachedValue) {
             (*i)++;
             if (static_cast<unsigned int>(*i) < args.size())
                 _extractValue(args[*i]);
