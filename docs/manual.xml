@@ -275,6 +275,23 @@ the type of argument. Some possible values include:
 </sect2>
 </sect1>
 
+<sect1 id="PARSER_STATE">
+<title>Independent parsers</title>
+<para>
+Each <classname>CmdLine</classname> owns its delimiter and positional
+registration checks. Optional positional arguments must be registered last;
+constructing an unregistered argument does not affect another parser.
+Use separate argument objects for separate parsers and keep the parser alive
+while using its registered arguments. Custom argument implementations should
+use <methodname>getDelimiter()</methodname>, which observes their parser's
+delimiter. The legacy static <methodname>Arg::delimiter()</methodname> and
+<methodname>Arg::setDelimiter()</methodname> remain available for unregistered
+arguments and legacy custom code, but do not select a registered parser's
+delimiter. The legacy <classname>OptionalUnlabeledTracker</classname> static
+helper is no longer used by the built-in arguments.
+</para>
+</sect1>
+
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>

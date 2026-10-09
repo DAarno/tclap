@@ -274,7 +274,7 @@ bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
     trimFlag(flag, value);
 
     if (argMatches(flag)) {
-        if (Arg::delimiter() != ' ' && value == "")
+        if (this->getDelimiter() != ' ' && value == "")
             throw(ArgParseException(
                 "Couldn't find delimiter for this argument!", toString()));
 

@@ -124,6 +124,9 @@ protected:
      */
     char _delimiter;
 
+    // Registration order, scoped to this parser rather than construction.
+    bool _hasOptionalUnlabeledArg;
+
     /**
      * Add pointers that should be deleted as part of cleanup when
      * this object is destroyed.
@@ -392,6 +395,7 @@ inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
       _version(v),
       _numRequired(0),
       _delimiter(delim),
+      _hasOptionalUnlabeledArg(false),
       _deleteOnExit(),
       _defaultOutput(),
       _output(&_defaultOutput),
@@ -407,8 +411,6 @@ inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
 }
 
 inline void CmdLine::_constructor() {
-    Arg::setDelimiter(_delimiter);
-
     Visitor *v;
     CmdLine::add(_standaloneArgs);
     _autoArgs.setParser(*this);
@@ -490,8 +492,22 @@ inline void CmdLine::addToArgList(Arg *a) {
             throw(SpecificationException(
                 "Argument with same flag/name already exists!", a->longID()));
 
-    a->addToList(_argList);
+    if (!a->hasLabel() && _hasOptionalUnlabeledArg) {
+        throw SpecificationException(
+            "You can't specify ANY Unlabeled Arg following an optional "
+            "Unlabeled Arg", a->longID());
+    }
 
+    const char *previous = a->_parserDelimiter;
+    a->_parserDelimiter = &_delimiter;
+    try {
+        a->addToList(_argList);
+    } catch (...) {
+        a->_parserDelimiter = previous;
+        throw;
+    }
+    if (!a->hasLabel() && !a->isRequired() && !a->acceptsMultipleValues())
+        _hasOptionalUnlabeledArg = true;
     if (a->isRequired()) _numRequired++;
 }
 

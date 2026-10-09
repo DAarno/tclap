@@ -51,7 +51,12 @@ namespace TCLAP {
  * anything.
  */
 class Arg {
+    friend class CmdLine;
+
 private:
+    // NULL uses the legacy static delimiter for unregistered arguments.
+    const char *_parserDelimiter;
+
     /**
      * Prevent accidental copying.
      */
@@ -185,6 +190,13 @@ public:
      */
     static char delimiter() { return delimiterRef(); }
 
+    /** Returns this argument's parser delimiter, or the legacy default.
+     * Custom arguments should use this instead of the static delimiter().
+     */
+    char getDelimiter() const {
+        return _parserDelimiter ? *_parserDelimiter : delimiter();
+    }
+
     /**
      * The char used as a place holder when SwitchArgs are combined.
      * Currently set to the bell char (ASCII 7).
@@ -225,7 +237,8 @@ public:
     static const std::string ignoreNameString() { return "ignore_rest"; }
 
     /**
-     * Sets the delimiter for all arguments.
+     * Sets the legacy delimiter for unregistered arguments and static callers.
+     * Registered built-in arguments use their owning parser delimiter.
      * \param c - The character that delimits flags/names from values.
      */
     static void setDelimiter(char c) { delimiterRef() = c; }
@@ -450,7 +463,8 @@ void ExtractValue(T &destVal, const std::string &strVal, StringLike sl) {
 
 inline Arg::Arg(const std::string &flag, const std::string &name,
                 const std::string &desc, bool req, bool valreq, Visitor *v)
-    : _flag(flag),
+    : _parserDelimiter(NULL),
+      _flag(flag),
       _name(name),
       _description(desc),
       _required(req),
@@ -495,7 +509,7 @@ inline std::string Arg::shortID(const std::string &valueId) const {
     else
         id = Arg::nameStartString() + _name;
 
-    if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+    if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
     return id;
 }
@@ -506,14 +520,14 @@ inline std::string Arg::longID(const std::string &valueId) const {
     if (_flag != "") {
         id += Arg::flagStartString() + _flag;
 
-        if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+        if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
         id += ",  ";
     }
 
     id += Arg::nameStartString() + _name;
 
-    if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+    if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
     return id;
 }
@@ -565,7 +579,7 @@ inline void Arg::_checkWithVisitor() const {
 inline void Arg::trimFlag(std::string &flag, std::string &value) const {
     int stop = 0;
     for (int i = 0; static_cast<unsigned int>(i) < flag.length(); i++)
-        if (flag[i] == Arg::delimiter()) {
+        if (flag[i] == getDelimiter()) {
             stop = i;
             break;
         }

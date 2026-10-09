@@ -164,7 +164,7 @@ inline bool SwitchArg::combinedSwitchesMatch(std::string &combinedSwitches) {
         return false;
 
     // make sure the delimiter isn't in the string
-    if (combinedSwitches.find_first_of(Arg::delimiter()) != std::string::npos)
+    if (combinedSwitches.find_first_of(this->getDelimiter()) != std::string::npos)
         return false;
 
     // ok, we're not specifying a ValueArg, so we know that we have
