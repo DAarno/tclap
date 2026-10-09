@@ -715,6 +715,71 @@ option on the command line. The help output is updated accordingly.
 </sect1>
 
 
+<sect1 id="PARSE_LIFECYCLE">
+<title>Parse failures and reuse</title>
+<para>
+Check the result of the entire parse before using any argument values for
+application work. Parsing is not transactional: an error may leave earlier
+arguments changed, or even store a value that subsequently fails its
+constraint. <methodname>isSet()</methodname> does not restore old values and
+cannot substitute for checking the whole parse.
+</para>
+<para>
+To parse again, call <methodname>reset()</methodname> and supply fresh input.
+The vector overload expects the program name at element 0 and erases that
+element. Reset restores parser/argument state, not the caller's input vector.
+Combined switches may also modify characters in that vector.
+</para>
+<para>
+By default the parser reports input errors and exits. For recovery in an
+embedding application, use <methodname>setExceptionHandling(false)</methodname>
+and catch <classname>ArgException</classname> around the entire parse.
+With automatic help/version enabled, their visitors throw
+<classname>ExitException</classname>; handle that requested exit separately
+and stop normal application work. The following example disables those
+visitors to focus on error recovery.
+</para>
+<programlisting>
+#include &lt;tclap/CmdLine.h&gt;
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+
+int main() {
+    TCLAP::CmdLine cmd("reuse example", ' ', "1", false);
+    cmd.setExceptionHandling(false);
+    TCLAP::ValueArg&lt;int&gt; number("n", "number", "number", false, 0, "integer");
+    cmd.add(number);
+    std::vector&lt;std::string&gt; first;
+    first.push_back("prog"); first.push_back("-n"); first.push_back("7");
+    first.push_back("--bogus");
+    try {
+        cmd.parse(first);
+        return 1; // This input should fail.
+    } catch (const TCLAP::ArgException &amp;) {
+        // A failure may leave number changed. Do no application work here.
+    }
+    cmd.reset();
+    // Build new input, including the program name; do not reuse first.
+    std::vector&lt;std::string&gt; second;
+    second.push_back("prog"); second.push_back("-n"); second.push_back("2");
+    try { cmd.parse(second); }
+    catch (const TCLAP::ArgException &amp;) { return 2; }
+    std::cout &lt;&lt; number.getValue() &lt;&lt; '\n';
+    return 0;
+}
+</programlisting>
+<para>
+On 1.2, delimiter, ignore-rest and optional-positional tracking remain
+process-wide. Independent parsers cannot safely use conflicting settings;
+optional positional construction can affect later parsers. Also,
+<classname>MultiArg</classname> in an XOR group retains its allow-more
+bookkeeping across reset, so recreating that parser and its arguments is the
+workaround for that reuse case. Reset plus fresh input does not remove these
+legacy restrictions.
+</para>
+</sect1>
+
 <sect1 id="CONSTRAINT">
 <title>I want to constrain the values allowed for a particular 
 argument...</title>
