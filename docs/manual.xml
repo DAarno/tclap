@@ -1339,11 +1339,40 @@ rejected. See <link linkend="READING_HEX_INTEGERS">the auto-base example</link>.
 <sect1 id="USING_ARGTRAITS">
 <title>I want to use different types...</title>
 <para>
-The usual C++ types (int, long, bool, etc.) are supported by <emphasis>TCLAP</emphasis> out
-of the box. As
-long as operator&gt;&gt; and operator&lt;&lt; are supported, other types should work fine
-too, you'll just need to specify the <classname>ArgTraits</classname> which
-tells <emphasis>TCLAP</emphasis> how you expect the type to be handled.
+Custom value types must satisfy <classname>Parseable&lt;T&gt;</classname> in
+<filename>ValueParsing.h</filename>: they must be
+<code>std::default_initializable</code> and support the applicable parsing
+category. Every parse creates a fresh <code>T{}</code>; supplying an explicit
+<code>.defaultValue</code> does not remove that requirement.
+</para>
+<para>
+Ordinary arithmetic types use <function>std::from_chars</function>, except
+bool and plain char that use stream extraction. Wide/UTF character types do
+not automatically satisfy Parseable. A custom ValueLike type
+needs <code>operator&gt;&gt;(std::istream&amp;, T&amp;)</code>. A StringLike type
+is selected by an <classname>ArgTraits&lt;T&gt;</classname> specialization or
+<code>T::ValueCategory</code> (including inheritance from
+<classname>StringLikeTrait</classname>) and must support
+<function>SetString</function>, normally assignment from
+<code>std::string</code>. Selecting that category alone does not implement
+assignment. See <link linkend="NUMERIC_GRAMMAR">numeric syntax</link> for the
+conversion paths. Stream output is needed when printing values or using
+<classname>ValuesConstraint</classname>; an output operator alone does not
+make a type parseable.
+</para>
+<para>
+Storage adds requirements beyond the parsing concept. Parsed values must be
+constructible from an rvalue for the result and storage paths.
+<classname>ValueArg&lt;T&gt;</classname> copies the initial default into its
+current value, stores another default, assigns the parsed value, and
+copy-assigns the stored default during reset. It therefore needs copying and
+assignment as well as parsing; arbitrary move-only types do not work there.
+<classname>MultiArg&lt;T&gt;</classname> stores results in
+<code>std::vector&lt;T&gt;</code> and clears that vector on reset; its element
+type must support insertion and relocation. A suitable move-only type can
+work with MultiArg even though it cannot work with ValueArg. Constraints and
+application operations may impose further requirements. The pair example
+below supplies default construction, copying, assignment and stream input.
 </para>
 
 <para>
