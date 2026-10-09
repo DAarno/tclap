@@ -50,6 +50,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace TCLAP {
 
@@ -126,6 +127,12 @@ protected:
 
     // Registration order, scoped to this parser rather than construction.
     bool _hasOptionalUnlabeledArg;
+    bool _registrationActive;
+    class Registration;
+    bool attachGroup(ArgGroup &group) {
+        add(group);
+        return true;
+    }
 
     /**
      * Add pointers that should be deleted as part of cleanup when
@@ -396,6 +403,7 @@ inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
       _numRequired(0),
       _delimiter(delim),
       _hasOptionalUnlabeledArg(false),
+      _registrationActive(false),
       _deleteOnExit(),
       _defaultOutput(),
       _output(&_defaultOutput),
@@ -413,7 +421,7 @@ inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
 inline void CmdLine::_constructor() {
     Visitor *v;
     CmdLine::add(_standaloneArgs);
-    _autoArgs.setParser(*this);
+    _autoArgs._parser = this;
     // add(_autoArgs);
 
     v = new IgnoreRestVisitor(*this);
@@ -475,46 +483,91 @@ inline void CmdLine::xorAdd(Arg &a, Arg &b) {
     xorAdd(ors);
 }
 
-inline ArgContainer &CmdLine::add(ArgGroup &args) {
-    args.setParser(*this);
-    _argGroups.push_back(&args);
+// Comparison/insertion hooks run against a private list. Bindings are
+// temporarily visible to hooks and restored unless the whole operation commits.
+class CmdLine::Registration {
+public:
+    explicit Registration(CmdLine &cmd)
+        : _cmd(cmd), _args(cmd._argList), _numRequired(cmd._numRequired),
+          _hasOptionalUnlabeledArg(cmd._hasOptionalUnlabeledArg), _bindings() {
+        if (_cmd._registrationActive)
+            throw SpecificationException("Argument registration cannot be re-entered");
+        _cmd._registrationActive = true;
+    }
 
+    ~Registration() throw() {
+        for (Bindings::reverse_iterator it = _bindings.rbegin();
+             it != _bindings.rend(); ++it)
+            it->first->_parserDelimiter = it->second;
+        _cmd._registrationActive = false;
+    }
+
+    void add(Arg &arg) {
+        for (ArgListIterator it = _args.begin(); it != _args.end(); ++it)
+            if (arg == **it)
+                throw SpecificationException(
+                    "Argument with same flag/name already exists!", arg.longID());
+        if (!arg.hasLabel()) {
+            if (_hasOptionalUnlabeledArg)
+                throw SpecificationException(
+                    "You can't specify ANY Unlabeled Arg following an optional "
+                    "Unlabeled Arg", arg.longID());
+            if (!arg.isRequired() && !arg.acceptsMultipleValues())
+                _hasOptionalUnlabeledArg = true;
+        }
+        _bindings.push_back(std::make_pair(&arg, arg._parserDelimiter));
+        arg._parserDelimiter = &_cmd._delimiter;
+        arg.addToList(_args);
+        if (arg.isRequired()) ++_numRequired;
+    }
+
+    void commit() {
+        _cmd._argList.swap(_args);
+        _cmd._numRequired = _numRequired;
+        _cmd._hasOptionalUnlabeledArg = _hasOptionalUnlabeledArg;
+        _bindings.clear();
+    }
+
+private:
+    Registration(const Registration &);
+    Registration &operator=(const Registration &);
+    typedef std::vector<std::pair<Arg *, const char *> > Bindings;
+    CmdLine &_cmd;
+    std::list<Arg *> _args;
+    int _numRequired;
+    bool _hasOptionalUnlabeledArg;
+    Bindings _bindings;
+};
+
+inline ArgContainer &CmdLine::add(ArgGroup &group) {
+    if (group._parser)
+        throw SpecificationException("Arg group can have only one parser");
+    std::list<ArgGroup *> groups(_argGroups);
+    groups.push_back(&group);
+    Registration registration(*this);
+    for (ArgGroup::iterator it = group.begin(); it != group.end(); ++it)
+        registration.add(**it);
+    group._parser = this;
+    _argGroups.swap(groups);
+    registration.commit();
     return *this;
 }
 
 inline ArgContainer &CmdLine::add(Arg &a) { return add(&a); }
 
-// TODO: Rename this to something smarter or refactor this logic so
-// it's not needed.
 inline void CmdLine::addToArgList(Arg *a) {
-    for (ArgListIterator it = _argList.begin(); it != _argList.end(); it++)
-        if (*a == *(*it))
-            throw(SpecificationException(
-                "Argument with same flag/name already exists!", a->longID()));
-
-    if (!a->hasLabel() && _hasOptionalUnlabeledArg) {
-        throw SpecificationException(
-            "You can't specify ANY Unlabeled Arg following an optional "
-            "Unlabeled Arg", a->longID());
-    }
-
-    const char *previous = a->_parserDelimiter;
-    a->_parserDelimiter = &_delimiter;
-    try {
-        a->addToList(_argList);
-    } catch (...) {
-        a->_parserDelimiter = previous;
-        throw;
-    }
-    if (!a->hasLabel() && !a->isRequired() && !a->acceptsMultipleValues())
-        _hasOptionalUnlabeledArg = true;
-    if (a->isRequired()) _numRequired++;
+    Registration registration(*this);
+    registration.add(*a);
+    registration.commit();
 }
 
 inline ArgContainer &CmdLine::add(Arg *a) {
-    addToArgList(a);
-    _standaloneArgs.add(a);
-
+    ArgGroup::Container members(_standaloneArgs._args);
+    members.push_back(a);
+    Registration registration(*this);
+    registration.add(*a);
+    _standaloneArgs._args.swap(members);
+    registration.commit();
     return *this;
 }
 

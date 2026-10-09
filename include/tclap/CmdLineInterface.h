@@ -44,6 +44,12 @@ class CmdLineOutput;
  * along the parsing to the appropriate Arg classes.
  */
 class CmdLineInterface : public ArgContainer {
+    friend class ArgGroup;
+protected:
+    // Return true when the implementation handles the whole attachment.
+    // The default lets ArgGroup keep the legacy custom-parser path.
+    virtual bool attachGroup(ArgGroup &) { return false; }
+
 public:
     /**
      * Destructor

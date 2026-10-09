@@ -39,6 +39,8 @@ namespace TCLAP {
  * EitherOf or OneOf derived classes are used.
  */
 class ArgGroup : public ArgContainer {
+    friend class CmdLine;
+    friend class CmdLineInterface;
 public:
     typedef std::list<Arg *> Container;
     typedef Container::iterator iterator;
@@ -88,14 +90,13 @@ public:
      * consistency with other args).
      */
     void setParser(CmdLineInterface &parser) {
-        if (_parser) {
+        if (_parser)
             throw SpecificationException("Arg group can have only one parser");
-        }
-
+        if (parser.attachGroup(*this)) return;
+        // Preserve the legacy path for custom CmdLineInterface implementations.
         _parser = &parser;
-        for (iterator it = begin(); it != end(); ++it) {
+        for (iterator it = begin(); it != end(); ++it)
             parser.addToArgList(*it);
-        }
     }
 
     /**
@@ -197,10 +198,12 @@ inline ArgContainer &ArgGroup::add(Arg *arg) {
         }
     }
 
-    _args.push_back(arg);
+    Container members(_args);
+    members.push_back(arg);
     if (_parser) {
         _parser->addToArgList(arg);
     }
+    _args.swap(members);
 
     return *this;
 }
