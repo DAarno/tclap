@@ -100,6 +100,9 @@ public:
      */
     int getValue() const { return _value; }
 
+    /** True when the count (including the initial count) is nonzero. */
+    operator bool() const { return _value != 0; }
+
     /**
      * Returns the shortID for this Arg.
      */
