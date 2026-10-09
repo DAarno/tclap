@@ -272,14 +272,15 @@ bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
     std::string value = "";
 
     trimFlag(flag, value);
+    const bool hasAttachedValue = flag != args[*i];
 
     if (argMatches(flag)) {
-        if (this->getDelimiter() != ' ' && value == "")
+        if (this->getDelimiter() != ' ' && !hasAttachedValue)
             throw(ArgParseException(
                 "Couldn't find delimiter for this argument!", toString()));
 
         // always take the first one, regardless of start string
-        if (value == "") {
+        if (!hasAttachedValue) {
             (*i)++;
             if (static_cast<unsigned int>(*i) < args.size())
                 _extractValue(args[*i]);

@@ -303,6 +303,23 @@ legacy attachment default and can override the protected
 </para>
 </sect1>
 
+<sect1 id="EMPTY_VALUES">
+<title>Explicitly empty values</title>
+<para>
+An attached delimiter can carry an empty value, for example
+<code>--name=</code> when the parser delimiter is <code>=</code>.
+With the default space delimiter, pass an empty argv element (for example,
+<code>--name ""</code> in a shell). Strings and types with
+<classname>StringLike</classname> traits receive the empty string directly.
+Numeric values reject empty input. Custom stream extractors decide whether
+empty input is valid through their <methodname>operator&gt;&gt;</methodname>
+implementation; no default-value substitution is performed.
+Constraints still check explicitly supplied values, including empty strings.
+These rules apply to both <classname>ValueArg</classname> and
+<classname>MultiArg</classname>. Omitting a value entirely is still an error.
+</para>
+</sect1>
+
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>
