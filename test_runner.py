@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 
@@ -15,13 +16,17 @@ def build(build_dir, config):
     if ret:
         return ret
     
-    ret = subprocess.run(['cmake', '--build', '.', '--config',
-                          config, '-j', str(cpu_count)],
-                         cwd=build_dir).returncode
-    if ret:
-        # Try again, it could be due to cmake not supporting -j
-        return subprocess.run(['cmake', '--build', '.', '--config', config],
-                              cwd=build_dir)
+    # CMake before 3.12 has no portable --build parallel option. Select
+    # the supported command first instead of retrying compiler failures.
+    version = subprocess.run(['cmake', '--version'], cwd=build_dir,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             universal_newlines=True)
+    match = re.search(r'cmake version (\d+)\.(\d+)', version.stdout or '')
+    command = ['cmake', '--build', '.', '--config', config]
+    if version.returncode == 0 and match:
+        if tuple(map(int, match.groups())) >= (3, 12):
+            command.extend(['-j', str(cpu_count)])
+    return subprocess.run(command, cwd=build_dir).returncode
 
 def run_tests(build_dir, config, tests_regex=None):
     command = ['ctest', '-C', config, '-V']
