@@ -520,7 +520,10 @@ important for unlabeled arguments.
 An <classname>UnlabeledMultiArg</classname> is an <classname>UnlabeledValueArg</classname> that allows more than one value to be specified.  Only one
 <classname>UnlabeledMultiArg</classname> can be specified per command line.
 The <classname>UnlabeledMultiArg</classname> simply reads the remaining
-values from argv up until -- or the end of the array is reached.
+unmatched operand values through the end of argv, including values after
+<parameter>--</parameter> with its normal non-ignoreable setting. The marker
+itself is consumed by the parser. See <link linkend="IGNORE_ARGS">end option
+recognition</link> for the ignoreable policy and branch-specific limitations.
 </para>
 <para>
 Say you want a strange command
@@ -543,10 +546,11 @@ really something like:
 To handle situations where multiple, unlabeled arguments are needed,
 we provide the <classname>UnlabeledMultiArg</classname>. 
 <classname>UnlabeledMultiArg</classname>s
-are declared much like everything else, but with only a description
-of the arguments. By default, if an <classname>UnlabeledMultiArg</classname> 
-is specified, then at least one is required to be present or an
-exception will be thrown. The most important thing to remember is,
+take an explicit <parameter>required</parameter> constructor boolean; there
+is no default for that choice. With true, at least one operand must be supplied
+or parsing fails. With false, omission is allowed and
+<methodname>getValue()</methodname> returns an empty vector. The example below
+chooses false. The most important thing to remember is,
 that like <classname>UnlabeledValueArg</classname>s: order matters! 
 In fact, <emphasis>an UnlabeledMultiArg must be the last argument added to the
 CmdLine!</emphasis>. Here is what a declaration looks like:
@@ -556,7 +560,7 @@ CmdLine!</emphasis>. Here is what a declaration looks like:
                 //
                 // UnlabeledMultiArg must be the LAST argument added!
                 //
-                UnlabeledMultiArg&lt;string&gt; multi("file names");
+                UnlabeledMultiArg&lt;string&gt; multi("fileNames", "file names", false, "string");
                 cmd.add( multi );
                 cmd.parse(argc, argv);
 
@@ -704,9 +708,75 @@ option on the command line. The help output is updated accordingly.
 </sect1>
 
 
+<sect1 id="PARSE_LIFECYCLE">
+<title>Parse failures and reuse</title>
+<para>
+Check the result of the entire parse before using any argument values for
+application work. Parsing is not transactional: an error may leave earlier
+arguments changed, or even store a value that subsequently fails its
+constraint. <methodname>isSet()</methodname> does not restore old values and
+cannot substitute for checking the whole parse.
+</para>
+<para>
+To parse again, call <methodname>reset()</methodname> and supply fresh input.
+The vector overload expects the program name at element 0 and erases that
+element. Reset restores parser/argument state, not the caller's input vector.
+Combined switches may also modify characters in that vector.
+</para>
+<para>
+By default the parser reports input errors and exits. For recovery in an
+embedding application, use <methodname>setExceptionHandling(false)</methodname>
+and catch <classname>ArgException</classname> around the entire parse.
+With automatic help/version enabled, their visitors throw
+<classname>ExitException</classname>; handle that requested exit separately
+and stop normal application work. The following example disables those
+visitors to focus on error recovery.
+</para>
+<programlisting>
+#include &lt;tclap/CmdLine.h&gt;
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+
+int main() {
+    TCLAP::CmdLine cmd("reuse example", ' ', "1", false);
+    cmd.setExceptionHandling(false);
+    TCLAP::ValueArg&lt;int&gt; number("n", "number", "number", false, 0, "integer");
+    cmd.add(number);
+    std::vector&lt;std::string&gt; first;
+    first.push_back("prog"); first.push_back("-n"); first.push_back("7");
+    first.push_back("--bogus");
+    try {
+        cmd.parse(first);
+        return 1; // This input should fail.
+    } catch (const TCLAP::ArgException &amp;) {
+        // A failure may leave number changed. Do no application work here.
+    }
+    cmd.reset();
+    // Build new input, including the program name; do not reuse first.
+    std::vector&lt;std::string&gt; second;
+    second.push_back("prog"); second.push_back("-n"); second.push_back("2");
+    try { cmd.parse(second); }
+    catch (const TCLAP::ArgException &amp;) { return 2; }
+    std::cout &lt;&lt; number.getValue() &lt;&lt; '\n';
+    return 0;
+}
+</programlisting>
+</sect1>
+
 <sect1 id="CONSTRAINT">
 <title>I want to constrain the values allowed for a particular 
 argument...</title>
+<para>
+Constraints check values explicitly supplied on the command line. An omitted
+optional argument has <methodname>isSet()</methodname> equal to false, and its
+default value is intentionally not checked against its constraint. The
+application decides whether and how to use that default. For example, an
+optional integer may default to 0 even if its allowed input values are 1 and 2.
+A required argument must still be supplied: its default does not satisfy the
+requirement. Read values only after the whole parse succeeds.
+</para>
+
 
 <para>
 For example, one might wish to allow only integers greater than 0. In
@@ -866,31 +936,31 @@ false will disable automatic help and version generation.
 </sect1>
 
 <sect1 id="IGNORE_ARGS">
-<title>I want to ignore certain arguments...</title>
+<title>End option recognition with --</title>
 <para>
-The <parameter>--</parameter> flag is automatically included in the 
-<classname>CmdLine</classname>.
-As (almost) per POSIX and GNU standards, any argument specified
-after the <parameter>--</parameter> flag is ignored. 
-<emphasis>Almost</emphasis> because if an
-<classname>UnlabeledValueArg</classname> that has not been set or an
-<classname>UnlabeledMultiArg</classname> has been specified, by default 
-we will assign any arguments beyond the <parameter>--</parameter> 
-to the those arguments as
-per the rules above. This is primarily useful if you want to pass
-in arguments with a dash as the first character of the argument. It
-should be noted that even if the <parameter>--</parameter> flag is 
-passed on the command line, the <classname>CmdLine</classname> will 
-<emphasis>still</emphasis> test to make sure all of the required 
-arguments are present.
+The automatically registered <parameter>--</parameter> marker ends option
+recognition. POSIX/GNU conventions treat following tokens as operands,
+including tokens beginning with a dash; they do not mean that all following
+input is discarded. TCLAP's ordinary unlabeled arguments consume those tokens
+in their registered order. The marker itself is not an operand.
 </para>
-
 <para>
-Of course, this isn't how POSIX/GNU handle things, they explicitly
-ignore arguments after the <parameter>--</parameter>. To accommodate this, 
-we can make both <classname>UnlabeledValueArg</classname>s and 
-<classname>UnlabeledMultiArg</classname>s ignoreable in their constructors. 
-See the <ulink url="html/index.html"> API Documentation</ulink> for details. 
+For example, with a switch <parameter>-x</parameter> and an unlabeled multi
+argument for files, <code>prog -x before -- -x after</code> sets the switch once
+and supplies the three operands <code>before</code>, <code>-x</code> and
+<code>after</code>. The second <parameter>-x</parameter> is a file name, not
+another switch occurrence. Required arguments are still checked after
+<parameter>--</parameter>; the marker does not satisfy missing requirements.
+</para>
+<para>
+TCLAP implements this through its separate ignoreable policy. Labeled arguments
+are normally ignoreable, so they stop matching after the marker. Unmatched
+remaining tokens are not reported as unknown-option errors. Unlabeled
+arguments are normally not ignoreable and therefore continue consuming input.
+Passing true for an unlabeled argument's constructor parameter
+<parameter>ignoreable</parameter> makes it stop consuming after the marker as
+well. This is a TCLAP policy choice, separate from the standard meaning of
+ending option recognition.
 </para>
 </sect1>
 
