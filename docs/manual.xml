@@ -506,7 +506,10 @@ important for unlabeled arguments.
 An <classname>UnlabeledMultiArg</classname> is an <classname>UnlabeledValueArg</classname> that allows more than one value to be specified.  Only one
 <classname>UnlabeledMultiArg</classname> can be specified per command line.
 The <classname>UnlabeledMultiArg</classname> simply reads the remaining
-values from argv up until -- or the end of the array is reached.
+unmatched operand values through the end of argv, including values after
+<parameter>--</parameter> with its normal non-ignoreable setting. The marker
+itself is consumed by the parser. See <link linkend="IGNORE_ARGS">end option
+recognition</link> for the ignoreable policy and branch-specific limitations.
 </para>
 <para>
 Say you want a strange command
@@ -529,10 +532,11 @@ really something like:
 To handle situations where multiple, unlabeled arguments are needed,
 we provide the <classname>UnlabeledMultiArg</classname>. 
 <classname>UnlabeledMultiArg</classname>s
-are declared much like everything else, but with only a description
-of the arguments. By default, if an <classname>UnlabeledMultiArg</classname> 
-is specified, then at least one is required to be present or an
-exception will be thrown. The most important thing to remember is,
+take an explicit <parameter>required</parameter> constructor boolean; there
+is no default for that choice. With true, at least one operand must be supplied
+or parsing fails. With false, omission is allowed and
+<methodname>getValue()</methodname> returns an empty vector. The example below
+chooses false. The most important thing to remember is,
 that like <classname>UnlabeledValueArg</classname>s: order matters! 
 In fact, <emphasis>an UnlabeledMultiArg must be the last argument added to the
 CmdLine!</emphasis>. Here is what a declaration looks like:
@@ -542,7 +546,7 @@ CmdLine!</emphasis>. Here is what a declaration looks like:
                 //
                 // UnlabeledMultiArg must be the LAST argument added!
                 //
-                UnlabeledMultiArg&lt;string&gt; multi("file names");
+                UnlabeledMultiArg&lt;string&gt; multi("fileNames", "file names", false, "string");
                 cmd.add( multi );
                 cmd.parse(argc, argv);
 

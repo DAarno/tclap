@@ -360,7 +360,10 @@ important for unlabeled arguments.
 An <code class="classname">UnlabeledMultiArg</code> is an <code class="classname">UnlabeledValueArg</code> that allows more than one value to be specified.  Only one
 <code class="classname">UnlabeledMultiArg</code> can be specified per command line.
 The <code class="classname">UnlabeledMultiArg</code> simply reads the remaining
-values from argv up until -- or the end of the array is reached.
+unmatched operand values through the end of argv, including values after
+<em class="parameter"><code>--</code></em> with its normal non-ignoreable setting. The marker
+itself is consumed by the parser. See <a class="link" href="#IGNORE_ARGS" title="End option recognition with --">end option
+recognition</a> for the ignoreable policy and branch-specific limitations.
 </p><p>
 Say you want a strange command
 that searches each file specified for a given string (let's call it
@@ -382,10 +385,11 @@ really something like:
 To handle situations where multiple, unlabeled arguments are needed,
 we provide the <code class="classname">UnlabeledMultiArg</code>.
 <code class="classname">UnlabeledMultiArg</code>s
-are declared much like everything else, but with only a description
-of the arguments. By default, if an <code class="classname">UnlabeledMultiArg</code>
-is specified, then at least one is required to be present or an
-exception will be thrown. The most important thing to remember is,
+take an explicit <em class="parameter"><code>required</code></em> constructor boolean; there
+is no default for that choice. With true, at least one operand must be supplied
+or parsing fails. With false, omission is allowed and
+<code class="methodname">getValue()</code> returns an empty vector. The example below
+chooses false. The most important thing to remember is,
 that like <code class="classname">UnlabeledValueArg</code>s: order matters!
 In fact, <span class="emphasis"><em>an UnlabeledMultiArg must be the last argument added to the
 CmdLine!</em></span>. Here is what a declaration looks like:
@@ -395,7 +399,7 @@ CmdLine!</em></span>. Here is what a declaration looks like:
                 //
                 // UnlabeledMultiArg must be the LAST argument added!
                 //
-                UnlabeledMultiArg&lt;string&gt; multi("file names");
+                UnlabeledMultiArg&lt;string&gt; multi("fileNames", "file names", false, "string");
                 cmd.add( multi );
                 cmd.parse(argc, argv);
 
