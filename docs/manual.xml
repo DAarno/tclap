@@ -738,6 +738,16 @@ option on the command line. The help output is updated accordingly.
 <sect1 id="CONSTRAINT">
 <title>I want to constrain the values allowed for a particular 
 argument...</title>
+<para>
+Constraints check values explicitly supplied on the command line. An omitted
+optional argument has <methodname>isSet()</methodname> equal to false, and its
+default value is intentionally not checked against its constraint. The
+application decides whether and how to use that default. For example, an
+optional integer may default to 0 even if its allowed input values are 1 and 2.
+A required argument must still be supplied: its default does not satisfy the
+requirement. Read values only after the whole parse succeeds.
+</para>
+
 
 <para>
 For example, one might wish to allow only integers greater than 0. In
