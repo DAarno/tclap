@@ -628,6 +628,38 @@ void TestParseOrExitVectorOverloadReturnsOnSuccess(Testing &t) {
     if (!a.isSet()) ERROR(t, "parseOrExit: -a should be set after parsing");
 }
 
+void TestShortPrefixValidation(Testing &t) {
+    for (bool help : {false, true}) {
+        for (const char *prefix : {"", "++"}) {
+            try {
+                CmdLine invalid({.message = "invalid prefix",
+                                 .dialect = {.flagPrefix = prefix},
+                                 .helpAndVersion = help});
+                ERROR(t, "Invalid short prefix was accepted");
+            } catch (const SpecificationException &e) {
+                if (e.error().find("Short flag prefix") == std::string::npos)
+                    ERROR(t, "Short prefix diagnostic is unclear: " << e.what());
+            }
+        }
+        for (const char *prefix : {"-", "/"}) {
+            CmdLine cmd({.message = "prefix",
+                         .dialect = {.delimiter = '=', .flagPrefix = prefix,
+                                     .namePrefix = "~~~"},
+                         .helpAndVersion = help});
+            SwitchArg a({.flag = "a", .name = "aaa", .description = "a"});
+            SwitchArg b({.flag = "b", .name = "bbb", .description = "b"});
+            ValueArg<int> number({.flag = "n", .name = "number",
+                                  .description = "number"});
+            cmd.add(a).add(b).add(number);
+            std::vector<std::string> args = {
+                "prog", std::string(prefix) + "ab", "~~~number=7"};
+            CheckParseSuccess(t, cmd.parse(args), "One-character short prefix");
+            if (!a.value() || !b.value() || number.value() != 7)
+                ERROR(t, "Valid short/long prefixes failed to parse");
+        }
+    }
+}
+
 int main() {
     Testing t;
     TestUnmatchedArgThrows(t);
@@ -644,6 +676,7 @@ int main() {
     TestMessageTranslatorRefreshesHelpAndVersion(t);
     TestIndependentCmdLinesDoNotShareDialect(t);
     TestCustomDialectPrefixesCoexistWithDefault(t);
+    TestShortPrefixValidation(t);
     TestAddOwned(t);
     TestParseOrExitReturnsOnSuccess(t);
     TestParseOrExitVectorOverloadReturnsOnSuccess(t);

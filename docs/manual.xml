@@ -381,6 +381,19 @@ These rules apply to both <classname>ValueArg</classname> and
 </para>
 </sect1>
 
+<sect1 id="DIALECT_PREFIXES">
+<title>Argument prefixes</title>
+<para>
+Set <code>CmdLineSpec::dialect</code> to select parsing conventions for a
+parser. <code>Dialect::flagPrefix</code> is a string containing exactly one
+character, such as <code>-</code> or <code>/</code>. Empty or multiple-character
+short prefixes are rejected with a <classname>SpecificationException</classname>
+before automatic arguments are constructed, even when help/version is disabled.
+<code>Dialect::namePrefix</code> may contain multiple characters, such as
+<code>--</code>. Combined short switches use the single short-prefix character.
+</para>
+</sect1>
+
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>

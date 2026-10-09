@@ -53,7 +53,8 @@ struct Dialect {
 
     /**
      * The string that marks the start of a short flag (e.g. "-" for
-     * "-n", "/" for "/n").
+     * "-n", "/" for "/n"). Must contain exactly one character; CmdLine
+     * validates this before constructing its automatic switches.
      */
     std::string flagPrefix = "-";
 

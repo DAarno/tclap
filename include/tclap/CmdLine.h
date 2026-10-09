@@ -521,6 +521,10 @@ inline CmdLine::CmdLine(CmdLineSpec spec)
 }
 
 inline void CmdLine::_constructor() {
+    if (_dialect.flagPrefix.size() != 1)
+        throw SpecificationException(
+            "Short flag prefix must contain exactly one character");
+
     CmdLine::add(_standaloneArgs);
     // argGroups() appends the built-ins last, after all user groups.
     _autoArgs._parser = this;
