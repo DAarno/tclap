@@ -190,6 +190,9 @@ class Arg
 		 */
 		static void beginIgnoring() { ignoreRestRef() = true; }
 
+		/** Clear the legacy process-wide end-of-options state. */
+		static void stopIgnoring() { ignoreRestRef() = false; }
+
 		/**
 		 * Whether to ignore the rest.
 		 */

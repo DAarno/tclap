@@ -169,3 +169,6 @@ foreach t : tests
 endforeach
 
 
+
+reset_test = executable('reset-test', 'reset-test.cpp', dependencies: tclap_dep)
+test('reset ignore-rest', reset_test)

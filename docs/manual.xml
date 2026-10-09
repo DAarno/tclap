@@ -268,7 +268,8 @@ construction tracker are process-wide. Constructing a second parser can
 change the delimiter used by the first. Constructing an optional positional
 argument prevents further positional arguments from being constructed, even
 for another parser and after the original parser is destroyed. Parsing the end-of-options marker
-affects the shared ignore-rest state. Independent or concurrent parsers
+affects the shared ignore-rest state, and <methodname>reset()</methodname>
+clears that shared state. Independent or concurrent parsers
 therefore need application coordination; parser destruction and
 reset do not clear the optional positional construction tracker.
 </para>

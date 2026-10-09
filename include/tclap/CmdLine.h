@@ -636,6 +636,7 @@ inline bool CmdLine::getExceptionHandling() const
 
 inline void CmdLine::reset()
 {
+	Arg::stopIgnoring();
 	for( ArgListIterator it = _argList.begin(); it != _argList.end(); it++ )
 		(*it)->reset();
 	
