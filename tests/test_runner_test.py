@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check runner paths without invoking a compiler or modifying process cwd."""
+"""Check runner paths and build exit status without invoking a compiler."""
 import importlib.util
 import os
 from pathlib import Path
@@ -44,6 +44,55 @@ class RunnerPathsTest(unittest.TestCase):
         # Keep the relative path on the same drive as CTest on Windows.
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as temp:
             self.check_build_path(os.path.relpath(Path(temp) / "relative build"))
+
+
+class RunnerBuildResultTest(unittest.TestCase):
+    def run_build(self, version="3.28.3", configure_code=0, build_code=0,
+                  version_code=0):
+        commands = []
+
+        def fake_run(command, **kwargs):
+            commands.append(command)
+            if "--version" in command:
+                return subprocess.CompletedProcess(command, version_code,
+                                                   "cmake version " + version)
+            code = build_code if "--build" in command else configure_code
+            return subprocess.CompletedProcess(command, code)
+
+        with tempfile.TemporaryDirectory() as temp:
+            with mock.patch.object(runner.subprocess, "run", fake_run):
+                result = runner.build(temp, "Release")
+        self.assertIsInstance(result, int)
+        return result, commands
+
+    def test_old_cmake_serial_build_success(self):
+        result, commands = self.run_build(version="3.7.2")
+        self.assertEqual(result, 0)
+        builds = [c for c in commands if "--build" in c]
+        self.assertEqual(len(builds), 1)
+        self.assertNotIn("-j", builds[0])
+
+    def test_modern_build_failure_is_not_retried(self):
+        result, commands = self.run_build(version="3.12.0", build_code=17)
+        self.assertEqual(result, 17)
+        builds = [c for c in commands if "--build" in c]
+        self.assertEqual(len(builds), 1)
+        self.assertIn("-j", builds[0])
+
+    def test_failed_or_unrecognized_version_query_uses_serial(self):
+        for version, code in [("", 0), ("3.28.3", 2)]:
+            with self.subTest(version=version, code=code):
+                result, commands = self.run_build(version=version,
+                                                  version_code=code)
+                self.assertEqual(result, 0)
+                builds = [c for c in commands if "--build" in c]
+                self.assertEqual(len(builds), 1)
+                self.assertNotIn("-j", builds[0])
+
+    def test_configuration_failure_is_forwarded(self):
+        result, commands = self.run_build(configure_code=13)
+        self.assertEqual(result, 13)
+        self.assertEqual(len(commands), 1)
 
 
 if __name__ == "__main__":
