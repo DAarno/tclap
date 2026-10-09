@@ -25,6 +25,7 @@
 #define TCLAP_DOC_BOOK_OUTPUT_H
 
 #include <tclap/Arg.h>
+#include <tclap/ArgGroup.h>
 #include <tclap/CmdLineInterface.h>
 #include <tclap/CmdLineOutput.h>
 
@@ -109,6 +110,13 @@ protected:
                                 const std::string &x) const;
     void removeChar(std::string &s, char r) const;
 
+    void printShortGroup(const ArgGroup &group, bool labelsOnly);
+    static bool hasVisiblePositional(const ArgGroup &group) {
+        for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it)
+            if (!(*it)->hasLabel() && (*it)->visibleInHelp()) return true;
+        return false;
+    }
+
     void printShortArg(Arg *it, bool required);
     void printLongArg(const ArgGroup &it) const;
 
@@ -132,6 +140,20 @@ inline const char *GroupChoice(const ArgGroup &group) {
     return "opt";
 }
 }  // namespace internal
+
+inline void DocBookOutput::printShortGroup(const ArgGroup &group, bool labelsOnly) {
+    int visible = 0;
+    for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it)
+        if ((*it)->visibleInHelp() && (!labelsOnly || (*it)->hasLabel())) ++visible;
+    if (visible > 1)
+        std::cout << "<group choice='" << internal::GroupChoice(group) << "'>\n";
+    for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it) {
+        Arg *arg = *it;
+        if (!arg->visibleInHelp() || (labelsOnly && !arg->hasLabel())) continue;
+        printShortArg(arg, arg->isRequired() || (visible == 1 && group.isRequired()));
+    }
+    if (visible > 1) std::cout << "</group>\n";
+}
 
 inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
     std::list<ArgGroup *> argSets = _cmd.argGroups();
@@ -162,22 +184,31 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
 
     std::cout << "<command>" << escapeXml(progName) << "</command>\n";
 
-    for (ArgGroup *group : argSets) {
-        int visible = CountVisibleArgs(*group);
-        if (visible > 1) {
-            std::cout << "<group choice='" << internal::GroupChoice(*group)
-                      << "'>\n";
-        }
-        for (Arg *arg : *group) {
-            if (!arg->visibleInHelp()) {
-                continue;
+    for (std::list<ArgGroup *>::const_iterator it = argSets.begin();
+         it != argSets.end(); ++it) {
+        const ArgGroup &group = **it;
+        if (group.isExclusive() && hasVisiblePositional(group)) continue;
+        printShortGroup(group, true);
+    }
+    const std::list<Arg *> operands = _cmd.argList();
+    std::list<ArgGroup *> shown;
+    for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
+        Arg *arg = *it;
+        if (arg->hasLabel() || !arg->visibleInHelp()) continue;
+        ArgGroup *owner = nullptr;
+        for (std::list<ArgGroup *>::const_iterator group = argSets.begin();
+             group != argSets.end(); ++group)
+            if (std::find((*group)->begin(), (*group)->end(), arg) != (*group)->end()) {
+                owner = *group;
+                break;
             }
-
-            printShortArg(arg, arg->isRequired() ||
-                                   (visible == 1 && group->isRequired()));
-        }
-        if (visible > 1) {
-            std::cout << "</group>\n";
+        if (owner && owner->isExclusive()) {
+            if (std::find(shown.begin(), shown.end(), owner) == shown.end()) {
+                printShortGroup(*owner, false);
+                shown.push_back(owner);
+            }
+        } else {
+            printShortArg(arg, arg->isRequired());
         }
     }
 
@@ -246,6 +277,12 @@ inline void DocBookOutput::printShortArg(Arg *a, bool required) {
     if (a->acceptsMultipleValues()) std::cout << " rep='repeat'";
 
     std::cout << '>';
+    if (!a->hasLabel()) {
+        std::cout << "<replaceable>" << escapeXml(a->name())
+                  << "</replaceable></arg>" << std::endl;
+        return;
+    }
+
     if (!a->flag().empty())
         std::cout << escapeXml(std::string(1, a->flagStartChar()) + a->flag());
     else
@@ -272,6 +309,13 @@ inline void DocBookOutput::printLongArg(const ArgGroup &group) const {
 
 
         std::cout << "<varlistentry>\n";
+        if (!a.hasLabel()) {
+            std::cout << "<term><replaceable>" << escapeXml(a.name())
+                      << "</replaceable></term>\n<listitem><para>"
+                      << escapeXml(desc) << "</para></listitem>\n</varlistentry>"
+                      << std::endl;
+            continue;
+        }
 
         if (!a.flag().empty()) {
             std::cout << "<term>\n";
