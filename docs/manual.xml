@@ -260,6 +260,20 @@ the type of argument. Some possible values include:
 </sect2>
 </sect1>
 
+<sect1 id="PARSER_STATE">
+<title>Parser sharing restrictions</title>
+<para>
+In TCLAP 1.2, the delimiter, ignore-rest state, and optional positional
+construction tracker are process-wide. Constructing a second parser can
+change the delimiter used by the first. Constructing an optional positional
+argument prevents further positional arguments from being constructed, even
+for another parser and after the original parser is destroyed. Parsing the end-of-options marker
+affects the shared ignore-rest state. Independent or concurrent parsers
+therefore need application coordination; parser destruction and
+reset do not clear the optional positional construction tracker.
+</para>
+</sect1>
+
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>
