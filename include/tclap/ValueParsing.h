@@ -137,6 +137,11 @@ Expected<T, std::string> parse_value(std::string_view text) {
     std::istringstream is{std::string(text)};
     T value{};
     int valuesRead = 0;
+    // Stream types decide whether empty input is meaningful for their type.
+    if (text.empty()) {
+        is >> value;
+        ++valuesRead;
+    }
 
     while (is.good()) {
         if (is.peek() == EOF) break;
