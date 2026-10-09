@@ -1,6 +1,10 @@
 #!/bin/bash
 
-set -x
+set -e
 
-rsync -aP html index.html manual.html style.css build.html \
-      $USER@web.sourceforge.net:/home/project-web/tclap/htdocs/v1.2
+# Run this script alongside the generated documentation.
+DOC_VERSION="1.2"
+cd -- "$(dirname -- "$0")"
+
+rsync -aP html index.html manual.html build.html style.css \
+      "$USER@web.sourceforge.net:/home/project-web/tclap/htdocs/v$DOC_VERSION/"

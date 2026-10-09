@@ -6,18 +6,16 @@ to either the GNU or POSIX standards, although it is close. See
 docs/manual.html for descriptions of how things work or look at the
 simple examples in the examples dir.
 
+Recommended versions
+--------------------
+
+  1.2  For existing integrations that require the legacy 1.2 API or
+       behavior. Receives only critical bug fixes.
+  1.4  Recommended for projects requiring C++98 compatibility.
+       Maintenance version with no new feature development.
+  1.6  Recommended for projects using C++20 or later. Modernized
+       internals with an API mostly source compatible with 1.4.
+
+Choose the version that matches your project's C++ and API requirements.
+
 Any and all feedback is welcome at https://sf.net/p/tclap/discussion/
-
-Branches
---------
-
-This repository has several long-lived branches:
-
-  1.2  Stable, backwards-compatible version with only critical bug fixes.
-  1.4  Current stable version; no new feature development. Should be used
-       by most projects requiring C++98 compatibility. Mostly source
-       compatible with 1.6.
-  1.6  Same as 1.4, but updated to work with modern (C++20 and later)
-       versions of C++. Mostly source compatible with 1.4.
-  2.0  Reworked library for modern C++ (C++20). Not stable, may break
-       API. New features may appear.
