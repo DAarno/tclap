@@ -811,6 +811,56 @@ option on the command line. The help output is updated accordingly.
 </sect1>
 
 
+<sect1 id="PARSE_LIFECYCLE">
+<title>Parse failures and reuse</title>
+<para>
+Check the result of the entire parse before using any argument values for
+application work. Parsing is not transactional: an error may leave earlier
+arguments changed, or even store a value that subsequently fails its
+constraint. <methodname>isSet()</methodname> does not restore old values and
+cannot substitute for checking the whole parse.
+</para>
+<para>
+To parse again, call <methodname>reset()</methodname> and supply fresh input.
+The vector overload expects the program name at element 0 and erases that
+element. Reset restores parser/argument state, not the caller's input vector.
+</para>
+<para>
+With <methodname>parse()</methodname>, continue only for
+<code>Outcome::Success</code>. <code>HelpRequested</code>,
+<code>VersionRequested</code> and <code>ParseError</code> all stop normal
+application work; reporting has already occurred. Malformed specifications
+and exceptions from custom callbacks/output/extractors can still throw.
+<methodname>parseOrExit()</methodname> is an alternative for a CLI main that
+should exit on help, version or errors.
+</para>
+<programlisting>
+#include &lt;tclap/CmdLine.h&gt;
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+
+int main() {
+    TCLAP::CmdLine cmd({.message = "reuse example", .helpAndVersion = false});
+    TCLAP::ValueArg&lt;int&gt; number({.flag = "n", .name = "number", .defaultValue = 0});
+    cmd.add(number);
+    std::vector&lt;std::string&gt; first;
+    first.push_back("prog"); first.push_back("-n"); first.push_back("7");
+    first.push_back("--bogus");
+    const auto result = cmd.parse(first);
+    if (result.outcome == TCLAP::Outcome::Success) return 1;
+    // A failure may leave number changed. Do no application work here.
+    cmd.reset();
+    // Build new input, including the program name; do not reuse first.
+    std::vector&lt;std::string&gt; second;
+    second.push_back("prog"); second.push_back("-n"); second.push_back("2");
+    if (cmd.parse(second).outcome != TCLAP::Outcome::Success) return 2;
+    std::cout &lt;&lt; number.value() &lt;&lt; '\n';
+    return 0;
+}
+</programlisting>
+</sect1>
+
 <sect1 id="CONSTRAINT">
 <title>I want to constrain the values allowed for a particular
 argument...</title>
