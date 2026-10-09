@@ -52,7 +52,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <utility>
 
 namespace TCLAP {
 
@@ -131,7 +130,7 @@ protected:
     bool _hasOptionalUnlabeledArg;
     bool _registrationActive;
     class Registration;
-    bool attachGroup(ArgGroup &group) {
+    bool attachGroup(ArgGroup &group) override {
         add(group);
         return true;
     }
@@ -505,18 +504,23 @@ public:
         _cmd._registrationActive = true;
     }
 
-    ~Registration() throw() {
-        for (Bindings::reverse_iterator it = _bindings.rbegin();
+    Registration(const Registration &) = delete;
+    Registration &operator=(const Registration &) = delete;
+
+    ~Registration() noexcept {
+        for (auto it = _bindings.rbegin();
              it != _bindings.rend(); ++it)
             it->first->_parserDelimiter = it->second;
         _cmd._registrationActive = false;
     }
 
     void add(Arg &arg) {
-        for (ArgListIterator it = _args.begin(); it != _args.end(); ++it)
-            if (arg == **it)
-                throw SpecificationException(
-                    "Argument with same flag/name already exists!", arg.longID());
+        if (std::ranges::any_of(_args, [&arg](const Arg *existing) {
+                return arg == *existing;
+            })) {
+            throw SpecificationException(
+                "Argument with same flag/name already exists!", arg.longID());
+        }
         if (!arg.hasLabel()) {
             if (_hasOptionalUnlabeledArg)
                 throw SpecificationException(
@@ -525,13 +529,13 @@ public:
             if (!arg.isRequired() && !arg.acceptsMultipleValues())
                 _hasOptionalUnlabeledArg = true;
         }
-        _bindings.push_back(std::make_pair(&arg, arg._parserDelimiter));
+        _bindings.emplace_back(&arg, arg._parserDelimiter);
         arg._parserDelimiter = &_cmd._delimiter;
         arg.addToList(_args);
         if (arg.isRequired()) ++_numRequired;
     }
 
-    void commit() {
+    void commit() noexcept {
         _cmd._argList.swap(_args);
         _cmd._numRequired = _numRequired;
         _cmd._hasOptionalUnlabeledArg = _hasOptionalUnlabeledArg;
@@ -539,9 +543,7 @@ public:
     }
 
 private:
-    Registration(const Registration &);
-    Registration &operator=(const Registration &);
-    typedef std::vector<std::pair<Arg *, const char *> > Bindings;
+    using Bindings = std::vector<std::pair<Arg *, const char *>>;
     CmdLine &_cmd;
     std::list<Arg *> _args;
     int _numRequired;
@@ -555,8 +557,7 @@ inline ArgContainer &CmdLine::add(ArgGroup &group) {
     std::list<ArgGroup *> groups(_argGroups);
     groups.push_back(&group);
     Registration registration(*this);
-    for (ArgGroup::iterator it = group.begin(); it != group.end(); ++it)
-        registration.add(**it);
+    for (Arg *arg : group) registration.add(*arg);
     group._parser = this;
     _argGroups.swap(groups);
     registration.commit();

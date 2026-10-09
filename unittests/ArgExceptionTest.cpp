@@ -100,7 +100,7 @@ void TestIndependentDiagnostics(Testing &t) {
     ArgException first("first error", "--first");
     ArgException second("second error", "--second");
     const char *saved = first.what();
-    second.what();
+    (void)second.what();
     if (std::string(saved) != "--first -- first error")
         ERROR(t, "A second exception overwrote the first diagnostic");
     ArgException copy(first);

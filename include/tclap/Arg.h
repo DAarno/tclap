@@ -62,7 +62,7 @@ public:
     friend class CmdLine;
 
 private:
-    // NULL uses the legacy static delimiter for unregistered arguments.
+    // nullptr uses the legacy static delimiter for unregistered arguments.
     const char *_parserDelimiter;
 
     /**
@@ -485,7 +485,7 @@ void ExtractValue(T &destVal, const std::string &strVal, StringLike sl) {
 
 inline Arg::Arg(std::string flag, std::string name, std::string desc,
                 bool req, bool valreq, Visitor *v)
-    : _parserDelimiter(NULL),
+    : _parserDelimiter(nullptr),
       _flag(std::move(flag)),
       _name(std::move(name)),
       _description(std::move(desc)),
