@@ -426,6 +426,10 @@ bool MultiArg<T>::allowMore()
 template<class T>
 void MultiArg<T>::reset()
 {
+    // Legacy XOR bookkeeping: _allowMore survives reset(). After one parse,
+    // allowMore() can report this MultiArg as already counted, so a reused
+    // XOR parser may report a required argument missing. This branch retains
+    // that behavior; construct a fresh parser and arguments for another parse.
 	Arg::reset();
 	_values.clear();
 }
