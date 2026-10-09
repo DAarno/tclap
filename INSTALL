@@ -36,6 +36,23 @@ defaults are good enough and it is not necessary to rely on the
 configuration detected by CMake - it is mostly used to work around
 some old compiler and Windows issues.
 
+Building without tests
+======================
+
+The default project build includes examples, unit tests and portable fuzz
+seed tests. The example tests require Python 3. Set BUILD_TESTING=OFF to
+skip test registration and the Python dependency. Unit tests and portable
+fuzz regression runners default to the initial value of BUILD_TESTING;
+explicitly enabled fuzz targets can still be built without registering tests.
+Use a fresh build directory when switching tests off: existing directories
+can retain old CTest registrations and cached developer-target options.
+
+For a library-only configuration, use a fresh build directory and configure
+with BUILD_TESTING=OFF, BUILD_EXAMPLES=OFF and BUILD_DOC=OFF, for example
+(from the build directory):
+
+cmake -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF ..
+
 VisualStudio Users
 ==================
 
