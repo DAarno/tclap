@@ -22,6 +22,8 @@
 
 #include "tclap/PredicateConstraint.h"
 #include "tclap/RangeConstraint.h"
+#include "tclap/CmdLine.h"
+#include <limits>
 #include "tclap/ValuesConstraint.h"
 #include "testing.h"
 
@@ -129,6 +131,29 @@ void TestRangeConstraint(Testing &t) {
               "RangeConstraint: unexpected description(): " << c.description());
 }
 
+void TestFloatingRange(Testing &t) {
+    RangeConstraint<double> range(0.0, 1.0);
+    const double inf = std::numeric_limits<double>::infinity();
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    if (!range.check(0.0) || !range.check(0.5) || !range.check(1.0) ||
+        range.check(-1.0) || range.check(2.0) || range.check(inf) ||
+        range.check(-inf) || range.check(nan))
+        ERROR(t, "Floating range accepted an unordered or out-of-range value");
+    RangeConstraint<double> unbounded(-inf, inf);
+    if (!unbounded.check(-inf) || !unbounded.check(inf) || unbounded.check(nan))
+        ERROR(t, "Infinite endpoints changed inclusive range semantics");
+    for (const char *input : {"nan", "inf", "-inf", "-1", "2"}) {
+        CmdLine cmd({.message = "floating range", .helpAndVersion = false});
+        ValueArg<double> number({.flag = "n", .name = "number",
+                                 .description = "constrained number", .required = true,
+                                 .constraint = &range});
+        cmd.add(number);
+        std::vector<std::string> args = {"prog", "--number", input};
+        if (cmd.parse(args).outcome != Outcome::ParseError || number.isSet())
+            ERROR(t, "CLI accepted an invalid floating range value: " << input);
+    }
+}
+
 int main() {
     Testing t;
     TestValuesConstraint(t);
@@ -137,5 +162,6 @@ int main() {
     TestPredicateConstraint(t);
     TestMakeConstraint(t);
     TestRangeConstraint(t);
+    TestFloatingRange(t);
     return t.errorCount();
 }

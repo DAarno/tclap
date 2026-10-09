@@ -63,7 +63,8 @@ public:
     [[nodiscard]] std::string shortID() const override { return _shortId; }
 
     bool check(const T &value) const override {
-        return !(value < _min) && !(_max < value);
+        // Positive comparisons also reject unordered floating-point values.
+        return _min <= value && value <= _max;
     }
 
 private:
