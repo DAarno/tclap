@@ -611,7 +611,10 @@ important for unlabeled arguments.
 An <classname>UnlabeledMultiArg</classname> is an <classname>UnlabeledValueArg</classname> that allows more than one value to be specified.  Only one
 <classname>UnlabeledMultiArg</classname> can be specified per command line.
 The <classname>UnlabeledMultiArg</classname> simply reads the remaining
-values from argv up until -- or the end of the array is reached.
+unmatched operand values through the end of argv, including values after
+<parameter>--</parameter> with its normal non-ignoreable setting. The marker
+itself is consumed by the parser. See <link linkend="IGNORE_ARGS">end option
+recognition</link> for the ignoreable policy and branch-specific limitations.
 </para>
 <para>
 Say you want a strange command
