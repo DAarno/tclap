@@ -96,6 +96,22 @@ void TestExitException(Testing &t) {
                      << e.getExitStatus());
 }
 
+void TestIndependentDiagnostics(Testing &t) {
+    ArgException first("first error", "--first");
+    ArgException second("second error", "--second");
+    const char *saved = first.what();
+    second.what();
+    if (std::string(saved) != "--first -- first error")
+        ERROR(t, "A second exception overwrote the first diagnostic");
+    ArgException copy(first);
+    first = second;
+    if (std::string(copy.what()) != "--first -- first error" ||
+        std::string(first.what()) != "--second -- second error")
+        ERROR(t, "Exception copy/assignment did not preserve diagnostics");
+    if (copy.what() != copy.what())
+        ERROR(t, "Repeated what() calls did not return a stable pointer");
+}
+
 int main() {
     Testing t;
     TestArgExceptionDefaults(t);
@@ -104,5 +120,6 @@ int main() {
     TestCmdLineParseException(t);
     TestSpecificationException(t);
     TestExitException(t);
+    TestIndependentDiagnostics(t);
     return t.errorCount();
 }
