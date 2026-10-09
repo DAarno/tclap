@@ -106,7 +106,33 @@ the constructor overloads that added an argument to a
 <classname>CmdLine</classname> passed in as a constructor parameter
 (see <link linkend="ARG_ADD_CMDLINE">this note</link> if you're
 migrating code that relied on that).
-
+</para>
+<para>
+C++20 designated initializers must follow the fields' declaration order in
+that specific Spec. You may skip fields that have defaults, but you cannot
+reorder the fields you provide. For <classname>ValueArgSpec&lt;T&gt;</classname>,
+<code>.required</code> precedes <code>.defaultValue</code>, which precedes
+<code>.typeDesc</code> and <code>.constraint</code>. For example:
+</para>
+<programlisting>
+TCLAP::ValueArg&lt;int&gt; number({.flag = "n", .name = "number",
+                            .required = true, .defaultValue = 1,
+                            .typeDesc = "integer"});
+</programlisting>
+<para>
+Placing <code>.defaultValue</code> after <code>.typeDesc</code> is ill-formed.
+The Spec types remain aggregates; this rule comes from C++20. Argument
+<code>.name</code> is mandatory even when other fields are omitted. Check the
+corresponding declaration rather than assuming every Spec has the same order:
+<ulink url="html/structTCLAP_1_1CmdLineSpec.html">CmdLineSpec</ulink>,
+<ulink url="html/structTCLAP_1_1SwitchArgSpec.html">SwitchArgSpec</ulink>,
+<ulink url="html/structTCLAP_1_1MultiSwitchArgSpec.html">MultiSwitchArgSpec</ulink>,
+<ulink url="html/structTCLAP_1_1ValueArgSpec.html">ValueArgSpec</ulink>,
+<ulink url="html/structTCLAP_1_1MultiArgSpec.html">MultiArgSpec</ulink>,
+<ulink url="html/structTCLAP_1_1UnlabeledValueArgSpec.html">UnlabeledValueArgSpec</ulink>,
+and <ulink url="html/structTCLAP_1_1UnlabeledMultiArgSpec.html">UnlabeledMultiArgSpec</ulink>.
+</para>
+<para>
 <programlisting>
 #include &lt;string&gt;
 #include &lt;iostream&gt;
