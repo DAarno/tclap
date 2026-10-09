@@ -20,10 +20,7 @@
  *
  *****************************************************************************/
 
-// Once an optional (non-required) UnlabeledValueArg has been declared,
-// its position on the command line is ambiguous with anything that
-// might follow it -- so TCLAP refuses to declare any further unlabeled
-// arg afterwards (OptionalUnlabeledTracker).
+// An optional positional must be registered last within its parser.
 
 #include "tclap/CmdLine.h"
 #include <iostream>
@@ -32,11 +29,15 @@ using namespace TCLAP;
 using namespace std;
 
 int main() {
+    CmdLine cmd("positional ordering", ' ', "1", false);
     UnlabeledValueArg<int> optional("extra", "an optional trailer", false, 0,
                                     "int");
 
+    cmd.add(optional);
+
     try {
         UnlabeledValueArg<int> tooLate("too-late", "desc", true, 0, "int");
+        cmd.add(tooLate);
     } catch (SpecificationException &e) {
         cout << e.what() << endl;
     }

@@ -208,7 +208,6 @@ UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
     : ValueArg<T>("", name, desc, req, val, typeDesc, v) {
     _ignoreable = ignoreable;
 
-    OptionalUnlabeledTracker::check(req, toString());
 }
 
 template <class T>
@@ -219,7 +218,6 @@ UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
                                         bool ignoreable, Visitor *v)
     : ValueArg<T>("", name, desc, req, val, typeDesc, v) {
     _ignoreable = ignoreable;
-    OptionalUnlabeledTracker::check(req, toString());
     parser.add(this);
 }
 
@@ -233,7 +231,6 @@ UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
                                         bool ignoreable, Visitor *v)
     : ValueArg<T>("", name, desc, req, val, constraint, v) {
     _ignoreable = ignoreable;
-    OptionalUnlabeledTracker::check(req, toString());
 }
 
 template <class T>
@@ -244,7 +241,6 @@ UnlabeledValueArg<T>::UnlabeledValueArg(const std::string &name,
                                         bool ignoreable, Visitor *v)
     : ValueArg<T>("", name, desc, req, val, constraint, v) {
     _ignoreable = ignoreable;
-    OptionalUnlabeledTracker::check(req, toString());
     parser.add(this);
 }
 

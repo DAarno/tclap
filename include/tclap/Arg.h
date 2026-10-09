@@ -59,8 +59,12 @@ public:
      */
     Arg(const Arg &rhs) = delete;
     Arg &operator=(const Arg &rhs) = delete;
+    friend class CmdLine;
 
 private:
+    // NULL uses the legacy static delimiter for unregistered arguments.
+    const char *_parserDelimiter;
+
     /**
      * The delimiter that separates an argument flag/name from the
      * value.
@@ -184,6 +188,13 @@ public:
      */
     static char delimiter() { return delimiterRef(); }
 
+    /** Returns this argument's parser delimiter, or the legacy default.
+     * Custom arguments should use this instead of the static delimiter().
+     */
+    char getDelimiter() const {
+        return _parserDelimiter ? *_parserDelimiter : delimiter();
+    }
+
     /**
      * The char used as a place holder when SwitchArgs are combined.
      * Currently set to the bell char (ASCII 7).
@@ -224,7 +235,8 @@ public:
     static std::string ignoreNameString() { return "ignore_rest"; }
 
     /**
-     * Sets the delimiter for all arguments.
+     * Sets the legacy delimiter for unregistered arguments and static callers.
+     * Registered built-in arguments use their owning parser delimiter.
      * \param c - The character that delimits flags/names from values.
      */
     static void setDelimiter(char c) { delimiterRef() = c; }
@@ -473,7 +485,8 @@ void ExtractValue(T &destVal, const std::string &strVal, StringLike sl) {
 
 inline Arg::Arg(std::string flag, std::string name, std::string desc,
                 bool req, bool valreq, Visitor *v)
-    : _flag(std::move(flag)),
+    : _parserDelimiter(NULL),
+      _flag(std::move(flag)),
       _name(std::move(name)),
       _description(std::move(desc)),
       _required(req),
@@ -516,7 +529,7 @@ inline std::string Arg::shortID(const std::string &valueId) const {
     else
         id = Arg::nameStartString() + _name;
 
-    if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+    if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
     return id;
 }
@@ -527,14 +540,14 @@ inline std::string Arg::longID(const std::string &valueId) const {
     if (!_flag.empty()) {
         id += Arg::flagStartString() + _flag;
 
-        if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+        if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
         id += ",  ";
     }
 
     id += Arg::nameStartString() + _name;
 
-    if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+    if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
     return id;
 }
@@ -578,7 +591,7 @@ inline void Arg::_checkWithVisitor() const {
  * Implementation of trimFlag.
  */
 inline void Arg::trimFlag(std::string &flag, std::string &value) const {
-    std::string::size_type stop = flag.find(Arg::delimiter());
+    std::string::size_type stop = flag.find(getDelimiter());
 
     if (stop != std::string::npos && stop > 1) {
         value = flag.substr(stop + 1);

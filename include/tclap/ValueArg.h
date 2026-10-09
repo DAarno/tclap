@@ -289,7 +289,7 @@ bool ValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
             throw(CmdLineParseException("Argument already set!", toString()));
         }
 
-        if (Arg::delimiter() != ' ' && value.empty())
+        if (this->getDelimiter() != ' ' && value.empty())
             throw(ArgParseException(
                 "Couldn't find delimiter for this argument!", toString()));
 

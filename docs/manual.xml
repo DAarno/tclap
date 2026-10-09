@@ -275,6 +275,34 @@ the type of argument. Some possible values include:
 </sect2>
 </sect1>
 
+<sect1 id="PARSER_STATE">
+<title>Independent parsers</title>
+<para>
+Each <classname>CmdLine</classname> owns its delimiter and positional
+registration checks. Optional positional arguments must be registered last;
+constructing an unregistered argument does not affect another parser.
+Use separate argument objects for separate parsers and keep the parser alive
+while using its registered arguments. Custom argument implementations should
+use <methodname>getDelimiter()</methodname>, which observes their parser's
+delimiter. The legacy static <methodname>Arg::delimiter()</methodname> and
+<methodname>Arg::setDelimiter()</methodname> remain available for unregistered
+arguments and legacy custom code, but do not select a registered parser's
+delimiter. The legacy <classname>OptionalUnlabeledTracker</classname> static
+helper is no longer used by the built-in arguments.
+</para>
+<para>
+Failed registration leaves the parser's argument list, required count,
+positional checks, delimiter bindings and group membership unchanged.
+A group rejected during attachment can be retried on another parser.
+Custom <methodname>addToList()</methodname> hooks receive a temporary list
+with the owning delimiter already bound; do not retain that list or re-enter
+registration. Application side effects in custom hooks are not rolled back.
+Custom <classname>CmdLineInterface</classname> implementations retain the
+legacy attachment default and can override the protected
+<methodname>attachGroup()</methodname> hook for their own transaction handling.
+</para>
+</sect1>
+
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>

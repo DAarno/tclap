@@ -49,7 +49,8 @@ public:
         : std::exception(),
           _errorText(std::move(text)),
           _argId(std::move(id)),
-          _typeDescription(std::move(td)) {}
+          _typeDescription(std::move(td)),
+          _what(_argId + " -- " + _errorText) {}
 
     /**
      * Destructor.
@@ -75,9 +76,7 @@ public:
      * Returns the arg id and error text.
      */
     [[nodiscard]] const char *what() const noexcept override {
-        static std::string ex;
-        ex = _argId + " -- " + _errorText;
-        return ex.c_str();
+        return _what.c_str();
     }
 
     /**
@@ -102,6 +101,9 @@ private:
      * between different child exceptions.
      */
     std::string _typeDescription;
+
+    // Prepared in the constructor: what() cannot allocate or throw.
+    std::string _what;
 };
 
 /**

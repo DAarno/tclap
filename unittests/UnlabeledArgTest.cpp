@@ -20,18 +20,7 @@
  *
  *****************************************************************************/
 
-// NOTE: OptionalUnlabeledTracker.h tracks, per-process, whether an
-// optional (non-required) UnlabeledValueArg has ever been constructed:
-// once one exists, no *further* unlabeled arg of any kind may be
-// constructed, since its position on the command line would be
-// ambiguous. (UnlabeledMultiArg's constructors happen to never trip
-// this themselves -- see UnlabeledMultiArg.h, they always pass `true`
-// to OptionalUnlabeledTracker::check() regardless of their own `req` --
-// but they still refuse to be constructed *after* the flag has been set
-// by an optional UnlabeledValueArg.) Since this global is shared by
-// every test in this binary, TestOptionalUnlabeledValueArgPoisonsTracker
-// deliberately sets it and so must run last: nothing after it may
-// construct another unlabeled arg.
+// Optional positional ordering is checked when arguments are registered.
 
 #include "tclap/CmdLine.h"
 #include "testing.h"
@@ -95,7 +84,7 @@ void TestUnlabeledValueArgMissingRequired(Testing &t) {
 // name OR description -- exercised directly here since it's easy to get
 // this kind of override subtly wrong (e.g. by comparing descriptions
 // with flag/name instead of just name/description on both sides). All
-// required, so none of this touches the OptionalUnlabeledTracker global.
+// required, with registration order validated within the parser.
 void TestUnlabeledValueArgEquality(Testing &t) {
     UnlabeledValueArg<int> a("count", "a count", true, 0, "int");
     UnlabeledValueArg<int> sameName("count", "different description", true, 0,
@@ -187,31 +176,18 @@ void TestUnlabeledMultiArgOptional(Testing &t) {
     }
 }
 
-// Must run last (see the file-level comment above): constructing an
-// *optional* UnlabeledValueArg poisons the process-wide
-// OptionalUnlabeledTracker, so no unlabeled arg of any kind may be
-// constructed afterwards.
-void TestOptionalUnlabeledValueArgPoisonsTracker(Testing &t) {
+void TestOptionalPositionalOrdering(Testing &t) {
+    CmdLine cmd("ordering", ' ', "1", false);
+    UnlabeledValueArg<int> optional("extra", "an optional trailer", false,
+                                    0, "int");
+    UnlabeledValueArg<int> tooLate("too-late", "desc", true, 0, "int");
+    cmd.add(optional);
     try {
-        UnlabeledValueArg<int> optional("extra", "an optional trailer", false,
-                                        0, "int");
-    } catch (ArgException &e) {
-        ERROR(t, "UnlabeledValueArg: unexpected exception constructing an "
-                 "optional unlabeled arg: "
-                     << e.error());
-    }
-
-    try {
-        UnlabeledValueArg<int> tooLate("too-late", "desc", true, 0, "int");
-        ERROR(t, "UnlabeledValueArg: expected SpecificationException "
-                 "constructing an unlabeled arg after an optional one, "
-                 "none thrown");
+        cmd.add(tooLate);
+        ERROR(t, "UnlabeledValueArg: expected registration to reject a "
+                 "positional after an optional one");
     } catch (SpecificationException &) {
         // Expected.
-    } catch (ArgException &e) {
-        ERROR(t, "UnlabeledValueArg: wrong exception type after an "
-                 "optional unlabeled arg: "
-                     << e.typeDescription());
     }
 }
 
@@ -222,6 +198,6 @@ int main() {
     TestUnlabeledValueArgEquality(t);
     TestUnlabeledMultiArgEquality(t);
     TestUnlabeledMultiArgOptional(t);
-    TestOptionalUnlabeledValueArgPoisonsTracker(t);
+    TestOptionalPositionalOrdering(t);
     return t.errorCount();
 }
