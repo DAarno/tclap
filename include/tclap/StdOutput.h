@@ -211,29 +211,26 @@ inline bool CompareOptions(std::pair<const Arg *, bool> a,
 // Group order is presentation order; positional operands use parser order.
 inline ArgGroup *FindArgGroup(const std::list<ArgGroup *> &groups,
                               const Arg *arg) {
-    for (std::list<ArgGroup *>::const_iterator it = groups.begin();
-         it != groups.end(); ++it)
-        if (std::find((*it)->begin(), (*it)->end(), arg) != (*it)->end())
-            return *it;
-    return NULL;
+    for (ArgGroup *group : groups)
+        if (std::ranges::find(*group, arg) != group->end()) return group;
+    return nullptr;
 }
 
 inline bool HasVisiblePositional(const ArgGroup &group) {
-    for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it)
-        if (!(*it)->hasLabel() && (*it)->visibleInHelp()) return true;
+    for (const Arg *arg : group)
+        if (!arg->hasLabel() && arg->visibleInHelp()) return true;
     return false;
 }
 
 inline void PrintExclusiveShortGroup(std::ostream &os, const ArgGroup &group) {
     os << (group.isRequired() ? " {" : " [");
     std::vector<Arg *> args;
-    for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it)
-        if ((*it)->visibleInHelp()) args.push_back(*it);
-    std::sort(args.begin(), args.end(), CompareShortID);
+    for (Arg *arg : group)
+        if (arg->visibleInHelp()) args.push_back(arg);
+    std::ranges::sort(args, CompareShortID);
     const char *separator = "";
-    for (std::vector<Arg *>::const_iterator it = args.begin();
-         it != args.end(); ++it) {
-        os << separator << (*it)->shortID();
+    for (const Arg *arg : args) {
+        os << separator << arg->shortID();
         separator = "|";
     }
     os << (group.isRequired() ? '}' : ']');
@@ -321,10 +318,9 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     }
 
     // Exclusive groups containing operands are printed with those operands.
-    for (std::list<ArgGroup *>::iterator it = exclusiveGroups.begin();
-         it != exclusiveGroups.end(); ++it) {
-        if (!internal::HasVisiblePositional(**it))
-            internal::PrintExclusiveShortGroup(outp, **it);
+    for (const ArgGroup *group : exclusiveGroups) {
+        if (!internal::HasVisiblePositional(*group))
+            internal::PrintExclusiveShortGroup(outp, *group);
     }
 
     // Next do options, we sort them later by optional first.
@@ -354,13 +350,13 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     // Positional order must match the order in which the parser consumes argv.
     const std::list<Arg *> operands = _cmd.getArgList();
     std::list<ArgGroup *> shown;
-    for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
-        const Arg &arg = **it;
+    for (const Arg *argPtr : operands) {
+        const Arg &arg = *argPtr;
         if (arg.hasLabel() || !arg.isValueRequired() || !arg.visibleInHelp())
             continue;
         ArgGroup *group = internal::FindArgGroup(argSets, &arg);
         if (group && group->isExclusive() && CountVisibleArgs(*group) > 1) {
-            if (std::find(shown.begin(), shown.end(), group) == shown.end()) {
+            if (std::ranges::find(shown, group) == shown.end()) {
                 internal::PrintExclusiveShortGroup(outp, *group);
                 shown.push_back(group);
             }
@@ -384,9 +380,8 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
     std::string message = _cmd.getMessage();
     std::list<ArgGroup *> argSets = _cmd.getArgGroups();
 
-    for (std::list<ArgGroup *>::iterator sit = argSets.begin();
-         sit != argSets.end(); ++sit) {
-        ArgGroup &argGroup = **sit;
+    for (ArgGroup *group : argSets) {
+        ArgGroup &argGroup = *group;
 
         int visible = CountVisibleArgs(argGroup);
         bool exclusive = visible > 1 && argGroup.isExclusive();
@@ -427,21 +422,21 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
 
     const std::list<Arg *> operands = _cmd.getArgList();
     std::list<ArgGroup *> shown;
-    for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
-        const Arg &arg = **it;
+    for (const Arg *argPtr : operands) {
+        const Arg &arg = *argPtr;
         if (arg.hasLabel() || !arg.visibleInHelp()) continue;
         ArgGroup *group = internal::FindArgGroup(argSets, &arg);
         if (group && group->isExclusive() && CountVisibleArgs(*group) > 1) {
-            if (std::find(shown.begin(), shown.end(), group) != shown.end()) continue;
+            if (std::ranges::find(shown, group) != shown.end()) continue;
             shown.push_back(group);
             spacePrint(os, group->isRequired()
                                ? _cmd.translateMessage("one_of_group", "One of:")
                                : _cmd.translateMessage("either_of_group", "Either of:"),
                        75, 3, 0);
-            for (ArgGroup::iterator member = group->begin(); member != group->end(); ++member) {
-                if (!(*member)->visibleInHelp()) continue;
-                spacePrint(os, (*member)->longID(), 75, 6, 3);
-                spacePrint(os, (*member)->getDescription((*member)->isRequired()), 75, 8, 0);
+            for (const Arg *member : *group) {
+                if (!member->visibleInHelp()) continue;
+                spacePrint(os, member->longID(), 75, 6, 3);
+                spacePrint(os, member->getDescription(member->isRequired()), 75, 8, 0);
                 os << '\n';
             }
             continue;

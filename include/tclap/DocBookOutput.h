@@ -71,14 +71,14 @@ protected:
     // Escape raw data once, at the XML output boundary (text and attributes).
     static std::string escapeXml(const std::string &text) {
         std::string result;
-        for (std::string::const_iterator it = text.begin(); it != text.end(); ++it) {
-            switch (*it) {
+        for (char character : text) {
+            switch (character) {
             case '&': result += "&amp;"; break;
             case '<': result += "&lt;"; break;
             case '>': result += "&gt;"; break;
             case '\"': result += "&quot;"; break;
             case '\'': result += "&apos;"; break;
-            default: result += *it; break;
+            default: result += character; break;
             }
         }
         return result;
@@ -112,8 +112,8 @@ protected:
 
     void printShortGroup(const ArgGroup &group, bool labelsOnly);
     static bool hasVisiblePositional(const ArgGroup &group) {
-        for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it)
-            if (!(*it)->hasLabel() && (*it)->visibleInHelp()) return true;
+        for (const Arg *arg : group)
+            if (!arg->hasLabel() && arg->visibleInHelp()) return true;
         return false;
     }
 
@@ -143,12 +143,11 @@ inline const char *GroupChoice(const ArgGroup &group) {
 
 inline void DocBookOutput::printShortGroup(const ArgGroup &group, bool labelsOnly) {
     int visible = 0;
-    for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it)
-        if ((*it)->visibleInHelp() && (!labelsOnly || (*it)->hasLabel())) ++visible;
+    for (const Arg *arg : group)
+        if (arg->visibleInHelp() && (!labelsOnly || arg->hasLabel())) ++visible;
     if (visible > 1)
         std::cout << "<group choice='" << internal::GroupChoice(group) << "'>\n";
-    for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it) {
-        Arg *arg = *it;
+    for (Arg *arg : group) {
         if (!arg->visibleInHelp() || (labelsOnly && !arg->hasLabel())) continue;
         printShortArg(arg, arg->isRequired() || (visible == 1 && group.isRequired()));
     }
@@ -184,26 +183,23 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
 
     std::cout << "<command>" << escapeXml(progName) << "</command>\n";
 
-    for (std::list<ArgGroup *>::const_iterator it = argSets.begin();
-         it != argSets.end(); ++it) {
-        const ArgGroup &group = **it;
+    for (const ArgGroup *groupPtr : argSets) {
+        const ArgGroup &group = *groupPtr;
         if (group.isExclusive() && hasVisiblePositional(group)) continue;
         printShortGroup(group, true);
     }
     const std::list<Arg *> operands = _cmd.getArgList();
     std::list<ArgGroup *> shown;
-    for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
-        Arg *arg = *it;
+    for (Arg *arg : operands) {
         if (arg->hasLabel() || !arg->visibleInHelp()) continue;
         ArgGroup *owner = nullptr;
-        for (std::list<ArgGroup *>::const_iterator group = argSets.begin();
-             group != argSets.end(); ++group)
-            if (std::find((*group)->begin(), (*group)->end(), arg) != (*group)->end()) {
-                owner = *group;
+        for (ArgGroup *group : argSets)
+            if (std::ranges::find(*group, arg) != group->end()) {
+                owner = group;
                 break;
             }
         if (owner && owner->isExclusive()) {
-            if (std::find(shown.begin(), shown.end(), owner) == shown.end()) {
+            if (std::ranges::find(shown, owner) == shown.end()) {
                 printShortGroup(*owner, false);
                 shown.push_back(owner);
             }
