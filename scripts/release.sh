@@ -22,6 +22,16 @@ if [ ! -f "$TCLAP_DIR/test_runner.py" ]; then
     exit 1
 fi
 
+if [ ! -f "$TCLAP_DIR/build/docs/manual.html" ]; then
+    echo "Generate build/docs/manual.html before staging a release" >&2
+    exit 1
+fi
+
+if [ ! -f "$TCLAP_DIR/build/docs/html/index.html" ]; then
+    echo "Generate build/docs/html before staging a release" >&2
+    exit 1
+fi
+
 FILES="AUTHORS ChangeLog CMakeLists.txt config.h.in COPYING docs examples include INSTALL NEWS README tests \
       unittests packaging fuzz test_runner.py"
 
@@ -31,3 +41,4 @@ done
 
 # Include generated docs for users without Doxygen.
 rsync -r --chmod=ugo+r,go-w --exclude "__*__" "$TCLAP_DIR/build/docs/html" "$DEST/docs/"
+rsync --chmod=ugo+r,go-w "$TCLAP_DIR/build/docs/manual.html" "$DEST/docs/"

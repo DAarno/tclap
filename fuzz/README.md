@@ -39,18 +39,25 @@ which driver it's linked against.
 
 ## Building and running
 
+Run the commands below from the repository root. The `-S`/`-B` configure
+syntax requires CMake 3.13 or later. With an older supported CMake, create
+and enter the build directory, run `cmake` with the same `-D` options and
+`..` as its source, then return to the repository root before following the commands below.
+
 Portable regression tests (default, any compiler):
 
 ```sh
-cmake -B build -DBUILD_FUZZ_REGRESSION=ON ..
+cmake -S . -B build -DBUILD_FUZZ_REGRESSION=ON
 cmake --build build
-ctest --test-dir build -R fuzz_
+cd build
+ctest -R fuzz_
+cd ..
 ```
 
 Real libFuzzer binaries (requires Clang):
 
 ```sh
-cmake -B build-fuzz -DBUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++ ..
+cmake -S . -B build-fuzz -DBUILD_FUZZERS=ON -DCMAKE_CXX_COMPILER=clang++
 cmake --build build-fuzz --target fuzz_cmdline_fuzzer
 ./build-fuzz/fuzz/fuzz_cmdline_fuzzer fuzz/seeds/fuzz_cmdline -max_total_time=60
 ```
@@ -71,7 +78,7 @@ If a `*_fuzzer` binary seems to hang rather than run, before assuming it's a
 target bug, try:
 
 ```sh
-ASAN_OPTIONS=symbolize=0 ./fuzz/fuzz_cmdline_fuzzer <corpus-dir> -print_funcs=0 ...
+ASAN_OPTIONS=symbolize=0 ./build-fuzz/fuzz/fuzz_cmdline_fuzzer <corpus-dir> -print_funcs=0 ...
 ```
 
 By default libFuzzer symbolizes newly-covered function names (`-print_funcs`,

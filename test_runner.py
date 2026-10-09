@@ -2,22 +2,31 @@
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 
 def build(build_dir, config):
-    os.chdir(build_dir)
+    build_dir = os.path.abspath(build_dir)
+    source_dir = os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(build_dir, exist_ok=True)
     cpu_count = os.cpu_count() or 1
     ret = subprocess.run(['cmake', '-DCMAKE_BUILD_TYPE=' + config,
-                          '..']).returncode
+                          source_dir], cwd=build_dir).returncode
     if ret:
         return ret
     
-    ret = subprocess.run(['cmake', '--build', '.', '--config',
-                          config, '-j', str(cpu_count)]).returncode
-    if ret:
-        # Try again, it could be due to cmake not supporting -j
-        return subprocess.run(['cmake', '--build', '.', '--config', config])
+    # CMake before 3.12 has no portable --build parallel option. Select
+    # the supported command first instead of retrying compiler failures.
+    version = subprocess.run(['cmake', '--version'], cwd=build_dir,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             universal_newlines=True)
+    match = re.search(r'cmake version (\d+)\.(\d+)', version.stdout or '')
+    command = ['cmake', '--build', '.', '--config', config]
+    if version.returncode == 0 and match:
+        if tuple(map(int, match.groups())) >= (3, 12):
+            command.extend(['-j', str(cpu_count)])
+    return subprocess.run(command, cwd=build_dir).returncode
 
 def run_tests(build_dir, config, tests_regex=None):
     command = ['ctest', '-C', config, '-V']
@@ -42,11 +51,9 @@ if __name__ == '__main__':
                              'examples: "^TypeNameTest$", "^fuzz_", '
                              '"^(test1|test2)$")')
     args = parser.parse_args()
-    cwd = os.getcwd()
     if args.build:
         ret = build(args.build_dir, args.config)
         if ret:
             sys.exit(ret)
 
-    os.chdir(cwd)
     sys.exit(run_tests(args.build_dir, args.config, args.tests_regex))
