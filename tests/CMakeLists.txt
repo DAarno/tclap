@@ -17,3 +17,6 @@ foreach(file ${TEST_FILES})
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/simple_test.py
     ${PYTHON_EXECUTABLE} ${file_basename})
 endforeach()
+
+add_test(NAME TestRunnerTest
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_runner_test.py)
