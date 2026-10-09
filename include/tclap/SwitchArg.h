@@ -112,14 +112,14 @@ public:
   bool combinedSwitchesMatch(std::string& combined);
 
   /**
-   * Returns bool, whether or not the switch has been set.
+   * Returns the default value, toggled when the switch occurs.
+   * Use isSet() to check whether the switch occurred.
    */
   bool getValue() const { return _value; }
 
   /**
-   * A SwitchArg can be used as a boolean, indicating
-   * whether or not the switch has been set. This is the
-   * same as calling getValue()
+   * A SwitchArg converts to its toggled/defaulted value, the same
+   * as calling getValue(). Use isSet() to check occurrence.
    */
   operator bool() const { return _value; }
                 
