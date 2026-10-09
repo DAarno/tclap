@@ -101,6 +101,9 @@ public:
      */
     [[nodiscard]] int value() const noexcept { return _value; }
 
+    /** True when the count (including the initial count) is nonzero. */
+    operator bool() const noexcept { return _value != 0; }
+
     /**
      * Returns the shortID for this Arg.
      */
