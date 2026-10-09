@@ -320,7 +320,9 @@ bool MultiArg<T>::processArg(int *i, std::vector<std::string>& args)
 
    	if ( argMatches( flag ) )
    	{
-   		if ( Arg::delimiter() != ' ' && value == "" )
+		// Legacy behavior: an empty attached value is treated as a missing
+		// delimiter. This branch deliberately retains that parsing behavior.
+		if ( Arg::delimiter() != ' ' && value == "" )
 			throw( ArgParseException( 
 			           "Couldn't find delimiter for this argument!",
 					   toString() ) );

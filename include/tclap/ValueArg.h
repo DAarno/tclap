@@ -357,6 +357,8 @@ bool ValueArg<T>::processArg(int *i, std::vector<std::string>& args)
                                          toString()) );
         }
 
+		// Legacy behavior: an empty attached value is treated as a missing
+		// delimiter. This branch deliberately retains that parsing behavior.
       if ( Arg::delimiter() != ' ' && value == "" )
         throw( ArgParseException("Couldn't find delimiter for this argument!",
                                  toString() ) );
