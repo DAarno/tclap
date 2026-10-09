@@ -73,8 +73,8 @@ private:
 };
 
 /**
- * Builds a PredicateConstraint<T>, deducing T from the predicate's
- * argument type so a call site doesn't have to spell it out:
+ * Builds a PredicateConstraint<T>. Supply T explicitly; only the
+ * predicate type is deduced from the callable:
  * auto positive = MakeConstraint<int>("must be positive", "positive",
  *                                     [](int v) { return v > 0; });
  * ValueArg<int> n({.flag = "n", .name = "num", .constraint = &positive});

@@ -62,8 +62,9 @@ enum class Outcome {
 struct ParseError {
     /// Human-readable description of what went wrong.
     std::string message;
-    /// The offending Arg's id (flag/name), or empty if the error isn't
-    /// attributable to a single Arg (e.g. an unknown token).
+    /// The offending Arg's id (flag/name), or the raw unknown token when
+    /// no argument matches it. Empty when the failure has no specific id
+    /// or token, such as missing required arguments.
     std::string argId{};
 };
 
