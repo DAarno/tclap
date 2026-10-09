@@ -963,31 +963,31 @@ false will disable automatic help and version generation.
 </sect1>
 
 <sect1 id="IGNORE_ARGS">
-<title>I want to ignore certain arguments...</title>
+<title>End option recognition with --</title>
 <para>
-The <parameter>--</parameter> flag is automatically included in the 
-<classname>CmdLine</classname>.
-As (almost) per POSIX and GNU standards, any argument specified
-after the <parameter>--</parameter> flag is ignored. 
-<emphasis>Almost</emphasis> because if an
-<classname>UnlabeledValueArg</classname> that has not been set or an
-<classname>UnlabeledMultiArg</classname> has been specified, by default 
-we will assign any arguments beyond the <parameter>--</parameter> 
-to the those arguments as
-per the rules above. This is primarily useful if you want to pass
-in arguments with a dash as the first character of the argument. It
-should be noted that even if the <parameter>--</parameter> flag is 
-passed on the command line, the <classname>CmdLine</classname> will 
-<emphasis>still</emphasis> test to make sure all of the required 
-arguments are present.
+The automatically registered <parameter>--</parameter> marker ends option
+recognition. POSIX/GNU conventions treat following tokens as operands,
+including tokens beginning with a dash; they do not mean that all following
+input is discarded. TCLAP's ordinary unlabeled arguments consume those tokens
+in their registered order. The marker itself is not an operand.
 </para>
-
 <para>
-Of course, this isn't how POSIX/GNU handle things, they explicitly
-ignore arguments after the <parameter>--</parameter>. To accommodate this, 
-we can make both <classname>UnlabeledValueArg</classname>s and 
-<classname>UnlabeledMultiArg</classname>s ignoreable in their constructors. 
-See the <ulink url="html/index.html"> API Documentation</ulink> for details. 
+For example, with a switch <parameter>-x</parameter> and an unlabeled multi
+argument for files, <code>prog -x before -- -x after</code> sets the switch once
+and supplies the three operands <code>before</code>, <code>-x</code> and
+<code>after</code>. The second <parameter>-x</parameter> is a file name, not
+another switch occurrence. Required arguments are still checked after
+<parameter>--</parameter>; the marker does not satisfy missing requirements.
+</para>
+<para>
+TCLAP implements this through its separate ignoreable policy. Labeled arguments
+are normally ignoreable, so they stop matching after the marker. Unmatched
+remaining tokens are not reported as unknown-option errors. Unlabeled
+arguments are normally not ignoreable and therefore continue consuming input.
+Passing true for an unlabeled argument's constructor parameter
+<parameter>ignoreable</parameter> makes it stop consuming after the marker as
+well. This is a TCLAP policy choice, separate from the standard meaning of
+ending option recognition.
 </para>
 </sect1>
 
