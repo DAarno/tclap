@@ -18,7 +18,7 @@
 <arg choice='plain'>-s <replaceable>string</replaceable></arg>
 <arg choice='plain'>-B</arg>
 </group>
-<arg choice='opt' rep='repeat'>-A <replaceable></replaceable></arg>
+<arg choice='opt' rep='repeat'>-A <replaceable>integer</replaceable></arg>
 <arg choice='opt'>--</arg>
 <arg choice='opt'>--version</arg>
 <arg choice='opt'>-h</arg>
@@ -38,7 +38,7 @@ this is a message
 <option>-A</option>
 </term>
 <term>
-<option>--sA <replaceable></replaceable></option>
+<option>--sA <replaceable>integer</replaceable></option>
 </term>
 <listitem>
 <para>

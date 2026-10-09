@@ -187,8 +187,10 @@ EXTRA_DIST = $(SHELL_TESTS) \
 			 test90.out \
 			 test91.out
 
-check_PROGRAMS += reset-test count-bool-test
+check_PROGRAMS += reset-test count-bool-test docbook-xml-test
 reset_test_SOURCES = reset-test.cpp
-TESTS = $(SHELL_TESTS) reset-test$(EXEEXT) count-bool-test$(EXEEXT)
+TESTS = $(SHELL_TESTS) reset-test$(EXEEXT) count-bool-test$(EXEEXT) docbook-xml-test$(EXEEXT)
 
 count_bool_test_SOURCES = count-bool-test.cpp
+
+docbook_xml_test_SOURCES = docbook-xml-test.cpp

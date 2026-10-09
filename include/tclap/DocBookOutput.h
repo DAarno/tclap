@@ -71,6 +71,38 @@ class DocBookOutput : public CmdLineOutput
 
 	    DocBookOutput() : theDelimiter('=') {}
 	protected:
+    // Escape raw data once, at the XML output boundary (text and attributes).
+    static std::string escapeXml(const std::string &text) {
+        std::string result;
+        for (std::string::const_iterator it = text.begin(); it != text.end(); ++it) {
+            switch (*it) {
+            case '&': result += "&amp;"; break;
+            case '<': result += "&lt;"; break;
+            case '>': result += "&gt;"; break;
+            case '\"': result += "&quot;"; break;
+            case '\'': result += "&apos;"; break;
+            default: result += *it; break;
+            }
+        }
+        return result;
+    }
+
+    static std::string valueLabel(const Arg &arg) {
+        const std::string id = arg.shortID();
+        const std::string label = arg.getFlag().empty()
+                                      ? arg.nameStartString() + arg.getName()
+                                      : arg.flagStartString() + arg.getFlag();
+        const std::string::size_type labelStart = id.find(label);
+        if (labelStart != std::string::npos) {
+            const std::string::size_type open = labelStart + label.size() + 1;
+            const std::string::size_type close = id.rfind('>');
+            if (open < id.size() && id[open] == '<' &&
+                close != std::string::npos && close > open)
+                return id.substr(open + 1, close - open - 1);
+        }
+        return id;  // Custom IDs without the usual value wrapper.
+    }
+
 
 		/**
 		 * Substitutes the char r for string x in string s.
@@ -111,19 +143,19 @@ inline void DocBookOutput::usage(CmdLineInterface& _cmd )
 	std::cout << "<refentry>" << std::endl;
 
 	std::cout << "<refmeta>" << std::endl;
-	std::cout << "<refentrytitle>" << progName << "</refentrytitle>" << std::endl;
+	std::cout << "<refentrytitle>" << escapeXml(progName) << "</refentrytitle>" << std::endl;
 	std::cout << "<manvolnum>1</manvolnum>" << std::endl;
 	std::cout << "</refmeta>" << std::endl;
 
 	std::cout << "<refnamediv>" << std::endl;
-	std::cout << "<refname>" << progName << "</refname>" << std::endl;
-	std::cout << "<refpurpose>" << _cmd.getMessage() << "</refpurpose>" << std::endl;
+	std::cout << "<refname>" << escapeXml(progName) << "</refname>" << std::endl;
+	std::cout << "<refpurpose>" << escapeXml(_cmd.getMessage()) << "</refpurpose>" << std::endl;
 	std::cout << "</refnamediv>" << std::endl;
 
 	std::cout << "<refsynopsisdiv>" << std::endl;
 	std::cout << "<cmdsynopsis>" << std::endl;
 
-	std::cout << "<command>" << progName << "</command>" << std::endl;
+	std::cout << "<command>" << escapeXml(progName) << "</command>" << std::endl;
 
 	// xor
 	for ( int i = 0; (unsigned int)i < xorList.size(); i++ )
@@ -147,7 +179,7 @@ inline void DocBookOutput::usage(CmdLineInterface& _cmd )
 	std::cout << "<refsect1>" << std::endl;
 	std::cout << "<title>Description</title>" << std::endl;
 	std::cout << "<para>" << std::endl;
-	std::cout << _cmd.getMessage() << std::endl; 
+	std::cout << escapeXml(_cmd.getMessage()) << std::endl;
 	std::cout << "</para>" << std::endl;
 	std::cout << "</refsect1>" << std::endl;
 
@@ -165,7 +197,7 @@ inline void DocBookOutput::usage(CmdLineInterface& _cmd )
 	std::cout << "<refsect1>" << std::endl;
 	std::cout << "<title>Version</title>" << std::endl;
 	std::cout << "<para>" << std::endl;
-	std::cout << xversion << std::endl; 
+	std::cout << escapeXml(xversion) << std::endl;
 	std::cout << "</para>" << std::endl;
 	std::cout << "</refsect1>" << std::endl;
 	
@@ -213,14 +245,7 @@ inline void DocBookOutput::basename( std::string& s )
 
 inline void DocBookOutput::printShortArg(Arg* a)
 {
-	std::string lt = "&lt;"; 
-	std::string gt = "&gt;"; 
 
-	std::string id = a->shortID();
-	substituteSpecialChars(id,'<',lt);
-	substituteSpecialChars(id,'>',gt);
-	removeChar(id,'[');
-	removeChar(id,']');
 	
 	std::string choice = "opt";
 	if ( a->isRequired() )
@@ -233,20 +258,14 @@ inline void DocBookOutput::printShortArg(Arg* a)
 
 	std::cout << '>';
 	if ( !a->getFlag().empty() )
-		std::cout << a->flagStartChar() << a->getFlag();
+		std::cout << escapeXml(std::string(1, a->flagStartChar()) + a->getFlag());
 	else
-		std::cout << a->nameStartString() << a->getName();
+		std::cout << escapeXml(a->nameStartString() + a->getName());
 	if ( a->isValueRequired() )
 	{
-		std::string arg = a->shortID();
-		removeChar(arg,'[');
-		removeChar(arg,']');
-		removeChar(arg,'<');
-		removeChar(arg,'>');
-		removeChar(arg,'.');
-		arg.erase(0, arg.find_last_of(theDelimiter) + 1);
-		std::cout << theDelimiter;
-		std::cout << "<replaceable>" << arg << "</replaceable>";
+		std::string arg = valueLabel(*a);
+		std::cout << escapeXml(std::string(1, theDelimiter));
+		std::cout << "<replaceable>" << escapeXml(arg) << "</replaceable>";
 	}
 	std::cout << "</arg>" << std::endl;
 
@@ -254,12 +273,10 @@ inline void DocBookOutput::printShortArg(Arg* a)
 
 inline void DocBookOutput::printLongArg(Arg* a)
 {
-	std::string lt = "&lt;"; 
-	std::string gt = "&gt;"; 
+
 
 	std::string desc = a->getDescription();
-	substituteSpecialChars(desc,'<',lt);
-	substituteSpecialChars(desc,'>',gt);
+
 
 	std::cout << "<varlistentry>" << std::endl;
 
@@ -267,32 +284,26 @@ inline void DocBookOutput::printLongArg(Arg* a)
 	{
 		std::cout << "<term>" << std::endl;
 		std::cout << "<option>";
-		std::cout << a->flagStartChar() << a->getFlag();
+		std::cout << escapeXml(std::string(1, a->flagStartChar()) + a->getFlag());
 		std::cout << "</option>" << std::endl;
 		std::cout << "</term>" << std::endl;
 	}
 
 	std::cout << "<term>" << std::endl;
 	std::cout << "<option>";
-	std::cout << a->nameStartString() << a->getName();
+	std::cout << escapeXml(a->nameStartString() + a->getName());
 	if ( a->isValueRequired() )
 	{
-		std::string arg = a->shortID();
-		removeChar(arg,'[');
-		removeChar(arg,']');
-		removeChar(arg,'<');
-		removeChar(arg,'>');
-		removeChar(arg,'.');
-		arg.erase(0, arg.find_last_of(theDelimiter) + 1);
-		std::cout << theDelimiter;
-		std::cout << "<replaceable>" << arg << "</replaceable>";
+		std::string arg = valueLabel(*a);
+		std::cout << escapeXml(std::string(1, theDelimiter));
+		std::cout << "<replaceable>" << escapeXml(arg) << "</replaceable>";
 	}
 	std::cout << "</option>" << std::endl;
 	std::cout << "</term>" << std::endl;
 
 	std::cout << "<listitem>" << std::endl;
 	std::cout << "<para>" << std::endl;
-	std::cout << desc << std::endl;
+	std::cout << escapeXml(desc) << std::endl;
 	std::cout << "</para>" << std::endl;
 	std::cout << "</listitem>" << std::endl;
 

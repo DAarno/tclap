@@ -175,3 +175,6 @@ test('reset ignore-rest', reset_test)
 
 count_bool_test = executable('count-bool-test', 'count-bool-test.cpp', dependencies: tclap_dep)
 test('counted switch bool', count_bool_test)
+
+docbook_xml_test = executable('docbook-xml-test', 'docbook-xml-test.cpp', dependencies: tclap_dep)
+test('DocBook XML', docbook_xml_test)
