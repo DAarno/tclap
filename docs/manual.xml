@@ -1296,6 +1296,45 @@ could just as well have been declared
 </para>
 </sect1>
 
+<sect1 id="NUMERIC_GRAMMAR">
+<title>Numeric syntax and migration from 1.x</title>
+<para>
+Ordinary integer and floating-point types use <function>std::from_chars</function>
+in 2.0. Signed integers accept <code>7</code> and <code>-7</code>;
+unsigned integers reject negative input. A leading plus such as <code>+7</code>
+is rejected for both ordinary integers and floating-point values, whereas
+1.x stream-based parsing accepts it. Leading whitespace is accepted, but
+trailing whitespace or any other unconsumed characters are rejected. Trailing
+whitespace rejection also applies in 1.x; it is not a migration change.
+</para>
+<para>
+Ordinary integers are decimal: <code>010</code> means 10 and
+<code>0x10</code> is rejected. Floating-point input accepts decimal and
+exponent forms such as <code>1.5</code> and <code>1e3</code>, as well as
+<code>inf</code>, <code>-inf</code> and <code>nan</code>. Parsing those spellings
+does not bypass constraints: for example, a finite
+<classname>RangeConstraint</classname> rejects infinities and NaN.
+The numeric conversion is independent of the stream locale: the decimal
+point is <code>.</code>, and <code>1,5</code> is rejected even with a comma
+locale. Leading-whitespace classification uses the current C character locale.
+</para>
+<para>
+<classname>bool</classname>, plain <classname>char</classname> and custom
+ValueLike types use stream extraction instead. With the default stream locale,
+bool accepts <code>0</code>/<code>1</code>, not <code>true</code>/<code>false</code>;
+char reads a character such as <code>x</code>, not its numeric code. Streams
+use their locale and custom extractors determine their own syntax. StringLike
+types use assignment and preserve spaces rather than numeric conversion.
+</para>
+<para>
+Use <classname>AutoBaseInt&lt;int&gt;</classname> explicitly to choose stream-based
+C-style bases for one argument: <code>0x10</code> is 16, <code>010</code> is 8,
+and <code>10</code> is 10. This wrapper accepts <code>+7</code> and
+<code>-7</code>; invalid octal <code>08</code> and trailing whitespace are
+rejected. See <link linkend="READING_HEX_INTEGERS">the auto-base example</link>.
+</para>
+</sect1>
+
 <sect1 id="USING_ARGTRAITS">
 <title>I want to use different types...</title>
 <para>
