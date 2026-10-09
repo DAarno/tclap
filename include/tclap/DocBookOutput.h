@@ -157,21 +157,38 @@ inline void DocBookOutput::usage(CmdLineInterface& _cmd )
 
 	std::cout << "<command>" << escapeXml(progName) << "</command>" << std::endl;
 
-	// xor
-	for ( int i = 0; (unsigned int)i < xorList.size(); i++ )
-	{
-		std::cout << "<group choice='req'>" << std::endl;
-		for ( ArgVectorIterator it = xorList[i].begin(); 
-						it != xorList[i].end(); it++ )
-			printShortArg((*it));
-
-		std::cout << "</group>" << std::endl;
-	}
-
-	// rest of args
-	for (ArgListIterator it = argList.begin(); it != argList.end(); it++)
-		if ( !xorHandler.contains( (*it) ) )
-			printShortArg((*it));
+    // Labeled XOR groups retain their grouping; groups with operands follow
+    // the parser's positional order rather than being moved before operands.
+    for (unsigned int i = 0; i < xorList.size(); ++i) {
+        bool hasOperand = false;
+        for (ArgVectorIterator it = xorList[i].begin(); it != xorList[i].end(); ++it)
+            if (!(*it)->hasLabel()) hasOperand = true;
+        if (hasOperand) continue;
+        std::cout << "<group choice='req'>" << std::endl;
+        for (ArgVectorIterator it = xorList[i].begin(); it != xorList[i].end(); ++it)
+            printShortArg(*it);
+        std::cout << "</group>" << std::endl;
+    }
+    for (ArgListIterator it = argList.begin(); it != argList.end(); ++it)
+        if ((*it)->hasLabel() && !xorHandler.contains(*it)) printShortArg(*it);
+    std::vector<bool> shown(xorList.size(), false);
+    for (ArgListIterator it = argList.begin(); it != argList.end(); ++it) {
+        Arg *arg = *it;
+        if (arg->hasLabel()) continue;
+        unsigned int owner = 0;
+        for (; owner < xorList.size(); ++owner)
+            if (std::find(xorList[owner].begin(), xorList[owner].end(), arg) !=
+                xorList[owner].end()) break;
+        if (owner == xorList.size()) {
+            printShortArg(arg);
+        } else if (!shown[owner]) {
+            std::cout << "<group choice='req'>" << std::endl;
+            for (ArgVectorIterator member = xorList[owner].begin();
+                 member != xorList[owner].end(); ++member) printShortArg(*member);
+            std::cout << "</group>" << std::endl;
+            shown[owner] = true;
+        }
+    }
 
  	std::cout << "</cmdsynopsis>" << std::endl;
 	std::cout << "</refsynopsisdiv>" << std::endl;
@@ -257,6 +274,12 @@ inline void DocBookOutput::printShortArg(Arg* a)
 
 
 	std::cout << '>';
+    if (!a->hasLabel()) {
+        std::cout << "<replaceable>" << escapeXml(a->getName())
+                  << "</replaceable></arg>" << std::endl;
+        return;
+    }
+
 	if ( !a->getFlag().empty() )
 		std::cout << escapeXml(std::string(1, a->flagStartChar()) + a->getFlag());
 	else
@@ -279,6 +302,13 @@ inline void DocBookOutput::printLongArg(Arg* a)
 
 
 	std::cout << "<varlistentry>" << std::endl;
+    if (!a->hasLabel()) {
+        std::cout << "<term><replaceable>" << escapeXml(a->getName())
+                  << "</replaceable></term>\n<listitem><para>"
+                  << escapeXml(desc) << "</para></listitem>\n</varlistentry>"
+                  << std::endl;
+        return;
+    }
 
 	if ( !a->getFlag().empty() )
 	{

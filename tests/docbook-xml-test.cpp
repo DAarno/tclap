@@ -20,8 +20,16 @@ int main(int argc, char **) {
     cmd.add(arg);
     CustomId custom;
     cmd.add(custom);
-    const char *argv[] = {"prog&<>'\""};
-    cmd.parse(1, argv);
+    TCLAP::UnlabeledValueArg<std::string> first("file&<>'\"", "first file", true, "", "string");
+    TCLAP::UnlabeledValueArg<std::string> second("second", "second file", true, "", "string");
+    TCLAP::UnlabeledValueArg<std::string> third("third", "third file", true, "", "string");
+    TCLAP::UnlabeledMultiArg<std::string> tail("files", "remaining files", false, "string");
+    TCLAP::SwitchArg none("n", "none", "no remaining files");
+    cmd.add(first); cmd.add(second); cmd.add(third); cmd.xorAdd(tail, none);
+    const char *argv[] = {"prog&<>'\"", "one", "two", "three", "four", "five"};
+    cmd.parse(6, argv);
+    if (first.getValue() != "one" || second.getValue() != "two" ||
+        third.getValue() != "three" || tail.getValue().size() != 2) return 7;
     TCLAP::DocBookOutput output;
     std::ostringstream rendered;
     std::streambuf *saved = std::cout.rdbuf(rendered.rdbuf());
@@ -44,6 +52,20 @@ int main(int argc, char **) {
             return 1;
         }
     }
+    if (xml.find("--file") != std::string::npos || xml.find("--second") != std::string::npos)
+        return 4;
+    const std::string::size_type synopsisEnd = xml.find("</cmdsynopsis>");
+    if (synopsisEnd == std::string::npos) return 8;
+    const std::string synopsis = xml.substr(0, synopsisEnd);
+    const std::string::size_type firstPos = synopsis.find("<replaceable>file&amp;"),
+                                secondPos = synopsis.find("<replaceable>second"),
+                                thirdPos = synopsis.find("<replaceable>third"),
+                                tailPos = synopsis.find("<replaceable>files");
+    if (firstPos == std::string::npos || secondPos == std::string::npos ||
+        thirdPos == std::string::npos || tailPos == std::string::npos ||
+        secondPos <= firstPos || thirdPos <= secondPos || tailPos <= thirdPos) return 5;
+    if (synopsis.find("<group choice='req'>") == std::string::npos ||
+        synopsis.find("rep='repeat'") == std::string::npos) return 6;
     if (xml.find("&amp;lt;") != std::string::npos) return 2;
     return 0;
 }

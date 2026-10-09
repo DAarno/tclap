@@ -275,6 +275,9 @@ class Arg
 		 */
 		const std::string& getName() const;
 
+		/** Whether this argument has an option label rather than being an operand. */
+		virtual bool hasLabel() const { return true; }
+
 		/**
 		 * Returns the argument description.
 		 */

@@ -58,6 +58,8 @@ class UnlabeledValueArg : public ValueArg<T>
 	using ValueArg<T>::toString;
 
 	public:
+		virtual bool hasLabel() const { return false; }
+
 
 		/**
 		 * UnlabeledValueArg constructor.

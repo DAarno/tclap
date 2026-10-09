@@ -55,6 +55,8 @@ class UnlabeledMultiArg : public MultiArg<T>
 	using MultiArg<T>::toString;
 
 	public:
+		virtual bool hasLabel() const { return false; }
+
 		
 		/**
 		 * Constructor.  
