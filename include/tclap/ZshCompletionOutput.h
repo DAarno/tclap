@@ -89,7 +89,7 @@ class ZshCompletionOutput : public CmdLineOutput
 		char theDelimiter;
 };
 
-ZshCompletionOutput::ZshCompletionOutput()
+inline ZshCompletionOutput::ZshCompletionOutput()
 : common(std::map<std::string, std::string>()),
   theDelimiter('=')
 {
