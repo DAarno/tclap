@@ -377,7 +377,7 @@ files. If you do the usual "make install" then your compiler should
 see the files by default. Alternatively, you can use the -I
 complier argument to specify the exact location of the libraries.
 <programlisting>
-        c++ -o my_program -I /some/place/tclap-2.X/include my_program.cpp
+        c++ -std=c++20 -o my_program -I /some/place/tclap-2.X/include my_program.cpp
 </programlisting>
 Where /some/place/tclap-2.X is the place you have unpacked the
 distribution.
@@ -393,10 +393,10 @@ directory.
 </para>
 
 <para>
-<emphasis>TCLAP 2.0</emphasis> requires a C++20 compiler --
-it makes deliberate use of C++20 features (designated initializers,
-concepts, and <classname>std::format</classname> where the standard
-library provides it) throughout its public API and implementation.
+<emphasis>TCLAP 2.0</emphasis> requires a C++20 compiler and a C++20
+standard library that provides <classname>std::format</classname>.
+It uses C++20 features, including designated initializers and concepts,
+throughout its public API and implementation.
 This is unlike the <emphasis>1.4</emphasis> branch, which stays on
 C++98 for maximum portability, and unlike <emphasis>1.6</emphasis>,
 which is also a C++20 rewrite of TCLAP's internals but keeps 1.4's
