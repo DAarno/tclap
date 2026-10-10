@@ -93,18 +93,20 @@ jobs:
 
       # 1.2 has no CTest integration or Windows test runner. Exercise parsing
       # and the executable that links headers from two translation units.
+      # The examples set an empty configuration-specific output directory,
+      # so Debug executables are placed directly in cmake-build/examples.
       - name: Smoke test
         shell: pwsh
         run: |
-          $output = & ./cmake-build/examples/Debug/test1.exe -n mike
+          $output = & ./cmake-build/examples/test1.exe -n mike
           if ($LASTEXITCODE -ne 0 -or $output -ne 'My name is: mike') {
             throw "Name parsing failed: $output"
           }
-          $output = & ./cmake-build/examples/Debug/test1.exe -r -n mike
+          $output = & ./cmake-build/examples/test1.exe -r -n mike
           if ($LASTEXITCODE -ne 0 -or $output -ne 'My name (spelled backwards) is: ekim') {
             throw "Switch parsing failed: $output"
           }
-          & ./cmake-build/examples/Debug/test-hard.exe
+          & ./cmake-build/examples/test-hard.exe
           if ($LASTEXITCODE -ne 0) {
             throw 'Header link smoke test failed'
           }
