@@ -60,6 +60,8 @@ public:
     void error() {
         errors_++;
         std::cout << msg_.str() << std::endl;
+        msg_.str(std::string());
+        msg_.clear();
     }
 
     int errorCount() const { return errors_; }
