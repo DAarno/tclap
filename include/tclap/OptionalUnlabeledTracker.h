@@ -27,6 +27,7 @@
 #define TCLAP_OPTIONAL_UNLABELED_TRACKER_H
 
 #include <string>
+#include <tclap/ArgException.h>
 
 namespace TCLAP {
 

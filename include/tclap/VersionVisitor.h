@@ -27,6 +27,7 @@
 #include <tclap/CmdLineInterface.h>
 #include <tclap/CmdLineOutput.h>
 #include <tclap/Visitor.h>
+#include <tclap/ArgException.h>
 
 namespace TCLAP {
 
