@@ -1,0 +1,110 @@
+name: Build 1.2
+
+on:
+  push:
+    branches: [ "1.2" ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: ${{ matrix.compiler }} on ubuntu-latest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [ g++, clang++ ]
+    env:
+      CXX: ${{ matrix.compiler }}
+      CXXFLAGS: -O2 -std=c++98
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Autotools
+        run: sudo apt-get update && sudo apt-get install -y autoconf automake
+
+      - name: Configure CMake examples
+        run: cmake -S . -B cmake-build -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+
+      - name: Build CMake examples
+        run: cmake --build cmake-build --parallel "$(nproc)"
+
+      # The 1.2 CMake integration builds examples only; Autotools runs the suite.
+      - name: Configure Autotools
+        run: |
+          bash autotools.sh
+          mkdir autotools-build
+          cd autotools-build
+          ../configure --disable-doxygen
+
+      - name: Build
+        run: make -C autotools-build -j"$(nproc)"
+
+      - name: Test
+        run: make -C autotools-build check -j"$(nproc)"
+
+  build-macos:
+    name: clang++ on macos-latest
+    runs-on: macos-latest
+    env:
+      CXX: clang++
+      CXXFLAGS: -O2 -std=c++98
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Autotools
+        run: brew install autoconf automake
+
+      - name: Configure CMake examples
+        run: cmake -S . -B cmake-build -DCMAKE_CXX_COMPILER=clang++
+
+      - name: Build CMake examples
+        run: cmake --build cmake-build --parallel "$(sysctl -n hw.ncpu)"
+
+      - name: Configure Autotools
+        run: |
+          bash autotools.sh
+          mkdir autotools-build
+          cd autotools-build
+          ../configure --disable-doxygen
+
+      - name: Build
+        run: make -C autotools-build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Test
+        run: make -C autotools-build check -j"$(sysctl -n hw.ncpu)"
+
+  build-windows:
+    name: MSVC on windows-latest
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake examples
+        run: cmake -S . -B cmake-build
+
+      - name: Build
+        run: cmake --build cmake-build --config Debug --parallel
+
+      # 1.2 has no CTest integration or Windows test runner. Exercise parsing
+      # and the executable that links headers from two translation units.
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $output = & ./cmake-build/examples/Debug/test1.exe -n mike
+          if ($LASTEXITCODE -ne 0 -or $output -ne 'My name is: mike') {
+            throw "Name parsing failed: $output"
+          }
+          $output = & ./cmake-build/examples/Debug/test1.exe -r -n mike
+          if ($LASTEXITCODE -ne 0 -or $output -ne 'My name (spelled backwards) is: ekim') {
+            throw "Switch parsing failed: $output"
+          }
+          & ./cmake-build/examples/Debug/test-hard.exe
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Header link smoke test failed'
+          }
