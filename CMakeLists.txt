@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 
 project(TCLAP VERSION 2.0.0 LANGUAGES CXX)
 set("PROJECT_DESCRIPTION" "A header-only templatized C++ command line parser library")
