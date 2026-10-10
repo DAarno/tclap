@@ -423,6 +423,15 @@ before automatic arguments are constructed, even when help/version is disabled.
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>
+For installed CMake consumers, use
+<code>find_package(TCLAP CONFIG REQUIRED)</code> and link your application
+target with <code>target_link_libraries(app PRIVATE TCLAP::TCLAP)</code>.
+Use <code>CMAKE_PREFIX_PATH</code> for a custom installation prefix, or
+<code>TCLAP_DIR</code> for a nonstandard package metadata directory. See
+<filename>INSTALL</filename> in the source root for a complete example.
+The imported target propagates the C++20 language requirement.
+</para>
+<para>
 <emphasis>TCLAP</emphasis> is implemented entirely in header files
 which means you only need to include CmdLine.h to use the library.
 <programlisting>
