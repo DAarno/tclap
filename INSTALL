@@ -32,9 +32,6 @@ For an application with main.cpp, its CMakeLists.txt can contain:
 
   cmake_minimum_required(VERSION 3.13)
   project(app LANGUAGES CXX)
-  set(CMAKE_CXX_STANDARD 98)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
   find_package(TCLAP CONFIG REQUIRED)
   add_executable(app main.cpp)
   target_link_libraries(app PRIVATE TCLAP::TCLAP)
@@ -48,7 +45,8 @@ locations:
 If CMAKE_INSTALL_LIBDIR places package metadata outside CMake's usual search
 layout, set TCLAP_DIR to the directory containing TCLAPConfig.cmake instead.
 
-For direct compiler commands, supply the installed include directory. Define
+The imported target propagates the C++20 requirement. For direct compiler
+commands, enable C++20 and supply the installed include directory. Define
 HAVE_TCLAP_CONFIG_H to include the generated tclap/TCLAPConfig.h configuration
 and version metadata when using a configured installation. The default header
 configuration also supports direct use without that macro.
