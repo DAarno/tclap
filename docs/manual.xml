@@ -200,7 +200,7 @@ any version information to
 be displayed, and <parameter>--</parameter> or 
 <parameter>--ignore_rest</parameter> will cause the
 remaining labeled arguments to be ignored. These switches are
-included by default on every command line. You can <link linked="NO_HELP_VERSION">disable this functionality</link> if desired (although we don't recommend it).
+included by default on every command line. You can <link linkend="NO_HELP_VERSION">disable this functionality</link> if desired (although we don't recommend it).
 How we generate the behavior behind these flags is described 
 <link linkend="VISITORS"> later</link>.
 </listitem>
