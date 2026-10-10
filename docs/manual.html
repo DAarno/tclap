@@ -182,6 +182,37 @@ affects the shared ignore-rest state, and <code class="methodname">reset()</code
 clears that shared state. Independent or concurrent parsers
 therefore need application coordination; parser destruction and
 reset do not clear the optional positional construction tracker.
+</p><p>
+<code class="methodname">add()</code> borrows its argument; it does not copy it or
+transfer ownership. Keep caller-owned arguments alive while the parser uses
+them. Constraints and custom output objects passed to
+<code class="methodname">setOutput()</code> are also borrowed and must remain alive
+while used. Declare dependencies before the objects that refer to them. This
+example declares the constraint and output first, the argument next, and the
+parser last, so destruction happens in the reverse order:
+</p><pre class="programlisting">#include &lt;tclap/CmdLine.h&gt;
+#include &lt;tclap/ValuesConstraint.h&gt;
+#include &lt;tclap/StdOutput.h&gt;
+#include &lt;vector&gt;
+
+int main(int argc, char **argv) {
+    std::vector&lt;int&gt; allowed;
+    allowed.push_back(1);
+    allowed.push_back(2);
+    TCLAP::ValuesConstraint&lt;int&gt; choices(allowed);
+    TCLAP::StdOutput output;
+    TCLAP::ValueArg&lt;int&gt; count("n", "number", "Choose a number",
+                              false, 1, &amp;choices);
+    TCLAP::CmdLine cmd("example");
+    cmd.setOutput(&amp;output);
+    cmd.add(count);
+    cmd.parse(argc, argv);
+    return 0;
+}
+</pre><p>
+Visitor objects supplied to arguments are borrowed and must remain alive
+when invoked. Use distinct argument objects for separate live parsers.
+The process-wide state restrictions described above still apply.
 </p></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="COMPILING"></a>Compiling</h2></div></div></div><p>
 For complete build, test and installation instructions, see the
 <code class="filename">INSTALL</code> file in the source root. Release archives include
