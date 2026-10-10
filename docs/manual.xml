@@ -757,6 +757,12 @@ be useful if there is a natural default. For example, selecting the
 encryption algorithm may default to AES, but there may be flags for
 choosing another algorithm and they are all mutually exclusive.
 </para>
+<para>
+<classname>AnyOf</classname> groups arguments for presentation only. It does
+not require a member to be selected or make one member depend on another.
+Each argument's own requirements still apply; check any conditional
+dependencies in application code after a successful parse.
+</para>
 </sect1>
 
 
