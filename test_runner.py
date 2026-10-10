@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 
@@ -11,22 +10,15 @@ def build(build_dir, config):
     source_dir = os.path.dirname(os.path.abspath(__file__))
     os.makedirs(build_dir, exist_ok=True)
     cpu_count = os.cpu_count() or 1
-    ret = subprocess.run(['cmake', '-DCMAKE_BUILD_TYPE=' + config,
-                          source_dir], cwd=build_dir).returncode
+    ret = subprocess.run(['cmake', '-S', source_dir, '-B', build_dir,
+                          '-DCMAKE_BUILD_TYPE=' + config],
+                         cwd=build_dir).returncode
     if ret:
         return ret
-    
-    # CMake before 3.12 has no portable --build parallel option. Select
-    # the supported command first instead of retrying compiler failures.
-    version = subprocess.run(['cmake', '--version'], cwd=build_dir,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             universal_newlines=True)
-    match = re.search(r'cmake version (\d+)\.(\d+)', version.stdout or '')
-    command = ['cmake', '--build', '.', '--config', config]
-    if version.returncode == 0 and match:
-        if tuple(map(int, match.groups())) >= (3, 12):
-            command.extend(['-j', str(cpu_count)])
-    return subprocess.run(command, cwd=build_dir).returncode
+
+    return subprocess.run(['cmake', '--build', '.', '--config', config,
+                           '--parallel', str(cpu_count)],
+                          cwd=build_dir).returncode
 
 def run_tests(build_dir, config, tests_regex=None):
     command = ['ctest', '-C', config, '-V']
