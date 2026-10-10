@@ -18,4 +18,6 @@ Recommended versions
 
 Choose the version that matches your project's C++ and API requirements.
 
+The optional CMake build requires CMake 3.13 or later.
+
 Any and all feedback is welcome at https://sf.net/p/tclap/discussion/
