@@ -810,6 +810,12 @@ be part of the same argument group This means that you can add a
 one of several options is necessary and one of the options requires
 additional information.
 </para>
+<para>
+<classname>AnyOf</classname> groups arguments for presentation only. It does
+not require a member to be selected or make one member depend on another.
+Each argument's own requirements still apply; check any conditional
+dependencies in application code after a successful parse.
+</para>
 </sect1>
 
 <sect1 id="ARG_GROUP_EITHEROF">

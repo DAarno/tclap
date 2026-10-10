@@ -158,10 +158,10 @@ public:
 };
 
 /**
- * Implements a group of arguments where any combination is possible
- * (including all or none). This is mostly used in case one optional
- * argument allows additional arguments to be specified (for example
- * [-c [-de] [-n <int>]]).
+ * Groups arguments for presentation without imposing a selection rule.
+ * Any combination of members may be selected, subject to each argument's
+ * own requirements. This group does not enforce conditional dependencies;
+ * applications must check any additional dependencies themselves.
  */
 class AnyOf : public ArgGroup {
 public:
