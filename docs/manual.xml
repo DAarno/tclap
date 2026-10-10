@@ -301,6 +301,40 @@ Custom <classname>CmdLineInterface</classname> implementations retain the
 legacy attachment default and can override the protected
 <methodname>attachGroup()</methodname> hook for their own transaction handling.
 </para>
+<para>
+<methodname>add()</methodname> borrows its argument; it does not copy it or
+transfer ownership. Keep caller-owned arguments alive while the parser uses
+them. Constraints and custom output objects passed to
+<methodname>setOutput()</methodname> are also borrowed and must remain alive
+while used. Declare dependencies before the objects that refer to them. This
+example declares the constraint and output first, the argument next, and the
+parser last, so destruction happens in the reverse order:
+</para>
+<programlisting>#include &lt;tclap/CmdLine.h&gt;
+#include &lt;tclap/ValuesConstraint.h&gt;
+#include &lt;tclap/StdOutput.h&gt;
+#include &lt;vector&gt;
+
+int main(int argc, char **argv) {
+    std::vector&lt;int&gt; allowed;
+    allowed.push_back(1);
+    allowed.push_back(2);
+    TCLAP::ValuesConstraint&lt;int&gt; choices(allowed);
+    TCLAP::StdOutput output;
+    TCLAP::ValueArg&lt;int&gt; count("n", "number", "Choose a number",
+                              false, 1, &amp;choices);
+    TCLAP::CmdLine cmd("example");
+    cmd.setOutput(&amp;output);
+    cmd.add(count);
+    cmd.parse(argc, argv);
+    return 0;
+}
+</programlisting>
+<para>
+Visitor objects supplied to arguments are borrowed and must remain alive
+when invoked. Groups passed to the parser are also borrowed. Use distinct argument objects for separate live parsers.
+Keep the parser alive while using registered arguments' delimiter bindings.
+</para>
 </sect1>
 
 <sect1 id="EMPTY_VALUES">
