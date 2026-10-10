@@ -323,6 +323,15 @@ These rules apply to both <classname>ValueArg</classname> and
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>
+For installed CMake consumers, use
+<code>find_package(TCLAP CONFIG REQUIRED)</code> and link your application
+target with <code>target_link_libraries(app PRIVATE TCLAP::TCLAP)</code>.
+Use <code>CMAKE_PREFIX_PATH</code> for a custom installation prefix, or
+<code>TCLAP_DIR</code> for a nonstandard package metadata directory. See
+<filename>INSTALL</filename> in the source root for a complete example.
+TCLAP 1.4 remains usable in C++98 mode.
+</para>
+<para>
 <emphasis>TCLAP</emphasis> is implemented entirely in header files 
 which means you only need to include CmdLine.h to use the library.
 <programlisting>

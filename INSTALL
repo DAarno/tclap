@@ -24,12 +24,34 @@ default install location. To install in an alternative location, use:
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=</your/install/prefix>
 cmake --build build --target install
 
-After TCLAP has been installed, you can use it by adding the install
-location to your compilers include path and define HAVE_TCLAP_CONFIG_H
-to use the config picked up by the system. On most systems the
-defaults are good enough and it is not necessary to rely on the
-configuration detected by CMake - it is mostly used to work around
-some old compiler and Windows issues.
+Using an installed package
+--------------------------
+
+A CMake application can use the installed headers through TCLAP::TCLAP.
+For an application with main.cpp, its CMakeLists.txt can contain:
+
+  cmake_minimum_required(VERSION 3.13)
+  project(app LANGUAGES CXX)
+  set(CMAKE_CXX_STANDARD 98)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+  find_package(TCLAP CONFIG REQUIRED)
+  add_executable(app main.cpp)
+  target_link_libraries(app PRIVATE TCLAP::TCLAP)
+
+Configure it with the installation prefix when it is outside normal search
+locations:
+
+  cmake -S . -B app-build -DCMAKE_PREFIX_PATH=/your/install/prefix
+  cmake --build app-build
+
+If CMAKE_INSTALL_LIBDIR places package metadata outside CMake's usual search
+layout, set TCLAP_DIR to the directory containing TCLAPConfig.cmake instead.
+
+For direct compiler commands, supply the installed include directory. Define
+HAVE_TCLAP_CONFIG_H to include the generated tclap/TCLAPConfig.h configuration
+and version metadata when using a configured installation. The default header
+configuration also supports direct use without that macro.
 
 Building without tests
 ======================
