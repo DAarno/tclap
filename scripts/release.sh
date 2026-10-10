@@ -2,18 +2,20 @@
 
 set -e
 
-TCLAP_DIR=$1
-DEST=$2
+TCLAP_DIR=${1:-}
+DEST=${2:-}
+# An optional build directory supports documentation generated out of tree.
+BUILD_DIR=${3:-"$TCLAP_DIR/build"}
 
 if [ "$TCLAP_DIR" == "" ]; then
     echo "Need one TCLAP dir"
-    echo "Usage: release.sh tclap-dir dest-dir"
+    echo "Usage: release.sh tclap-dir dest-dir [build-dir]"
     exit 1
 fi
 
 if [ "$DEST" == "" ]; then
     echo "Need one destination dir"
-    echo "Usage: release.sh tclap-dir dest-dir"
+    echo "Usage: release.sh tclap-dir dest-dir [build-dir]"
     exit 1
 fi
 
@@ -22,13 +24,13 @@ if [ ! -f "$TCLAP_DIR/test_runner.py" ]; then
     exit 1
 fi
 
-if [ ! -f "$TCLAP_DIR/build/docs/manual.html" ]; then
-    echo "Generate build/docs/manual.html before staging a release" >&2
+if [ ! -f "$BUILD_DIR/docs/manual.html" ]; then
+    echo "Generate $BUILD_DIR/docs/manual.html before staging a release" >&2
     exit 1
 fi
 
-if [ ! -f "$TCLAP_DIR/build/docs/html/index.html" ]; then
-    echo "Generate build/docs/html before staging a release" >&2
+if [ ! -f "$BUILD_DIR/docs/html/index.html" ]; then
+    echo "Generate $BUILD_DIR/docs/html before staging a release" >&2
     exit 1
 fi
 
@@ -40,5 +42,5 @@ for FIL in $FILES; do
 done
 
 # Include generated docs for users without Doxygen.
-rsync -r --chmod=ugo+r,go-w --exclude "__*__" "$TCLAP_DIR/build/docs/html" "$DEST/docs/"
-rsync --chmod=ugo+r,go-w "$TCLAP_DIR/build/docs/manual.html" "$DEST/docs/"
+rsync -r --chmod=ugo+r,go-w --exclude "__*__" "$BUILD_DIR/docs/html" "$DEST/docs/"
+rsync --chmod=ugo+r,go-w "$BUILD_DIR/docs/manual.html" "$DEST/docs/"

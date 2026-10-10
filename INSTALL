@@ -53,3 +53,11 @@ VisualStudio Users
 
 VisualStudio can work with CMake, use the "File->Open Folder" option
 to import the project into VisualStudio.
+
+Release staging
+---------------
+Generate documentation with BUILD_DOC=ON, then stage it with:
+
+  bash scripts/release.sh SOURCE_DIR DEST_DIR BUILD_DIR
+
+BUILD_DIR is optional and defaults to SOURCE_DIR/build. Paths may contain spaces.
