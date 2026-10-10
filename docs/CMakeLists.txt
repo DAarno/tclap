@@ -6,6 +6,8 @@ add_file(upload.sh)
 add_file(style.css)
 add_file(README)
 add_file(manual.xml)
+configure_file(${PROJECT_SOURCE_DIR}/examples/test1.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/test1.cpp COPYONLY)
 add_file(index.html)
 add_file(build.html)
 
@@ -13,6 +15,7 @@ install(
   FILES
     ${CMAKE_CURRENT_BINARY_DIR}/index.html
     ${CMAKE_CURRENT_BINARY_DIR}/style.css
+    ${CMAKE_CURRENT_BINARY_DIR}/test1.cpp
   DESTINATION ${DOC_INSTALL_DIR}
   COMPONENT doc
 )
