@@ -44,3 +44,4 @@ done
 # Include generated docs for users without Doxygen.
 rsync -r --chmod=ugo+r,go-w --exclude "__*__" "$BUILD_DIR/docs/html" "$DEST/docs/"
 rsync --chmod=ugo+r,go-w "$BUILD_DIR/docs/manual.html" "$DEST/docs/"
+rsync --chmod=ugo+r,go-w "$TCLAP_DIR/examples/test1.cpp" "$DEST/docs/"
