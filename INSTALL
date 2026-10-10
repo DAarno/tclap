@@ -1,3 +1,47 @@
+TCLAP build routes
+==================
+
+TCLAP is header-only and supports C++98. Release archives already contain
+configure; a Git checkout first needs Autoconf and Automake:
+
+  bash autotools.sh
+
+Autotools is the complete build, test, documentation and release route.
+From the source root, use a separate build directory:
+
+  mkdir legacy-build
+  cd legacy-build
+  ../configure CXXFLAGS="-O2 -std=c++98"
+  make
+  make check
+  make install
+
+Use --prefix=/your/install/prefix with configure for a custom installation.
+Documentation needs Doxygen; rendering the manual also needs xsltproc and the
+DocBook XSL stylesheets. Use --disable-doxygen when only building/testing code.
+
+The optional CMake route requires CMake >= 3.13 and builds the examples:
+
+  cmake -S . -B example-build
+  cmake --build example-build
+
+It does not provide installation targets, a CMake imported library target or
+the full test suite on this branch. Copy include/tclap or add the source
+include directory to your application's include path when using this route.
+
+The optional Meson integration requires Meson >= 0.56. It provides a source
+subproject dependency named tclap_dep. Examples and the test suite can be
+built with:
+
+  meson setup meson-build -Dwith_meson_tests=true -Dcpp_std=c++98
+  meson compile -C meson-build
+  meson test -C meson-build
+
+Meson tests are disabled on Windows and this integration has no install or
+release packaging rules; use Autotools for those tasks.
+
+The generic Autotools installation reference follows.
+
 Basic Installation
 ==================
 

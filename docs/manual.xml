@@ -278,6 +278,15 @@ reset do not clear the optional positional construction tracker.
 <sect1 id="COMPILING">
 <title>Compiling</title>
 <para>
+For complete build, test and installation instructions, see the
+<filename>INSTALL</filename> file in the source root. Release archives include
+<filename>configure</filename>; Git checkouts require
+<command>bash autotools.sh</command> first. Autotools supports installation and
+release packaging. The optional CMake route builds examples; the Meson route
+provides a source dependency and optional tests, but neither installs this
+branch.
+</para>
+<para>
 <emphasis>TCLAP</emphasis> is implemented entirely in header files 
 which means you only need to include CmdLine.h to use the library.
 <programlisting>

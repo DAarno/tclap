@@ -183,6 +183,14 @@ clears that shared state. Independent or concurrent parsers
 therefore need application coordination; parser destruction and
 reset do not clear the optional positional construction tracker.
 </p></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="COMPILING"></a>Compiling</h2></div></div></div><p>
+For complete build, test and installation instructions, see the
+<code class="filename">INSTALL</code> file in the source root. Release archives include
+<code class="filename">configure</code>; Git checkouts require
+<span class="command"><strong>bash autotools.sh</strong></span> first. Autotools supports installation and
+release packaging. The optional CMake route builds examples; the Meson route
+provides a source dependency and optional tests, but neither installs this
+branch.
+</p><p>
 <span class="emphasis"><em>TCLAP</em></span> is implemented entirely in header files
 which means you only need to include CmdLine.h to use the library.
 </p><pre class="programlisting">
