@@ -20,7 +20,7 @@ public:
   const std::string &name() const { return name_; }
   std::ifstream &stream() {
     if (!stream_.is_open()) {
-      stream_.open(name_, std::ifstream::binary | std::ifstream::ate);
+      stream_.open(name_.c_str(), std::ifstream::binary | std::ifstream::ate);
     }
     return stream_;
   }
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
     /* Compare against contents of reference file. */
     std::ifstream &f_tmp = tmpFile.stream();
-    std::ifstream f_ref(refFile.getValue(),
+    std::ifstream f_ref(refFile.getValue().c_str(),
                         std::ifstream::binary | std::ifstream::ate);
     if (f_tmp.fail() || f_ref.fail()) {
       return 2; // One of the files fail.

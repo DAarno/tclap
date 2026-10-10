@@ -180,3 +180,8 @@ operates.
      script, and exit.
 
 `configure' also accepts some other, not widely useful, options.
+
+The release verification script accepts an optional out-of-source build
+directory (default: build under the source directory):
+
+  bash scripts/release.sh /path/to/release-objects

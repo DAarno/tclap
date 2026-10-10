@@ -1,0 +1,8 @@
+TCLAP 1.2 maintenance
+=====================
+
+See ChangeLog for detailed changes.
+
+Release archives include the optional CMake and Meson build integrations.
+Packaging supports long documentation filenames, and the test wrapper builds
+with C++98.
