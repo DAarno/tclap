@@ -39,10 +39,7 @@ which driver it's linked against.
 
 ## Building and running
 
-Run the commands below from the repository root. The `-S`/`-B` configure
-syntax requires CMake 3.13 or later. With an older supported CMake, create
-and enter the build directory, run `cmake` with the same `-D` options and
-`..` as its source, then return to the repository root before following the commands below.
+Run the commands below from the repository root using CMake 3.13 or later.
 
 Portable regression tests (default, any compiler):
 

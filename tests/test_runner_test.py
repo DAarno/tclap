@@ -47,47 +47,40 @@ class RunnerPathsTest(unittest.TestCase):
 
 
 class RunnerBuildResultTest(unittest.TestCase):
-    def run_build(self, version="3.28.3", configure_code=0, build_code=0,
-                  version_code=0):
+    def run_build(self, configure_code=0, build_code=0, cpu_count=4):
         commands = []
 
         def fake_run(command, **kwargs):
             commands.append(command)
-            if "--version" in command:
-                return subprocess.CompletedProcess(command, version_code,
-                                                   "cmake version " + version)
             code = build_code if "--build" in command else configure_code
             return subprocess.CompletedProcess(command, code)
 
         with tempfile.TemporaryDirectory() as temp:
-            with mock.patch.object(runner.subprocess, "run", fake_run):
+            with mock.patch.object(runner.subprocess, "run", fake_run), \
+                    mock.patch.object(runner.os, "cpu_count",
+                                      return_value=cpu_count):
                 result = runner.build(temp, "Release")
         self.assertIsInstance(result, int)
         return result, commands
 
-    def test_old_cmake_serial_build_success(self):
-        result, commands = self.run_build(version="3.7.2")
+    def test_parallel_build_success(self):
+        result, commands = self.run_build()
         self.assertEqual(result, 0)
-        builds = [c for c in commands if "--build" in c]
-        self.assertEqual(len(builds), 1)
-        self.assertNotIn("-j", builds[0])
+        self.assertEqual(len(commands), 2)
+        self.assertIn("-S", commands[0])
+        self.assertIn("-B", commands[0])
+        self.assertEqual(commands[1], ["cmake", "--build", ".", "--config",
+                                       "Release", "--parallel", "4"])
 
-    def test_modern_build_failure_is_not_retried(self):
-        result, commands = self.run_build(version="3.12.0", build_code=17)
+    def test_build_failure_is_not_retried(self):
+        result, commands = self.run_build(build_code=17)
         self.assertEqual(result, 17)
-        builds = [c for c in commands if "--build" in c]
-        self.assertEqual(len(builds), 1)
-        self.assertIn("-j", builds[0])
+        self.assertEqual(len(commands), 2)
 
-    def test_failed_or_unrecognized_version_query_uses_serial(self):
-        for version, code in [("", 0), ("3.28.3", 2)]:
-            with self.subTest(version=version, code=code):
-                result, commands = self.run_build(version=version,
-                                                  version_code=code)
-                self.assertEqual(result, 0)
-                builds = [c for c in commands if "--build" in c]
-                self.assertEqual(len(builds), 1)
-                self.assertNotIn("-j", builds[0])
+    def test_unknown_cpu_count_uses_one_job(self):
+        result, commands = self.run_build(cpu_count=None)
+        self.assertEqual(result, 0)
+        self.assertEqual(commands[1][-2:], ["--parallel", "1"])
 
     def test_configuration_failure_is_forwarded(self):
         result, commands = self.run_build(configure_code=13)

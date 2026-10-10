@@ -63,9 +63,6 @@ if(BUILD_FUZZERS)
 		add_executable(${fuzzer_target} ${file})
 		target_include_directories(${fuzzer_target} PUBLIC ../include/ ${PROJECT_BINARY_DIR})
 		target_compile_options(${fuzzer_target} PRIVATE -fsanitize=fuzzer,address,undefined -g -O1)
-		# target_link_options() needs CMake >= 3.13; this project's floor is
-		# 3.12, so pass the sanitizer flags through target_link_libraries()
-		# instead -- a linker flag starting with '-' is forwarded as-is.
-		target_link_libraries(${fuzzer_target} PRIVATE -fsanitize=fuzzer,address,undefined)
+		target_link_options(${fuzzer_target} PRIVATE -fsanitize=fuzzer,address,undefined)
 	endforeach()
 endif()

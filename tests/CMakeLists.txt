@@ -1,12 +1,8 @@
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}")
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.12")
-  find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}")
-else()
-  find_package(PythonInterp 3 REQUIRED)
-endif()
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}")
 
 enable_testing()
 
