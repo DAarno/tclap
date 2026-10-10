@@ -4,4 +4,4 @@ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 Name: @PKGCONFIG_NAME@
 Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
-Cflags: -I${includedir}
+Cflags: -I"${includedir}"
