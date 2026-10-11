@@ -43,7 +43,6 @@
  *
  *****************************************************************************/
 
-#include <cstdint>
 #include <cstddef>
 #include <iostream>
 #include <sstream>
@@ -79,7 +78,7 @@ private:
     std::streambuf *oldCerr_;
 };
 
-void FuzzSpacePrintDirect(const uint8_t *data, size_t size) {
+void FuzzSpacePrintDirect(const unsigned char *data, size_t size) {
     if (size < 3) return;
 
     // Keep the geometry in a plausible range (real callers in StdOutput.h
@@ -97,7 +96,7 @@ void FuzzSpacePrintDirect(const uint8_t *data, size_t size) {
     out.spacePrint(sink, s, maxWidth, indentSpaces, secondLineOffset);
 }
 
-void FuzzFullUsage(const uint8_t *data, size_t size) {
+void FuzzFullUsage(const unsigned char *data, size_t size) {
     std::string desc(reinterpret_cast<const char *>(data), size);
 
     std::ostringstream sink;
@@ -145,12 +144,12 @@ void FuzzFullUsage(const uint8_t *data, size_t size) {
 
 }  // namespace
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
     if (size > tclap_fuzz::kMaxInputSize) return 0;
     if (size < 1) return 0;
 
-    uint8_t mode = data[0];
-    const uint8_t *rest = data + 1;
+    unsigned char mode = data[0];
+    const unsigned char *rest = data + 1;
     size_t restSize = size - 1;
 
     if (mode % 2 == 0) {

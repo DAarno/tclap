@@ -1,12 +1,8 @@
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}")
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
 
-# Match the top-level project standard so these harnesses can include
-# the (now C++20) library headers. This only affects how sources in
-# *this* directory are compiled; the library itself remains
-# header-only and standard-agnostic.
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# The harnesses and standalone driver support C++98. Inherit the project's
+# language standard for both portable regression and libFuzzer targets.
 
 file(GLOB FUZZ_TARGET_FILES fuzz_*.cpp)
 

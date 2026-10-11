@@ -12,9 +12,16 @@ parts:
   opt-in.
 
 Both are built from the same `fuzz_*.cpp` sources -- each one exports a
-standard `extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t
+standard `extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t
 size)`, so there's exactly one implementation of each target regardless of
-which driver it's linked against.
+which driver it's linked against. The harnesses, shared utilities, and standalone
+replay driver are C++98-compatible and inherit the project's language standard.
+The byte type is `unsigned char`, which matches libFuzzer's `uint8_t` on the
+supported eight-bit-byte platforms.
+
+Portable replay needs no fuzzing runtime. Interactive fuzzing still requires
+Clang and its matching libFuzzer runtime, even when the harnesses are compiled
+as C++98.
 
 ## Targets
 

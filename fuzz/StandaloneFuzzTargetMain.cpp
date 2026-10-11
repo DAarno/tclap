@@ -27,12 +27,12 @@
  *
  *****************************************************************************/
 
-#include <cstdint>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
+extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size);
 
 namespace {
 
@@ -44,8 +44,8 @@ bool RunFile(const char *path) {
         return false;
     }
 
-    std::vector<uint8_t> data;
-    uint8_t buf[4096];
+    std::vector<unsigned char> data;
+    unsigned char buf[4096];
     size_t n;
     while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) {
         data.insert(data.end(), buf, buf + n);

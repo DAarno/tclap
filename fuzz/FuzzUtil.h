@@ -28,7 +28,6 @@
 #define TCLAP_FUZZ_UTIL_H
 
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -48,7 +47,7 @@ const std::size_t kMaxInputSize = 4096;
 // Splitting on a literal delimiter byte -- rather than e.g. pulling
 // length-prefixed tokens out with a FuzzedDataProvider -- keeps seed corpus
 // files plain text: one argv token per line.
-inline std::vector<std::string> SplitArgs(const uint8_t *data,
+inline std::vector<std::string> SplitArgs(const unsigned char *data,
                                            std::size_t size) {
     std::vector<std::string> args;
     args.push_back("fuzz");
