@@ -1,13 +1,8 @@
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}")
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
 
-# The fuzz harnesses use a few small C++11-and-up conveniences (auto,
-# range-for) for readability. This only affects how sources in *this*
-# directory are compiled -- the library itself is still exercised at
-# C++98 via tests/examples/unittests, and remains header-only and
-# standard-agnostic.
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# The harnesses and standalone driver support C++98. Inherit the project's
+# language standard for both portable regression and libFuzzer targets.
 
 file(GLOB FUZZ_TARGET_FILES fuzz_*.cpp)
 

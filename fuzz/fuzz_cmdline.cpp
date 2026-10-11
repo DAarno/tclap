@@ -40,7 +40,6 @@
  *
  *****************************************************************************/
 
-#include <cstdint>
 #include <cstddef>
 
 #include <tclap/CmdLine.h>
@@ -58,7 +57,7 @@ public:
 
 }  // namespace
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
     if (size > tclap_fuzz::kMaxInputSize) return 0;
 
     std::vector<std::string> args = tclap_fuzz::SplitArgs(data, size);

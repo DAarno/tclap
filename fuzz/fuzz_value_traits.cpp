@@ -32,7 +32,6 @@
  *
  *****************************************************************************/
 
-#include <cstdint>
 #include <cstddef>
 #include <string>
 
@@ -76,11 +75,11 @@ void FuzzOneType(const std::string &typeDesc, const std::string &value) {
 
 }  // namespace
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
     if (size > tclap_fuzz::kMaxInputSize) return 0;
     if (size < 1) return 0;
 
-    uint8_t selector = data[0];
+    unsigned char selector = data[0];
     std::string value(reinterpret_cast<const char *>(data + 1), size - 1);
 
     switch (selector % 8) {
