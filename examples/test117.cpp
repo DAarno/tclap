@@ -20,14 +20,9 @@
  *
  *****************************************************************************/
 
-// Regression test for UnlabeledValueArg::operator==: it used to compare
-// this object's raw (unformatted) description against the other
-// object's formatted description(), which prepends "(required) "
-// for required args -- so the description half of the "match by name
-// OR description" check silently never fired between two required
-// args. Both arguments here are required, so this only demonstrates
-// the fix if the description comparison actually uses the same
-// formatting on both sides.
+// Registration conflicts depend on declared names and flags, never on help
+// descriptions. Two positional arguments can describe the same kind of value
+// while reserving distinct names.
 
 #include "tclap/CmdLine.h"
 #include <iostream>
@@ -56,12 +51,7 @@ int main() {
                                       .required = true,
                                       .defaultValue = 0,
                                       .typeDesc = "int"});
-    // Compared through the Arg& base, matching how CmdLine/ArgGroup always
-    // invoke this operator; comparing two same-typed derived objects
-    // directly would make C++20's reversed-candidate rule ambiguous.
-    const Arg &argA = a;
-
-    cout << "same name only:        " << (argA == sameName) << endl;
-    cout << "same description only: " << (argA == sameDescription) << endl;
-    cout << "neither matches:       " << (argA == different) << endl;
+    cout << "same name only:        " << a.conflictsWith(sameName) << endl;
+    cout << "same description only: " << a.conflictsWith(sameDescription) << endl;
+    cout << "neither matches:       " << a.conflictsWith(different) << endl;
 }

@@ -293,11 +293,16 @@ public:
                             std::vector<bool> &consumed) = 0;
 
     /**
-     * Operator ==.
-     * Equality operator. Must be virtual to handle unlabeled args.
-     * \param a - The Arg to be compared to this.
+     * Whether these declarations conflict during registration. The same
+     * object, a shared name, or a shared nonempty short flag is a conflict.
+     * Names are unique across labeled and positional arguments; short flags
+     * and names are separate namespaces. Descriptions do not participate.
+     *
+     * This rule is nonvirtual and applies to custom arguments too. Additional
+     * tokens recognized by a custom processArg() are not inferred here.
+     * This is a conflict check, not an equality relation.
      */
-    virtual bool operator==(const Arg &a) const;
+    [[nodiscard]] bool conflictsWith(const Arg &other) const noexcept;
 
     /**
      * Returns the argument flag.
@@ -532,8 +537,9 @@ inline std::string Arg::longID(const std::string &valueId) const {
     return id;
 }
 
-inline bool Arg::operator==(const Arg &a) const {
-    return (!_flag.empty() && _flag == a._flag) || _name == a._name;
+inline bool Arg::conflictsWith(const Arg &other) const noexcept {
+    return this == &other || _name == other._name ||
+           (!_flag.empty() && _flag == other._flag);
 }
 
 inline const std::string &Arg::flag() const noexcept { return _flag; }

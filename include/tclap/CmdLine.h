@@ -607,8 +607,8 @@ inline void CmdLine::xorAdd(Arg &a, Arg &b) {
     _xorAddImpl(ors);
 }
 
-// Registration may call user-defined comparison and insertion hooks and
-// allocate list nodes. Work on a private copy until all of that succeeds.
+// Registration may call user-defined insertion hooks and allocate list nodes.
+// Work on a private copy until all of that succeeds.
 // Only dialect bindings change temporarily: hooks must see the parser's
 // dialect, and the destructor restores the original pointers on failure.
 class CmdLine::Registration {
@@ -631,7 +631,7 @@ public:
 
     void add(Arg &arg) {
         if (std::ranges::any_of(_args, [&arg](const Arg *existing) {
-                return arg == *existing;
+                return arg.conflictsWith(*existing);
             })) {
             throw SpecificationException(
                 "Argument with same flag/name already exists!", arg.longID());

@@ -22,7 +22,7 @@
 
 // Tests for behavior that lives on the Arg base class itself (shared by
 // every Arg subtype), using SwitchArg as the simplest concrete stand-in:
-// constructor validation, identity (operator==), and shortID/longID/
+// constructor validation, registration conflicts, and shortID/longID/
 // toString formatting for a flag-less (long-option-only) Arg.
 
 #include "tclap/CmdLine.h"
@@ -128,7 +128,7 @@ void TestArgRejectsNameWithSpace(Testing &t) {
     }
 }
 
-void TestArgEqualityByFlagOrName(Testing &t) {
+void TestArgConflictsByFlagOrName(Testing &t) {
     SwitchArg a(
         SwitchArgSpec{.flag = "a", .name = "aaa", .description = "desc a"});
     SwitchArg sameFlag(SwitchArgSpec{
@@ -140,12 +140,19 @@ void TestArgEqualityByFlagOrName(Testing &t) {
                       .name = "ddd",
                       .description = "neither flag nor name matches"});
 
-    if (!(a == sameFlag))
-        ERROR(t, "Arg: operator== should match on flag alone");
-    if (!(a == sameName))
-        ERROR(t, "Arg: operator== should match on name alone");
-    if (a == different)
-        ERROR(t, "Arg: operator== should not match distinct flag and name");
+    static_assert(noexcept(a.conflictsWith(sameFlag)));
+    if (!a.conflictsWith(a))
+        ERROR(t, "Arg: should conflict with itself");
+    if (!sameFlag.conflictsWith(a) || !sameName.conflictsWith(a) ||
+        different.conflictsWith(a))
+        ERROR(t, "Arg: conflicts should be symmetric");
+
+    if (!a.conflictsWith(sameFlag))
+        ERROR(t, "Arg: conflictsWith should match on flag alone");
+    if (!a.conflictsWith(sameName))
+        ERROR(t, "Arg: conflictsWith should match on name alone");
+    if (a.conflictsWith(different))
+        ERROR(t, "Arg: conflictsWith should not match distinct flag and name");
 }
 
 void TestArgFlaglessFormatting(Testing &t) {
@@ -224,7 +231,7 @@ int main() {
     TestArgAllowsIgnoreRestNameWithDashFlag(t);
     TestArgRejectsNameStartingWithDash(t);
     TestArgRejectsNameWithSpace(t);
-    TestArgEqualityByFlagOrName(t);
+    TestArgConflictsByFlagOrName(t);
     TestArgFlaglessFormatting(t);
     TestArgAcceptsMultipleValues(t);
     TestArgExceptionWhatIsStablePerInstance(t);

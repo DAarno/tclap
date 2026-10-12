@@ -305,6 +305,131 @@ void TestRegistrationPathsAndOrder(Testing &t) {
     }
 }
 
+// Exercise standalone insertion, insertion into an attached group, and batch
+// attachment of a group whose members were checked before it had a parser.
+void TestPositionalDescriptionsArePresentationOnly(Testing &t) {
+    for (const std::string &description : {std::string(), std::string("File")}) {
+        for (int path = 0; path != 3; ++path) {
+            UnlabeledValueArg<int> first(
+                {.name = "first", .description = description, .required = true});
+            UnlabeledMultiArg<int> rest(
+                {.name = "rest", .description = description, .required = true});
+            CmdLine cmd({.message = "test", .helpAndVersion = false});
+            AnyOf group;
+            if (path == 0) {
+                cmd.add(first).add(rest);
+            } else {
+                if (path == 1) cmd.add(group);
+                group.add(first).add(rest);
+                if (path == 2) cmd.add(group);
+            }
+            std::vector<std::string> args = {"prog", "1", "2", "3"};
+            CheckParseSuccess(t, cmd.parse(args), "Identical descriptions");
+            if (first.value() != 1 || rest.value() != std::vector<int>{2, 3})
+                ERROR(t, "Identical descriptions changed positional parsing");
+        }
+    }
+}
+
+void TestMixedDeclarationsInEitherOrder(Testing &t) {
+    for (bool positionalFirst : {false, true}) {
+        for (bool sameName : {false, true}) {
+            for (int path = 0; path != 3; ++path) {
+                UnlabeledValueArg<int> positional(
+                    {.name = "input", .description = "File"});
+                SwitchArg labeled({.flag = "s",
+                                   .name = sameName ? "input" : "switch",
+                                   .description = "File"});
+                CmdLine cmd({.message = "test", .helpAndVersion = false});
+                AnyOf group;
+                if (path == 1) cmd.add(group);
+                ArgContainer &container = path == 0
+                    ? static_cast<ArgContainer &>(cmd)
+                    : static_cast<ArgContainer &>(group);
+                Arg &first = positionalFirst ? static_cast<Arg &>(positional)
+                                             : static_cast<Arg &>(labeled);
+                Arg &second = positionalFirst ? static_cast<Arg &>(labeled)
+                                              : static_cast<Arg &>(positional);
+                container.add(first);
+                const auto before = cmd.argList();
+                const std::list<Arg *> members(group.begin(), group.end());
+                if (sameName) {
+                    ExpectSpecificationError(t, [&] { container.add(second); });
+                    if (cmd.argList() != before ||
+                        std::list<Arg *>(group.begin(), group.end()) != members)
+                        ERROR(t, "Name conflict changed registration");
+                } else {
+                    container.add(second);
+                    if (path == 2) cmd.add(group);
+                    std::vector<std::string> args = {"prog", "-s", "7"};
+                    CheckParseSuccess(t, cmd.parse(args), "Mixed declarations");
+                    if (!labeled.value() || positional.value() != 7)
+                        ERROR(t, "Registration order changed mixed parsing");
+                }
+            }
+        }
+    }
+}
+
+// A custom subclass can hide a nonvirtual method, but cannot change the
+// registration contract enforced through Arg references. Its own equality
+// operation must not influence registration or exclusive selection either.
+class HiddenConflictSwitch : public SwitchArg {
+public:
+    using SwitchArg::SwitchArg;
+    bool conflictsWith(const Arg &) const noexcept { return false; }
+    bool operator==(const Arg &) const { return true; }
+};
+
+void TestDeclaredConflictsCannotBeBypassed(Testing &t) {
+    for (int path = 0; path != 3; ++path) {
+        SwitchArg first({.flag = "a", .name = "first", .description = ""});
+        HiddenConflictSwitch sameName({.flag = "b", .name = "first", .description = ""});
+        HiddenConflictSwitch sameFlag({.flag = "a", .name = "second", .description = ""});
+        // A short flag and a long name occupy different namespaces.
+        SwitchArg valid({.flag = "f", .name = "a", .description = ""});
+        CmdLine cmd({.message = "test", .helpAndVersion = false});
+        AnyOf group;
+        if (path == 1) cmd.add(group);
+        ArgContainer &container = path == 0
+            ? static_cast<ArgContainer &>(cmd)
+            : static_cast<ArgContainer &>(group);
+        container.add(first);
+        const auto before = cmd.argList();
+        const std::list<Arg *> members(group.begin(), group.end());
+        for (Arg *conflict : {static_cast<Arg *>(&first),
+                              static_cast<Arg *>(&sameName),
+                              static_cast<Arg *>(&sameFlag)}) {
+            ExpectSpecificationError(t, [&] { container.add(*conflict); });
+            if (cmd.argList() != before ||
+                std::list<Arg *>(group.begin(), group.end()) != members)
+                ERROR(t, "Duplicate changed registration");
+        }
+        container.add(valid);
+        if (path == 2) cmd.add(group);
+        std::vector<std::string> args = {"prog", "-a", "--a"};
+        CheckParseSuccess(t, cmd.parse(args), "Separate flag/name namespaces");
+        if (!first.value() || !valid.value())
+            ERROR(t, "Short flags and long names should be separate");
+    }
+}
+
+void TestExclusiveSelectionUsesObjectIdentity(Testing &t) {
+    HiddenConflictSwitch first({.flag = "a", .name = "first", .description = ""});
+    HiddenConflictSwitch second({.flag = "b", .name = "second", .description = ""});
+    CmdLine cmd({.message = "test", .helpAndVersion = false});
+    EitherOf group(cmd);
+    group.add(first).add(second);
+    std::vector<std::string> args = {"prog", "-a", "-b"};
+    if (cmd.parse(args).outcome != Outcome::ParseError)
+        ERROR(t, "Two distinct selected members must violate exclusivity");
+    cmd.reset();
+    args = {"prog", "-b"};
+    CheckParseSuccess(t, cmd.parse(args), "Single exclusive member after reset");
+    if (first.value() || !second.value())
+        ERROR(t, "Reset/retry changed exclusive selection");
+}
+
 int main() {
     Testing t;
     // Keep running after an unexpected attachment error to report all cases.
@@ -313,7 +438,11 @@ int main() {
                       TestPositionalOrderFailureDoesNotAttachGroup,
                       TestThrowingMemberRestoresDialectAndPositionTracking,
                       TestThrowingBatchCanBeRetried,
-                      TestRegistrationPathsAndOrder}) {
+                      TestRegistrationPathsAndOrder,
+                      TestPositionalDescriptionsArePresentationOnly,
+                      TestMixedDeclarationsInEitherOrder,
+                      TestDeclaredConflictsCannotBeBypassed,
+                      TestExclusiveSelectionUsesObjectIdentity}) {
         try {
             test(t);
         } catch (const std::exception &e) {

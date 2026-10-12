@@ -101,13 +101,9 @@ void TestUnlabeledValueArgMissingRequired(Testing &t) {
                   "required positional arg");
 }
 
-// Unlike the base Arg::operator== (which matches on flag OR name),
-// UnlabeledValueArg/UnlabeledMultiArg override operator== to match on
-// name OR description -- exercised directly here since it's easy to get
-// this kind of override subtly wrong (e.g. by comparing descriptions
-// with flag/name instead of just name/description on both sides). All
-// required, so none of this touches the OptionalUnlabeledTracker global.
-void TestUnlabeledValueArgEquality(Testing &t) {
+// Positional arguments reserve their names, but descriptions are presentation
+// metadata and must not cause registration conflicts.
+void TestUnlabeledValueArgConflicts(Testing &t) {
     UnlabeledValueArg<int> a(
         UnlabeledValueArgSpec<int>{.name = "count",
                                    .description = "a count",
@@ -132,20 +128,13 @@ void TestUnlabeledValueArgEquality(Testing &t) {
                                    .required = true,
                                    .defaultValue = 0,
                                    .typeDesc = "int"});
-    // Compared through the Arg& base, matching how CmdLine/ArgGroup always
-    // invoke this operator; comparing two same-typed derived objects
-    // directly would make C++20's reversed-candidate rule ambiguous.
-    const Arg &argA = a;
-
-    if (!(argA == sameName))
-        ERROR(t, "UnlabeledValueArg: operator== should match on name alone");
-    if (!(argA == sameDescription))
+    if (!a.conflictsWith(sameName))
+        ERROR(t, "UnlabeledValueArg: conflictsWith should match on name alone");
+    if (a.conflictsWith(sameDescription))
+        ERROR(t, "UnlabeledValueArg: descriptions should not cause a conflict");
+    if (a.conflictsWith(different))
         ERROR(t,
-              "UnlabeledValueArg: operator== should match on "
-              "description alone");
-    if (argA == different)
-        ERROR(t,
-              "UnlabeledValueArg: operator== should not match distinct "
+              "UnlabeledValueArg: conflictsWith should not match distinct "
               "name and description");
 
     if (a.longID("val").find(a.name()) == std::string::npos)
@@ -153,7 +142,7 @@ void TestUnlabeledValueArgEquality(Testing &t) {
                      << a.longID("val"));
 }
 
-void TestUnlabeledMultiArgEquality(Testing &t) {
+void TestUnlabeledMultiArgConflicts(Testing &t) {
     UnlabeledMultiArg<std::string> a(
         UnlabeledMultiArgSpec<std::string>{.name = "files",
                                            .description = "file names",
@@ -169,13 +158,12 @@ void TestUnlabeledMultiArgEquality(Testing &t) {
                                            .description = "different",
                                            .required = true,
                                            .typeDesc = "string"});
-    const Arg &argA = a;
 
-    if (!(argA == sameName))
-        ERROR(t, "UnlabeledMultiArg: operator== should match on name alone");
-    if (argA == different)
+    if (!a.conflictsWith(sameName))
+        ERROR(t, "UnlabeledMultiArg: conflictsWith should match on name alone");
+    if (a.conflictsWith(different))
         ERROR(t,
-              "UnlabeledMultiArg: operator== should not match distinct "
+              "UnlabeledMultiArg: conflictsWith should not match distinct "
               "name and description");
 
     if (a.longID("val").find("(accepted multiple times)") == std::string::npos)
@@ -344,8 +332,8 @@ int main() {
     Testing t;
     TestUnlabeledValueArgPositional(t);
     TestUnlabeledValueArgMissingRequired(t);
-    TestUnlabeledValueArgEquality(t);
-    TestUnlabeledMultiArgEquality(t);
+    TestUnlabeledValueArgConflicts(t);
+    TestUnlabeledMultiArgConflicts(t);
     TestUnlabeledMultiArgOptional(t);
     TestUnaddedOptionalUnlabeledArgDoesNotPoisonAnything(t);
     TestOptionalUnlabeledArgPoisonsOnlyItsOwnCmdLine(t);

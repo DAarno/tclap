@@ -128,12 +128,6 @@ public:
     }
 
     /**
-     * Operator ==.
-     * \param a - The Arg to be compared to this.
-     */
-    bool operator==(const Arg &a) const override;
-
-    /**
      * Pushes this to back of list rather than front.
      * \param argList - The list this should be added to.
      */
@@ -178,11 +172,6 @@ bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args,
     _setBy = args[*i];
     this->_invokeOnMatch();
     return true;
-}
-
-template <class T>
-bool UnlabeledMultiArg<T>::operator==(const Arg &a) const {
-    return _name == a.name() || this->description() == a.description();
 }
 
 template <class T>

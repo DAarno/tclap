@@ -135,11 +135,6 @@ public:
     }
 
     /**
-     * Overrides operator== for specific behavior.
-     */
-    bool operator==(const Arg &a) const override;
-
-    /**
      * Instead of pushing to the front of list, push to the back.
      * \param argList - The list to add this to.
      */
@@ -183,14 +178,6 @@ bool UnlabeledValueArg<T>::processArg(int *i, std::vector<std::string> &args,
     _setBy = args[*i];
     this->_invokeOnMatch();
     return true;
-}
-
-/**
- * Overriding operator== for specific behavior.
- */
-template <class T>
-bool UnlabeledValueArg<T>::operator==(const Arg &a) const {
-    return _name == a.name() || this->description() == a.description();
 }
 
 template <class T>
