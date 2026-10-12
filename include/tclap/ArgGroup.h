@@ -192,7 +192,7 @@ public:
 
 inline ArgContainer &ArgGroup::add(Arg *arg) {
     for (iterator it = begin(); it != end(); it++) {
-        if (*arg == **it) {
+        if (arg->conflictsWith(**it)) {
             throw SpecificationException(
                 "Argument with same flag/name already exists!", arg->longID());
         }
@@ -214,7 +214,7 @@ inline bool ExclusiveArgGroup::validate() {
 
     for (const_iterator it = begin(); it != end(); ++it) {
         if ((*it)->isSet()) {
-            if (arg != NULL && !(*arg == **it)) {
+            if (arg != NULL && arg != *it) {
                 // We found a matching argument, but one was
                 // already found previously.
                 throw CmdLineParseException(

@@ -140,10 +140,157 @@ void TestPositionalAttachment(Testing &t) {
     other.parse(2, argv);
 }
 
+// Legacy equality and a hidden conflict method must not control registration.
+class CustomEqualitySwitch : public SwitchArg {
+public:
+    CustomEqualitySwitch(const std::string &flag, const std::string &name,
+                         bool equal)
+        : SwitchArg(flag, name, "custom"), _equal(equal) {}
+    bool operator==(const Arg &) const { return _equal; }
+    bool conflictsWith(const Arg &) const { return false; }
+private:
+    bool _equal;
+};
+
+void AddPair(CmdLine &cmd, AnyOf &group, Arg &first, Arg &second, int mode) {
+    if (mode == 0) {
+        cmd.add(first);
+        cmd.add(second);
+    } else if (mode == 1) {
+        cmd.add(group);
+        group.add(first).add(second);
+    } else {
+        group.add(first).add(second);
+        cmd.add(group);
+    }
+}
+
+void TestDescriptionsDoNotConflict(Testing &t) {
+    for (int mode = 0; mode < 3; ++mode) {
+        for (int empty = 0; empty < 2; ++empty) {
+            CmdLine cmd("test", ' ', "1", false);
+            AnyOf group;
+            const std::string desc = empty ? "" : "shared";
+            UnlabeledValueArg<int> first("first", desc, true, 0, "int");
+            UnlabeledMultiArg<int> second("second", desc, true, "int");
+            AddPair(cmd, group, first, second, mode);
+            cmd.setExceptionHandling(false);
+            const char *argv[] = {"prog", "1", "2", "3"};
+            cmd.parse(4, argv);
+            if (first.getValue() != 1 || second.getValue().size() != 2 ||
+                second.getValue()[0] != 2 || second.getValue()[1] != 3)
+                ERROR(t, "Equal descriptions changed positional parsing");
+        }
+    }
+}
+
+void TestMixedDeclarations(Testing &t) {
+    for (int mode = 0; mode < 3; ++mode) {
+        for (int reverse = 0; reverse < 2; ++reverse) {
+            for (int conflict = 0; conflict < 2; ++conflict) {
+                CmdLine cmd("test", ' ', "1", false);
+                AnyOf group;
+                SwitchArg labeled("s", "switch", "shared");
+                UnlabeledValueArg<int> positional(
+                    conflict ? "switch" : "positional", "shared", false,
+                    0, "int");
+                Arg &first = reverse ? static_cast<Arg &>(positional)
+                                     : static_cast<Arg &>(labeled);
+                Arg &second = reverse ? static_cast<Arg &>(labeled)
+                                      : static_cast<Arg &>(positional);
+                try {
+                    AddPair(cmd, group, first, second, mode);
+                    if (conflict) ERROR(t, "Mixed duplicate name was accepted");
+                } catch (const SpecificationException &) {
+                    if (!conflict) throw;
+                    if (cmd.getArgList().size() != (mode == 2 ? 1u : 2u) ||
+                        (mode != 0 &&
+                         ArgGroup::Container(group.begin(), group.end()).size() != 1)
+                        || second.getDelimiter() != ' ')
+                        ERROR(t, "Mixed rejection changed membership");
+                    continue;
+                }
+                cmd.setExceptionHandling(false);
+                const char *argv[] = {"prog", "-s", "7"};
+                cmd.parse(3, argv);
+                if (!labeled.getValue() || positional.getValue() != 7)
+                    ERROR(t, "Mixed registration order changed parsing");
+            }
+        }
+    }
+}
+
+void TestCustomEqualityCannotBypassConflicts(Testing &t) {
+    for (int mode = 0; mode < 3; ++mode) {
+        for (int kind = 0; kind < 3; ++kind) {
+            CmdLine cmd("test", '=', "1", false);
+            AnyOf group;
+            CustomEqualitySwitch first("a", "first", false);
+            CustomEqualitySwitch second(kind == 1 ? "a" : "b",
+                                        kind == 2 ? "first" : "second", false);
+            Arg &candidate = kind == 0 ? static_cast<Arg &>(first)
+                                       : static_cast<Arg &>(second);
+            try {
+                AddPair(cmd, group, first, candidate, mode);
+                ERROR(t, "Custom equality bypassed a declared conflict");
+            } catch (const SpecificationException &) {
+                if (cmd.getArgList().size() != (mode == 2 ? 1u : 2u) ||
+                    (mode != 0 &&
+                     ArgGroup::Container(group.begin(), group.end()).size() != 1))
+                    ERROR(t, "Custom conflict changed membership");
+            }
+            if (second.getDelimiter() != ' ')
+                ERROR(t, "Rejected argument retained a parser binding");
+        }
+        CmdLine cmd("test", ' ', "1", false);
+        AnyOf group;
+        CustomEqualitySwitch shortFlag("a", "short", true);
+        CustomEqualitySwitch longName("b", "a", true);
+        AddPair(cmd, group, shortFlag, longName, mode);
+        cmd.setExceptionHandling(false);
+        const char *argv[] = {"prog", "-a", "--a"};
+        cmd.parse(3, argv);
+        if (!shortFlag.getValue() || !longName.getValue())
+            ERROR(t, "Short flags and names were not separate namespaces");
+    }
+    // StandaloneArgs also has a public, detached add() path.
+    StandaloneArgs standalone;
+    CustomEqualitySwitch first("a", "first", false);
+    standalone.add(&first);
+    try {
+        standalone.add(&first);
+        ERROR(t, "Detached standalone group accepted the same object twice");
+    } catch (const SpecificationException &) {}
+}
+
+void TestExclusiveSelectionUsesIdentity(Testing &t) {
+    CmdLine cmd("test", ' ', "1", false);
+    OneOf group;
+    CustomEqualitySwitch first("a", "first", true);
+    CustomEqualitySwitch second("b", "second", true);
+    group.add(first).add(second);
+    cmd.add(group);
+    cmd.setExceptionHandling(false);
+    const char *both[] = {"prog", "-a", "-b"};
+    try {
+        cmd.parse(3, both);
+        ERROR(t, "Custom equality bypassed exclusive selection");
+    } catch (const CmdLineParseException &) {}
+    cmd.reset();
+    const char *one[] = {"prog", "-b"};
+    cmd.parse(2, one);
+    if (first.getValue() || !second.getValue())
+        ERROR(t, "Exclusive group did not recover after reset");
+}
+
 int main() {
     Testing t;
     void (*tests[])(Testing &) = {TestMemberConflict, TestBatchConflict,
-                                  TestThrowingInsertion, TestPositionalAttachment};
+                                  TestThrowingInsertion, TestPositionalAttachment,
+                                  TestDescriptionsDoNotConflict,
+                                  TestMixedDeclarations,
+                                  TestCustomEqualityCannotBypassConflicts,
+                                  TestExclusiveSelectionUsesIdentity};
     for (unsigned i = 0; i < sizeof(tests) / sizeof(tests[0]); ++i) {
         try { tests[i](t); }
         catch (const std::exception &e) {
