@@ -272,6 +272,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     outp << _cmd.getProgramName() + " ";
 
     std::string switches = Arg::flagStartString();
+    bool hasShortSwitches = false;
 
     std::list<ArgGroup *> exclusiveGroups;
     std::list<ArgGroup *> nonExclusiveGroups;
@@ -310,13 +311,14 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
              ++it) {
             if (internal::IsVisibleShortSwitch(**it)) {
                 switches += (*it)->getFlag();
+                hasShortSwitches = true;
             }
         }
 
         std::sort(switches.begin(), switches.end(), cmpSwitch);
     }
 
-    outp << " [" << switches << ']';
+    if (hasShortSwitches) outp << " [" << switches << ']';
 
     // Now do long switches (e.g., --version, but no -v)
     std::vector<Arg *> longSwitches;
