@@ -265,7 +265,7 @@ public:
      * tokens recognized by processArg() are not inferred.
      * \param a - The Arg to compare with this argument.
      */
-    bool conflictsWith(const Arg &a) const;
+    [[nodiscard]] bool conflictsWith(const Arg &a) const noexcept;
 
     /**
      * Returns the argument flag.
@@ -568,7 +568,7 @@ inline std::string Arg::longID(const std::string &valueId) const {
     return id;
 }
 
-inline bool Arg::conflictsWith(const Arg &a) const {
+inline bool Arg::conflictsWith(const Arg &a) const noexcept {
     return this == &a || _name == a._name ||
            (!_flag.empty() && _flag == a._flag);
 }

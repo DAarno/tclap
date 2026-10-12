@@ -128,6 +128,8 @@ void TestArgEqualityByFlagOrName(Testing &t) {
 
 void TestDeclaredConflicts(Testing &t) {
     SwitchArg a("a", "aaa", "shared");
+    static_assert(noexcept(a.conflictsWith(a)),
+                  "Declared conflict checks must not throw");
     SwitchArg sameFlag("a", "other", "different");
     SwitchArg sameName("b", "aaa", "different");
     SwitchArg separateNamespace("b", "a", "shared");
