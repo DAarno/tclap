@@ -21,3 +21,13 @@ foreach(file ${TEST_FILES})
   default_opts(${file_basename})
   add_test(NAME ${file_basename} COMMAND ${file_basename})
 endforeach()
+
+# Run the same usage checks with the legacy configurable prefixes.
+add_executable(AlternatePrefixShortUsageTest ShortUsageTest.cpp)
+target_include_directories(AlternatePrefixShortUsageTest PRIVATE
+    ../include/ ${PROJECT_BINARY_DIR})
+target_compile_definitions(AlternatePrefixShortUsageTest PRIVATE
+    "TCLAP_FLAGSTARTCHAR='/'" "TCLAP_FLAGSTARTSTRING=\"/\""
+    "TCLAP_NAMESTARTSTRING=\"//\"")
+default_opts(AlternatePrefixShortUsageTest)
+add_test(NAME AlternatePrefixShortUsageTest COMMAND AlternatePrefixShortUsageTest)
