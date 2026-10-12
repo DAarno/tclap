@@ -89,13 +89,9 @@ void TestIgnoreRest(Testing &t) {
         ERROR(t, "CmdLine: -a should not be matched after \"--\"");
 }
 
-// The three TestXorAdd* functions below deliberately keep calling the
-// now-deprecated xorAdd() directly (triggering -Wdeprecated-declarations)
-// rather than migrating to OneOf like examples/*.cpp did: xorAdd() is
-// deprecated-in-place, not removed, and these are the regression tests
-// verifying it still behaves correctly. OneOf's own equivalent behavior
-// is covered separately by ArgGroupTest.cpp.
-void TestXorAddBothSelectedThrows(Testing &t) {
+// OneOf requires exactly one selected member. Exercise the parser outcomes
+// through an explicitly constructed and attached group.
+void TestOneOfBothSelectedThrows(Testing &t) {
     CmdLine cmd(CmdLineSpec{.message = "test",
                             .dialect = {.delimiter = ' '},
                             .version = "1.0",
@@ -104,7 +100,9 @@ void TestXorAddBothSelectedThrows(Testing &t) {
         .flag = "a", .name = "aaa", .description = "switch a"});
     SwitchArg b(SwitchArgSpec{
         .flag = "b", .name = "bbb", .description = "switch b"});
-    cmd.xorAdd(a, b);
+    OneOf group;
+    group.add(a).add(b);
+    cmd.add(group);
 
     const char *argv[] = {"prog", "-a", "-b"};
     std::vector<std::string> args = MakeArgs(argv);
@@ -112,11 +110,11 @@ void TestXorAddBothSelectedThrows(Testing &t) {
 
     if (result.outcome != Outcome::ParseError)
         ERROR(t,
-              "CmdLine: expected ParseError with both xorAdd'd switches "
+              "CmdLine: expected ParseError with both OneOf switches "
               "selected");
 }
 
-void TestXorAddNoneSelectedThrows(Testing &t) {
+void TestOneOfNoneSelectedThrows(Testing &t) {
     CmdLine cmd(CmdLineSpec{.message = "test",
                             .dialect = {.delimiter = ' '},
                             .version = "1.0",
@@ -125,7 +123,9 @@ void TestXorAddNoneSelectedThrows(Testing &t) {
         .flag = "a", .name = "aaa", .description = "switch a"});
     SwitchArg b(SwitchArgSpec{
         .flag = "b", .name = "bbb", .description = "switch b"});
-    cmd.xorAdd(a, b);
+    OneOf group;
+    group.add(a).add(b);
+    cmd.add(group);
 
     const char *argv[] = {"prog"};
     std::vector<std::string> args = MakeArgs(argv);
@@ -133,11 +133,11 @@ void TestXorAddNoneSelectedThrows(Testing &t) {
 
     if (result.outcome != Outcome::ParseError)
         ERROR(t,
-              "CmdLine: expected ParseError with neither xorAdd'd switch "
+              "CmdLine: expected ParseError with neither OneOf switch "
               "selected");
 }
 
-void TestXorAddOneSelected(Testing &t) {
+void TestOneOfOneSelected(Testing &t) {
     CmdLine cmd(CmdLineSpec{.message = "test",
                             .dialect = {.delimiter = ' '},
                             .version = "1.0",
@@ -146,7 +146,9 @@ void TestXorAddOneSelected(Testing &t) {
         .flag = "a", .name = "aaa", .description = "switch a"});
     SwitchArg b(SwitchArgSpec{
         .flag = "b", .name = "bbb", .description = "switch b"});
-    cmd.xorAdd(a, b);
+    OneOf group;
+    group.add(a).add(b);
+    cmd.add(group);
 
     const char *argv[] = {"prog", "-a"};
     std::vector<std::string> args = MakeArgs(argv);
@@ -154,12 +156,12 @@ void TestXorAddOneSelected(Testing &t) {
 
     if (result.outcome != Outcome::Success)
         ERROR(t,
-              "CmdLine: unexpected parse failure with one xorAdd'd "
+              "CmdLine: unexpected parse failure with one OneOf "
               "switch selected: "
                   << (result.error.has_value() ? result.error->message
                                                 : std::string()));
     if (!a.isSet() || b.isSet())
-        ERROR(t, "CmdLine: exactly -a should be set after xorAdd");
+        ERROR(t, "CmdLine: exactly -a should be set with OneOf");
 }
 
 void TestGetters(Testing &t) {
@@ -665,9 +667,9 @@ int main() {
     TestUnmatchedArgThrows(t);
     TestIgnoreUnmatched(t);
     TestIgnoreRest(t);
-    TestXorAddBothSelectedThrows(t);
-    TestXorAddNoneSelectedThrows(t);
-    TestXorAddOneSelected(t);
+    TestOneOfBothSelectedThrows(t);
+    TestOneOfNoneSelectedThrows(t);
+    TestOneOfOneSelected(t);
     TestGetters(t);
     TestReset(t);
     TestResetClearsIgnoring(t);

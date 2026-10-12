@@ -243,11 +243,6 @@ private:
      */
     void _constructor();
 
-    // Shared by both (deprecated) xorAdd() overloads, so the two-Arg
-    // overload doesn't have to call the other deprecated overload --
-    // that would trigger its own deprecation warning at the call site.
-    void _xorAddImpl(const std::vector<Arg *> &args);
-
     /**
      * Whether or not to automatically create help and version switches.
      */
@@ -348,18 +343,6 @@ public:
      */
     template <typename ArgType>
     ArgType &addOwned(typename ArgType::Spec spec);
-
-    /**
-     * \deprecated Use OneOf instead.
-     */
-    [[deprecated("Use ArgGroup/OneOf instead.")]] void xorAdd(
-        Arg &a, Arg &b) override;
-
-    /**
-     * \deprecated Use OneOf instead.
-     */
-    [[deprecated("Use ArgGroup/OneOf instead.")]] void xorAdd(
-        const std::vector<Arg *> &xors) override;
 
     /**
      * Parses the command line.
@@ -584,27 +567,6 @@ inline void CmdLine::_constructor() {
         _autoArgs.add(vers);
         _autoArgs.add(help);
     }
-}
-
-inline void CmdLine::_xorAddImpl(const std::vector<Arg *> &args) {
-    auto group = std::make_unique<OneOf>(*this);
-    OneOf *groupPtr = group.get();
-    _deleteOnExit(std::move(group));
-
-    for (Arg *arg : args) {
-        groupPtr->add(*arg);
-    }
-}
-
-inline void CmdLine::xorAdd(const std::vector<Arg *> &args) {
-    _xorAddImpl(args);
-}
-
-inline void CmdLine::xorAdd(Arg &a, Arg &b) {
-    std::vector<Arg *> ors;
-    ors.push_back(&a);
-    ors.push_back(&b);
-    _xorAddImpl(ors);
 }
 
 // Registration may call user-defined insertion hooks and allocate list nodes.

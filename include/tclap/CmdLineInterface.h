@@ -90,18 +90,6 @@ public:
     virtual ArgContainer &add(ArgGroup &args) = 0;
 
     /**
-     * \deprecated Use OneOf instead.
-     */
-    [[deprecated("Use ArgGroup/OneOf instead.")]] virtual void xorAdd(
-        Arg &a, Arg &b) = 0;
-
-    /**
-     * \deprecated Use OneOf instead.
-     */
-    [[deprecated("Use ArgGroup/OneOf instead.")]] virtual void xorAdd(
-        const std::vector<Arg *> &xors) = 0;
-
-    /**
      * Parses the command line. Never throws for a malformed command
      * line and never calls exit() -- see ParseOutcome's docs. A
      * SpecificationException (a programmer error, e.g. two Args sharing

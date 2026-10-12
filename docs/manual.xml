@@ -811,6 +811,36 @@ one of several options is necessary and one of the options requires
 additional information.
 </para>
 <para>
+The deprecated <methodname>xorAdd()</methodname> overloads have been removed
+in 2.0. Replace a two-argument call with a named <classname>OneOf</classname>,
+add its members, and attach the group to the parser:
+</para>
+<programlisting>
+        OneOf choice;
+        choice.add(first).add(second);
+        cmd.add(choice);
+</programlisting>
+<para>
+For a collection of argument pointers, add each member to the group before
+attaching it:
+</para>
+<programlisting>
+        OneOf choice;
+        for (Arg *arg : alternatives) choice.add(*arg);
+        cmd.add(choice);
+</programlisting>
+<para>
+Members must be individually optional (<code>.required = false</code>, the
+default); the group requires exactly one member to be selected. Register each
+member through the group rather than separately with the parser. The parser
+borrows the group and its members, so keep them alive while parsing or rendering
+help. Constructing the group unattached and then calling
+<methodname>cmd.add(choice)</methodname> registers the whole group atomically.
+Custom <classname>CmdLineInterface</classname> implementations should remove
+their obsolete <methodname>xorAdd()</methodname> overrides.
+</para>
+
+<para>
 <classname>AnyOf</classname> groups arguments for presentation only. It does
 not require a member to be selected or make one member depend on another.
 Each argument's own requirements still apply; check any conditional
