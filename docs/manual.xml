@@ -757,6 +757,35 @@ option on the command line. The help output is updated accordingly.
 </sect1>
 
 
+<sect1 id="REGISTRATION_CONFLICTS">
+<title>Argument registration conflicts</title>
+<para>
+Each argument name must be unique within a parser, including names of
+positional arguments. Nonempty short flags must also be unique. Short flags
+and long names are separate namespaces: one argument can use
+<code>-x</code> while another uses <code>--x</code>. Registering the same
+argument object twice is rejected. Descriptions are presentation text and
+may be identical or empty without causing a conflict.
+</para>
+<para>
+These checks also apply when adding arguments to groups and attaching groups
+to a parser. They do not change the separate rules for positional ordering or
+exclusive groups. Failed registration leaves the parser and group membership
+unchanged.
+</para>
+<para>
+Use <methodname>arg.conflictsWith(other)</methodname> to check for conflicting
+declarations, or compare addresses to check whether two references identify
+the same object. The legacy virtual equality operator is retained for source
+compatibility, including its positional description comparisons, but no longer
+controls registration or exclusive group selection. The conflict rule is
+nonvirtual and applies to custom arguments through their declared names and
+flags; additional tokens recognized by a custom <methodname>processArg()</methodname>
+are not inferred by registration. Custom equality overrides that previously
+changed duplicate detection must adapt to this declared-name-and-flag rule.
+</para>
+</sect1>
+
 <sect1 id="PARSE_LIFECYCLE">
 <title>Parse failures and reuse</title>
 <para>

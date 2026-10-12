@@ -62,7 +62,7 @@ public:
     ArgContainer &add(Arg *arg) override {
         // std::cerr << "Adding " << arg->getName() << " to StandaloneArgs\n";
         if (std::ranges::any_of(*this, [arg](const Arg *existing) {
-                return *arg == *existing;
+                return arg->conflictsWith(*existing);
             })) {
             throw SpecificationException(
                 "Argument with same flag/name already exists!",
@@ -492,7 +492,7 @@ inline void CmdLine::xorAdd(Arg &a, Arg &b) {
     xorAdd(ors);
 }
 
-// Comparison/insertion hooks run against a private list. Bindings are
+// Insertion hooks run against a private list. Bindings are
 // temporarily visible to hooks and restored unless the whole operation commits.
 class CmdLine::Registration {
 public:
@@ -516,7 +516,7 @@ public:
 
     void add(Arg &arg) {
         if (std::ranges::any_of(_args, [&arg](const Arg *existing) {
-                return arg == *existing;
+                return arg.conflictsWith(*existing);
             })) {
             throw SpecificationException(
                 "Argument with same flag/name already exists!", arg.longID());

@@ -252,10 +252,20 @@ public:
 
     /**
      * Operator ==.
-     * Equality operator. Must be virtual to handle unlabeled args.
+     * Legacy equality operator, retained for source compatibility.
+     * Registration uses conflictsWith(), not this virtual comparison.
      * \param a - The Arg to be compared to this.
      */
     virtual bool operator==(const Arg &a) const;
+
+    /**
+     * Checks declared registration conflicts: the same object, the same
+     * name, or the same nonempty short flag. Descriptions do not conflict.
+     * This nonvirtual rule also applies to custom arguments; additional
+     * tokens recognized by processArg() are not inferred.
+     * \param a - The Arg to compare with this argument.
+     */
+    bool conflictsWith(const Arg &a) const;
 
     /**
      * Returns the argument flag.
@@ -556,6 +566,11 @@ inline std::string Arg::longID(const std::string &valueId) const {
     if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
     return id;
+}
+
+inline bool Arg::conflictsWith(const Arg &a) const {
+    return this == &a || _name == a._name ||
+           (!_flag.empty() && _flag == a._flag);
 }
 
 inline bool Arg::operator==(const Arg &a) const {

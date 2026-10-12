@@ -126,6 +126,21 @@ void TestArgEqualityByFlagOrName(Testing &t) {
         ERROR(t, "Arg: operator== should not match distinct flag and name");
 }
 
+void TestDeclaredConflicts(Testing &t) {
+    SwitchArg a("a", "aaa", "shared");
+    SwitchArg sameFlag("a", "other", "different");
+    SwitchArg sameName("b", "aaa", "different");
+    SwitchArg separateNamespace("b", "a", "shared");
+    SwitchArg longOnly("", "long", "shared");
+    SwitchArg otherLongOnly("", "other-long", "shared");
+    if (!a.conflictsWith(a) || !a.conflictsWith(sameFlag) ||
+        !sameFlag.conflictsWith(a) || !a.conflictsWith(sameName) ||
+        !sameName.conflictsWith(a) || a.conflictsWith(separateNamespace) ||
+        separateNamespace.conflictsWith(a) ||
+        longOnly.conflictsWith(otherLongOnly))
+        ERROR(t, "Declared conflict rule is incorrect or asymmetric");
+}
+
 void TestArgFlaglessFormatting(Testing &t) {
     // An Arg with an empty flag can only be specified via "--name" on
     // the command line; shortID/longID/toString should omit the flag
@@ -178,6 +193,7 @@ int main() {
     TestArgRejectsNameStartingWithDash(t);
     TestArgRejectsNameWithSpace(t);
     TestArgEqualityByFlagOrName(t);
+    TestDeclaredConflicts(t);
     TestArgFlaglessFormatting(t);
     TestArgAcceptsMultipleValues(t);
     return t.errorCount();

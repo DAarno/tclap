@@ -194,7 +194,7 @@ public:
 
 inline ArgContainer &ArgGroup::add(Arg *arg) {
     if (std::ranges::any_of(*this, [arg](const Arg *existing) {
-            return *arg == *existing;
+            return arg->conflictsWith(*existing);
         })) {
         throw SpecificationException(
             "Argument with same flag/name already exists!", arg->longID());
@@ -216,7 +216,7 @@ inline bool ExclusiveArgGroup::validate() {
 
     for (Arg *candidate : *this) {
         if (candidate->isSet()) {
-            if (arg != nullptr && !(*arg == *candidate)) {
+            if (arg != nullptr && arg != candidate) {
                 // We found a matching argument, but one was
                 // already found previously.
                 throw CmdLineParseException(
