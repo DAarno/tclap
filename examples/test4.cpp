@@ -15,7 +15,8 @@ public:
     virtual void failure(CmdLineInterface &c, ArgException &e) {
         static_cast<void>(c);  // Ignore input, don't warn
         cerr << "my failure message: " << endl << e.what() << endl;
-        exit(1);
+        // Let parse() release the exception before parseOrExit() exits.
+        return;
     }
 
     virtual void usage(CmdLineInterface &c) {
