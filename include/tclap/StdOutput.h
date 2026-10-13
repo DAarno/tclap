@@ -35,6 +35,7 @@
 #include <format>
 #include <iostream>
 #include <list>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
