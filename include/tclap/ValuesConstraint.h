@@ -27,6 +27,7 @@
 #include <tclap/Constraint.h>
 #include <tclap/sstream.h>
 
+#include <sstream>
 #include <string>
 #include <vector>
 
