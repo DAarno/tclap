@@ -42,8 +42,7 @@ template <> bool SameValue<float>(const float &a, const float &b) {
 
 template <typename T>
 void CheckKnown(const std::string &input, const Observation &result, const T &value) {
-    // Embedded NUL in legacy numeric extraction is a separate finding;
-    // it receives reset/replay checks, without pinning truncation as a contract.
+    // The common type-independent NUL check runs before these numeric cases.
     if (input.find('\0') != std::string::npos) return;
     if (input.empty() || input == "42 " || input == "abc" ||
         input == "true" || input == "1e400" ||
@@ -126,6 +125,13 @@ void FuzzOneType(const std::string &typeDesc, const std::string &input,
     const T firstValue = value.getValue();
     if (first.status == Succeeded)
         Require(value.isSet(), "value/input", "successful conversion not set");
+#if !TCLAP_ALLOW_NUL_TRUNCATION
+    // All non-string types selected below specialize numeric_limits.
+    if (input.find('\0') != std::string::npos &&
+        std::numeric_limits<T>::is_specialized)
+        Require(first.status == ParseError, "value/input",
+                "embedded NUL accepted in strict mode");
+#endif
     CheckKnown(input, first, firstValue);
     cmd.reset();
     CheckReset(cmd, "value/reset-input");

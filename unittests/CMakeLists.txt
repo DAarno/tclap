@@ -31,3 +31,12 @@ target_compile_definitions(AlternatePrefixShortUsageTest PRIVATE
     "TCLAP_NAMESTARTSTRING=\"//\"")
 default_opts(AlternatePrefixShortUsageTest)
 add_test(NAME AlternatePrefixShortUsageTest COMMAND AlternatePrefixShortUsageTest)
+
+# Verify the opt-in historical NUL truncation separately from strict defaults.
+add_executable(NulTruncationCompatibilityTest NulValueTest.cpp)
+target_include_directories(NulTruncationCompatibilityTest PRIVATE
+    ../include/ ${PROJECT_BINARY_DIR})
+target_compile_definitions(NulTruncationCompatibilityTest PRIVATE
+    TCLAP_ALLOW_NUL_TRUNCATION=1 TCLAP_EXPECT_NUL_TRUNCATION=1)
+default_opts(NulTruncationCompatibilityTest)
+add_test(NAME NulTruncationCompatibilityTest COMMAND NulTruncationCompatibilityTest)

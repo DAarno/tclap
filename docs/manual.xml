@@ -786,6 +786,35 @@ changed duplicate detection must adapt to this declared-name-and-flag rule.
 </para>
 </sect1>
 
+<sect1 id="EMBEDDED_NUL_VALUES">
+<title>Embedded NUL bytes in values</title>
+<para>
+Stream-extracted values (<classname>ValueLike</classname>) reject embedded
+NUL bytes by default. This includes numeric, boolean and character values,
+and custom types using <code>operator&gt;&gt;</code>. For example, an integer
+token containing the bytes <code>42\0junk</code> is rejected instead of
+being silently read as <code>42</code>. This matters when supplying
+<code>std::string</code> tokens through the vector parsing overload; ordinary
+C-string command-line arguments cannot carry embedded NUL bytes.
+</para>
+<para>
+To retain the historical behavior, define
+<code>TCLAP_ALLOW_NUL_TRUNCATION=1</code> before including any TCLAP headers.
+The default is <code>0</code>. Compatibility mode passes only the prefix
+before the first NUL to the extractor; it does not accept ordinary trailing
+junk such as <code>42junk</code>. For CMake consumers:
+</para>
+<programlisting>
+        target_compile_definitions(myapp PRIVATE TCLAP_ALLOW_NUL_TRUNCATION=1)
+</programlisting>
+<para>
+Use the same setting across every translation unit in the program, including
+libraries that include TCLAP, because it changes header-defined template
+behavior. <classname>StringLike</classname> values, including
+<code>std::string</code>, preserve all bytes under either setting.
+</para>
+</sect1>
+
 <sect1 id="PARSE_LIFECYCLE">
 <title>Parse failures and reuse</title>
 <para>
