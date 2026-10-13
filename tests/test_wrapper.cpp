@@ -40,10 +40,11 @@ private:
  */
 int main(int argc, char *argv[]) {
   try {
+    // Forward help/version tokens to the command being tested.
     TCLAP::CmdLine argParser("Runs a command with given parameters and"
                              " compares its output to stdout with the "
                              " contents of a given reference file.",
-                             ' ', "1.0");
+                             ' ', "1.0", false);
     TCLAP::UnlabeledValueArg<std::string> refFile("ref", "Reference file", true,
                                                   "", "string", argParser);
     TCLAP::UnlabeledValueArg<std::string> baseCmd("cmd", "Command to run", true,
