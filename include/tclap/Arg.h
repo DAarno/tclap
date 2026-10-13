@@ -29,6 +29,12 @@
 #include <tclap/TCLAPConfig.h>
 #endif
 
+// Define to 1 before including TCLAP to retain the historical truncation of
+// ValueLike input at its first NUL byte. Use one setting across the program.
+#ifndef TCLAP_ALLOW_NUL_TRUNCATION
+#define TCLAP_ALLOW_NUL_TRUNCATION 0
+#endif
+
 #include <tclap/ArgException.h>
 #include <tclap/ArgTraits.h>
 #include <tclap/CmdLineInterface.h>
@@ -426,6 +432,10 @@ typedef std::list<Visitor *>::const_iterator VisitorListIterator;
 template <typename T>
 void ExtractValue(T &destVal, const std::string &strVal, ValueLike vl) {
     static_cast<void>(vl);  // Avoid warning about unused vl
+#if !TCLAP_ALLOW_NUL_TRUNCATION
+    if (strVal.find('\0') != std::string::npos)
+        throw ArgParseException("Embedded NUL in argument value");
+#endif
     istringstream is(strVal.c_str());
 
     int valuesRead = 0;

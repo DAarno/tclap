@@ -70,8 +70,11 @@ input error. Specification and standard exceptions fail the run.
 Maintenance conversion keeps stream semantics, including leading plus and
 unsigned `-1` mapping to `numeric_limits<unsigned int>::max()`. Stream
 acceptance of `nan`/`inf` can vary by standard library, so those inputs receive
-recovery checks without a fixed acceptance oracle. Numeric embedded-NUL
-truncation is a separate review finding, not a promised behavior.
+recovery checks without a fixed acceptance oracle. ValueLike inputs containing
+NUL are rejected by default; their fuzz oracle checks that rejection.
+`TCLAP_ALLOW_NUL_TRUNCATION=1` restores prefix truncation for compatibility.
+StringLike inputs must preserve all bytes with either policy. Use one macro
+setting across the program; see the manual for consumer configuration.
 
 The word-wrap target verifies that removing only ASCII spaces and newlines
 from input/output leaves the same bytes, and that rendering ends in a newline.
