@@ -30,6 +30,7 @@
 #include <config.h>
 #endif
 
+#include <sstream>
 #include <string>
 #include <vector>
 #include <tclap/Constraint.h>
