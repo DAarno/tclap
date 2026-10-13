@@ -57,15 +57,16 @@ private:
 class ObservingOutput : public TCLAP::StdOutput {
 public:
     ObservingOutput() : usageCalls(0), versionCalls(0), failureCalls(0) {}
-    void usage(TCLAP::CmdLineInterface &cmd) {
+    void usage(TCLAP::CmdLineInterface &cmd) override {
         ++usageCalls;
         TCLAP::StdOutput::usage(cmd);
     }
-    void version(TCLAP::CmdLineInterface &cmd) {
+    void version(TCLAP::CmdLineInterface &cmd) override {
         ++versionCalls;
         TCLAP::StdOutput::version(cmd);
     }
-    void failure(TCLAP::CmdLineInterface &cmd, TCLAP::ArgException &error) {
+    void failure(TCLAP::CmdLineInterface &cmd,
+                 TCLAP::ArgException &error) override {
         ++failureCalls;
         TCLAP::StdOutput::failure(cmd, error);
     }

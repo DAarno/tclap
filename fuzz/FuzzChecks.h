@@ -42,9 +42,9 @@ struct Observation {
 class RecordingOutput : public TCLAP::CmdLineOutput {
 public:
     RecordingOutput() : usageCalls(0), versionCalls(0), failureCalls(0) {}
-    void usage(TCLAP::CmdLineInterface &) { ++usageCalls; }
-    void version(TCLAP::CmdLineInterface &) { ++versionCalls; }
-    void failure(TCLAP::CmdLineInterface &, TCLAP::ArgException &) {
+    void usage(TCLAP::CmdLineInterface &) override { ++usageCalls; }
+    void version(TCLAP::CmdLineInterface &) override { ++versionCalls; }
+    void failure(TCLAP::CmdLineInterface &, TCLAP::ArgException &) override {
         ++failureCalls;
     }
     void reset() { usageCalls = versionCalls = failureCalls = 0; }
@@ -92,17 +92,14 @@ inline Observation Parse(TCLAP::CmdLine &cmd, RecordingOutput &output,
 inline void CheckReset(TCLAP::CmdLine &cmd, const char *phase) {
     Require(!cmd.ignoreRest() && cmd.getProgramName().empty(), phase,
             "reset did not clear parser state");
-    const std::list<TCLAP::Arg *> args = cmd.getArgList();
-    for (std::list<TCLAP::Arg *>::const_iterator it = args.begin();
-         it != args.end();
-         ++it)
-        Require(!(*it)->isSet(), phase, "reset left an argument set");
+    for (const TCLAP::Arg *arg : cmd.getArgList())
+        Require(!arg->isSet(), phase, "reset left an argument set");
 }
 
 inline std::string SignificantBytes(const std::string &text) {
     std::string result;
-    for (std::size_t i = 0; i < text.size(); ++i)
-        if (text[i] != ' ' && text[i] != '\n') result += text[i];
+    for (const char byte : text)
+        if (byte != ' ' && byte != '\n') result += byte;
     return result;
 }
 
