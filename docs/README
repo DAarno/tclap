@@ -5,3 +5,16 @@ and an xsl file that defines the output.  For example:
 xsltproc --stringparam html.stylesheet style.css /usr/share/xml/docbook/stylesheet/docbook-xsl/html/docbook.xsl  manual.xml > manual.html
 
 The manual.html is build automatically by cmake.
+
+To upload documentation to SourceForge, configure and build documentation
+from the branch you want to publish, then run the generated upload script:
+
+cmake -S . -B build-docs -DBUILD_DOC=ON -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF
+cmake --build build-docs
+bash build-docs/docs/upload.sh
+
+Set USER to your SourceForge username if it differs from your local username.
+Reconfigure before uploading after switching branches or updating sources.
+The generated script uploads to the configured branch's version directory;
+only 1.4 also updates the main website. Do not reuse an upload.sh generated
+by an older checkout or run the unconfigured docs/upload.sh source template.
