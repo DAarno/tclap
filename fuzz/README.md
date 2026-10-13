@@ -12,7 +12,7 @@ parts:
   opt-in.
 
 Both are built from the same `fuzz_*.cpp` sources -- each one exports a
-standard `extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t
+standard `extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t
 size)`, so there's exactly one implementation of each target regardless of
 which driver it's linked against.
 
@@ -36,6 +36,53 @@ which driver it's linked against.
   `CmdLine` with fuzzed argument descriptions and drives it through
   `usage()`/`version()`/`failure()`, with stdout/stderr redirected to a local
   buffer for the duration.
+
+## Semantic checks and expected failures
+
+The same checks run in portable replay and mutation fuzzing, including Release
+builds with `NDEBUG`. `Require` prints a phase-specific diagnostic to C stderr
+and aborts on a violated property. Unexpected exceptions, including
+`bad_alloc` and `length_error`, must fail instead of being swallowed. Inputs
+larger than 4096 bytes are skipped; no resource exception is accepted for a
+bounded input. Failed output streams are also detected.
+
+Command and value targets perform three parses for every eligible input:
+original input, reset plus a known valid recovery input, then reset plus a
+fresh copy of the original. They check defaults, `isSet()`, outcomes, output
+callbacks and successful values. The command recovery also checks repeated
+switch counts, ordered MultiArg values, exclusive selection and ignore-rest.
+Failed parses can leave partial state; the checks do not require rollback or
+compare partial values, and do not require `setBy()` to clear.
+
+On this branch, every `ParseOutcome` is checked, including error data and
+usage/version/failure callbacks. Specification and standard exceptions are
+unexpected and fail the run. Arithmetic conversion uses `from_chars`: leading
+plus and negative unsigned values are rejected, while `nan` and `inf` are
+checked for their floating-point classifications.
+
+The word-wrap target verifies that removing only ASCII spaces and newlines
+from input/output leaves the same bytes, and that rendering ends in a newline.
+The full-output target checks separate version, usage and failure captures,
+option identifiers, callback counts and the deliberately unknown token.
+
+The corpus has 49 seeds. Expected results are matched by content, not filename.
+Some historical command seed names describe attempted syntax, not success:
+
+| Seed | Expected result |
+| --- | --- |
+| `valid_mixed`, `combined_short` | Parse error (space delimiter / unsupported attached value syntax) |
+| `bad_int_value`, `exclusive_group_conflict`, `partial_error`, `unknown_after_operand` | Parse error |
+| `unknown_flag`, `malformed_delim` | Success: the optional positional argument consumes the token |
+| `empty` | Success: one empty positional token, not an argv with no tokens |
+| `ignore_rest` | Success: positional `-r`, labeled switches unset |
+| `help`, `version` | Corresponding early-exit outcome |
+| `valid_recovery`, `combined_switches_only` | Success with explicit value/count checks |
+
+Additional conversion seeds cover finite values, whitespace, plus, numeric
+booleans, one character and embedded NUL bytes. String bytes must survive
+unchanged. Parser defects revealed by a new check are recorded separately;
+do not weaken the check or add an intentionally failing seed to the default
+passing corpus.
 
 ## Building and running
 

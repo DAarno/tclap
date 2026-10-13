@@ -18,54 +18,28 @@
  *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  *  DEALINGS IN THE SOFTWARE.
  *
- *  Fuzzes StdOutput's text formatting, in particular the hand-rolled
- *  word-wrap arithmetic in fmtPrintLine()/spacePrint() (see StdOutput.h):
- *  it walks a string with size_t "from"/"to" indices, breaking at the
- *  nearest space/comma/pipe under a computed line width, and includes at
- *  least one place (`to = from + maxChars - 1`, where maxChars is a size_t
- *  that can be 0 when indentSpaces >= maxWidth) that looks like it could
- *  underflow and then index the string out of bounds -- exactly the sort
- *  of hand-written index arithmetic fuzzing tends to find bugs in.
- *
- *  Two modes, selected by the first input byte:
- *   - mode 0: call StdOutput::spacePrint() directly (reached via a small
- *     subclass that "using"s the otherwise-protected method) with the
- *     wrap geometry (maxWidth/indentSpaces/secondLineOffset) and the
- *     string itself both derived from fuzzed bytes. Tight and fast --
- *     the primary target.
- *   - mode 1: build a real CmdLine with fuzzed argument descriptions and
- *     drive it through usage()/version()/failure(), to catch
- *     integration-level issues in _shortUsage/_longUsage rather than in
- *     spacePrint alone. stdout/stderr are redirected to a local
- *     ostringstream for the duration (restored via RAII even if an
- *     exception propagates) so this stays fast and doesn't spam real
- *     stdout on every run.
+ *  Checks text preservation and actual usage/version/failure rendering.
  *
  *****************************************************************************/
 
 #include <cstddef>
-#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <string>
-
 #include <tclap/CmdLine.h>
-
+#include "FuzzChecks.h"
 #include "FuzzUtil.h"
 
 namespace {
+using namespace tclap_fuzz;
 
 class ExposedOutput : public TCLAP::StdOutput {
 public:
     using TCLAP::StdOutput::spacePrint;
 };
 
-// Restores std::cout/std::cerr's stream buffers on scope exit, including
-// via exception unwinding -- kept RAII since SpecificationException (a
-// programmer error, not expected here but caught defensively below) could
-// still propagate out of the scope that redirects them, and leaving the
-// global streams pointed at a since-destroyed local ostringstream would
-// make the *next* fuzzer iteration crash on unrelated input.
+// Restore buffers on scope exit, including unexpected exception unwinding.
+// C stderr is not redirected, so Require stays visible.
 class StreamRedirect {
 public:
     explicit StreamRedirect(std::streambuf *sink)
@@ -74,91 +48,102 @@ public:
         std::cout.rdbuf(oldCout_);
         std::cerr.rdbuf(oldCerr_);
     }
-
 private:
-    std::streambuf *oldCout_;
-    std::streambuf *oldCerr_;
+    StreamRedirect(const StreamRedirect &);
+    StreamRedirect &operator=(const StreamRedirect &);
+    std::streambuf *oldCout_, *oldCerr_;
 };
 
-void FuzzSpacePrintDirect(const uint8_t *data, size_t size) {
-    if (size < 3) return;
+class ObservingOutput : public TCLAP::StdOutput {
+public:
+    ObservingOutput() : usageCalls(0), versionCalls(0), failureCalls(0) {}
+    void usage(TCLAP::CmdLineInterface &cmd) override {
+        ++usageCalls;
+        TCLAP::StdOutput::usage(cmd);
+    }
+    void version(TCLAP::CmdLineInterface &cmd) override {
+        ++versionCalls;
+        TCLAP::StdOutput::version(cmd);
+    }
+    void failure(TCLAP::CmdLineInterface &cmd, TCLAP::ArgException &error) override {
+        ++failureCalls;
+        TCLAP::StdOutput::failure(cmd, error);
+    }
+    int usageCalls, versionCalls, failureCalls;
+};
 
-    // Keep the geometry in a plausible range (real callers in StdOutput.h
-    // only ever use small positive-ish widths/indents), but still let it
-    // go negative or let indentSpaces exceed maxWidth, since that's the
-    // combination that drives maxChars to 0 in fmtPrintLine().
-    int maxWidth = (static_cast<int>(data[0]) % 200) - 20;
-    int indentSpaces = (static_cast<int>(data[1]) % 100) - 20;
-    int secondLineOffset = (static_cast<int>(data[2]) % 100) - 20;
-
-    std::string s(reinterpret_cast<const char *>(data + 3), size - 3);
-
-    ExposedOutput out;
-    std::ostringstream sink;
-    out.spacePrint(sink, s, maxWidth, indentSpaces, secondLineOffset);
+void CheckStreams(const std::ostringstream &sink, const char *phase) {
+    Require(sink.good() && std::cout.good() && std::cerr.good(), phase,
+            "output stream failed");
 }
 
-void FuzzFullUsage(const uint8_t *data, size_t size) {
-    std::string desc(reinterpret_cast<const char *>(data), size);
+void FuzzSpacePrintDirect(const unsigned char *data, size_t size) {
+    if (size < 3) return;
+    const int maxWidth = (static_cast<int>(data[0]) % 200) - 20;
+    const int indentSpaces = (static_cast<int>(data[1]) % 100) - 20;
+    const int secondLineOffset = (static_cast<int>(data[2]) % 100) - 20;
+    const std::string text(reinterpret_cast<const char *>(data + 3), size - 3);
+    ExposedOutput output;
+    std::ostringstream sink;
+    output.spacePrint(sink, text, maxWidth, indentSpaces, secondLineOffset);
+    Require(sink.good(), "output/wrap", "output stream failed");
+    const std::string rendered = sink.str();
+    Require(!rendered.empty() && rendered[rendered.size() - 1] == '\n',
+            "output/wrap", "rendering did not end in a newline");
+    Require(SignificantBytes(text) == SignificantBytes(rendered),
+            "output/wrap", "text bytes were lost, duplicated or reordered");
+}
 
+void FuzzFullUsage(const unsigned char *data, size_t size) {
+    const std::string description(reinterpret_cast<const char *>(data), size);
     std::ostringstream sink;
     StreamRedirect redirect(sink.rdbuf());
+    ObservingOutput output;
+    TCLAP::SwitchArg switchArg({.flag = "s", .name = "switch",
+                                .description = description});
+    TCLAP::ValueArg<std::string> valueArg({.flag = "d", .name = "described",
+                                          .description = description,
+                                          .typeDesc = description});
+    TCLAP::CmdLine cmd({.message = description, .version = "1.0"});
+    cmd.setOutput(&output);
+    cmd.add(switchArg).add(valueArg);
 
-    try {
-        TCLAP::CmdLine cmd(TCLAP::CmdLineSpec{
-            .message = desc, .dialect = {.delimiter = ' '}, .version = "1.0"});
-        TCLAP::StdOutput realOutput;
-        cmd.setOutput(&realOutput);
+    output.version(cmd);
+    CheckStreams(sink, "output/version");
+    Require(output.versionCalls == 1 && output.usageCalls == 0 &&
+            output.failureCalls == 0 && sink.str().find("1.0") != std::string::npos,
+            "output/version", "version output missing or wrong callbacks");
+    sink.str(std::string());
+    sink.clear();
+    output.usage(cmd);
+    CheckStreams(sink, "output/usage");
+    Require(output.usageCalls == 1 && output.versionCalls == 1 &&
+            output.failureCalls == 0 &&
+            sink.str().find("--switch") != std::string::npos &&
+            sink.str().find("--described") != std::string::npos,
+            "output/usage", "option identifiers missing or wrong callbacks");
+    sink.str(std::string());
+    sink.clear();
 
-        TCLAP::SwitchArg switchArg(TCLAP::SwitchArgSpec{.flag = "s",
-                                                        .name = "switch",
-                                                        .description = desc,
-                                                        .defaultValue = false});
-        cmd.add(switchArg);
-        TCLAP::ValueArg<std::string> valueArg(
-            TCLAP::ValueArgSpec<std::string>{.flag = "d",
-                                             .name = "described",
-                                             .description = desc,
-                                             .required = false,
-                                             .defaultValue = "",
-                                             .typeDesc = desc});
-        cmd.add(valueArg);
-
-        realOutput.version(cmd);
-        realOutput.usage(cmd);
-
-        // A guaranteed-unmatched flag makes parse() return a ParseError
-        // outcome; StdOutput::failure() (the actual target here,
-        // exercising _shortUsage on a real parse error) is called
-        // internally by parse() itself as part of building that outcome
-        // -- unconditionally now, unlike the old exception-based
-        // contract, so there's nothing left to catch or re-invoke here.
-        std::vector<std::string> badArgs;
-        badArgs.push_back("fuzz");
-        badArgs.push_back("--this-flag-does-not-exist");
-
-        TCLAP::ParseOutcome result = cmd.parse(badArgs);
-        static_cast<void>(result);
-    } catch (TCLAP::SpecificationException &) {
-    } catch (std::exception &) {
-    }
+    const char *unknown = "--this-flag-does-not-exist";
+    std::vector<std::string> args;
+    args.push_back("fuzz");
+    args.push_back(unknown);
+    const TCLAP::ParseOutcome result = cmd.parse(args);
+    Require(result.outcome == TCLAP::Outcome::ParseError && result.error.has_value() &&
+            !result.error->message.empty() && result.error->argId == unknown,
+            "output/failure", "unknown flag did not produce expected error data");
+    Require(output.failureCalls == 1 && output.usageCalls == 1 &&
+            output.versionCalls == 1, "output/failure", "wrong failure callbacks");
+    CheckStreams(sink, "output/failure");
+    Require(sink.str().find(unknown) != std::string::npos,
+            "output/failure", "failure output omitted offending token");
 }
-
 }  // namespace
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (size > tclap_fuzz::kMaxInputSize) return 0;
-    if (size < 1) return 0;
-
-    uint8_t mode = data[0];
-    const uint8_t *rest = data + 1;
-    size_t restSize = size - 1;
-
-    if (mode % 2 == 0) {
-        FuzzSpacePrintDirect(rest, restSize);
-    } else {
-        FuzzFullUsage(rest, restSize);
-    }
-
+extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
+    if (size > tclap_fuzz::kMaxInputSize || size < 1) return 0;
+    if (data[0] % 2 == 0) FuzzSpacePrintDirect(data + 1, size - 1);
+    else FuzzFullUsage(data + 1, size - 1);
     return 0;
 }
