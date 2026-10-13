@@ -44,6 +44,59 @@ as C++98.
   `usage()`/`version()`/`failure()`, with stdout/stderr redirected to a local
   buffer for the duration.
 
+## Semantic checks and expected failures
+
+The same checks run in portable replay and mutation fuzzing, including Release
+builds with `NDEBUG`. `Require` prints a phase-specific diagnostic to C stderr
+and aborts on a violated property. Unexpected exceptions, including
+`bad_alloc` and `length_error`, must fail instead of being swallowed. Inputs
+larger than 4096 bytes are skipped; no resource exception is accepted for a
+bounded input. Failed output streams are also detected.
+
+Command and value targets perform three parses for every eligible input:
+original input, reset plus a known valid recovery input, then reset plus a
+fresh copy of the original. They check defaults, `isSet()`, outcomes, output
+callbacks and successful values. The command recovery also checks repeated
+switch counts, ordered MultiArg values, exclusive selection and ignore-rest.
+Failed parses can leave partial state; the checks do not require rollback or
+compare partial values, and do not require `setBy()` to clear.
+
+Construction and registration are outside input-error handlers. Only
+`ArgParseException` and `CmdLineParseException` are expected from arbitrary
+command parsing; successful help/version exits must have exactly one matching
+output callback. Value conversion accepts only `ArgParseException` as an
+input error. Specification and standard exceptions fail the run.
+
+Maintenance conversion keeps stream semantics, including leading plus and
+unsigned `-1` mapping to `numeric_limits<unsigned int>::max()`. Stream
+acceptance of `nan`/`inf` can vary by standard library, so those inputs receive
+recovery checks without a fixed acceptance oracle. Numeric embedded-NUL
+truncation is a separate review finding, not a promised behavior.
+
+The word-wrap target verifies that removing only ASCII spaces and newlines
+from input/output leaves the same bytes, and that rendering ends in a newline.
+The full-output target checks separate version, usage and failure captures,
+option identifiers, callback counts and the deliberately unknown token.
+
+The corpus has 49 seeds. Expected results are matched by content, not filename.
+Some historical command seed names describe attempted syntax, not success:
+
+| Seed | Expected result |
+| --- | --- |
+| `valid_mixed`, `combined_short` | Parse error (space delimiter / unsupported attached value syntax) |
+| `bad_int_value`, `exclusive_group_conflict`, `partial_error`, `unknown_after_operand` | Parse error |
+| `unknown_flag`, `malformed_delim` | Success: the optional positional argument consumes the token |
+| `empty` | Success: one empty positional token, not an argv with no tokens |
+| `ignore_rest` | Success: positional `-r`, labeled switches unset |
+| `help`, `version` | Corresponding early-exit outcome |
+| `valid_recovery`, `combined_switches_only` | Success with explicit value/count checks |
+
+Additional conversion seeds cover finite values, whitespace, plus, numeric
+booleans, one character and embedded NUL bytes. String bytes must survive
+unchanged. Parser defects revealed by a new check are recorded separately;
+do not weaken the check or add an intentionally failing seed to the default
+passing corpus.
+
 ## Building and running
 
 Run the commands below from the repository root using CMake 3.13 or later.

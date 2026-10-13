@@ -51,6 +51,10 @@ inline std::vector<std::string> SplitArgs(const unsigned char *data,
                                            std::size_t size) {
     std::vector<std::string> args;
     args.push_back("fuzz");
+    if (size == 0) {
+        args.push_back(std::string());
+        return args;
+    }
 
     std::size_t start = 0;
     for (std::size_t i = 0; i < size; i++) {
