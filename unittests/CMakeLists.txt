@@ -40,3 +40,13 @@ target_compile_definitions(NulTruncationCompatibilityTest PRIVATE
     TCLAP_ALLOW_NUL_TRUNCATION=1 TCLAP_EXPECT_NUL_TRUNCATION=1)
 default_opts(NulTruncationCompatibilityTest)
 add_test(NAME NulTruncationCompatibilityTest COMMAND NulTruncationCompatibilityTest)
+
+# Equal prefixes exercise alias conflicts across short/long namespaces.
+add_executable(AlternatePrefixAliasDialectTest AliasDialectTest.cpp)
+target_include_directories(AlternatePrefixAliasDialectTest PRIVATE
+    ../include/ ${PROJECT_BINARY_DIR})
+target_compile_definitions(AlternatePrefixAliasDialectTest PRIVATE
+    "TCLAP_FLAGSTARTCHAR='/'" "TCLAP_FLAGSTARTSTRING=\"/\""
+    "TCLAP_NAMESTARTSTRING=\"/\"")
+default_opts(AlternatePrefixAliasDialectTest)
+add_test(NAME AlternatePrefixAliasDialectTest COMMAND AlternatePrefixAliasDialectTest)
