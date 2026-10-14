@@ -35,6 +35,7 @@
 
 #include <tclap/Constraint.h>
 #include <tclap/PredicateConstraint.h>
+#include <tclap/ComparisonConstraint.h>
 #include <tclap/RangeConstraint.h>
 #include <tclap/ValuesConstraint.h>
 
