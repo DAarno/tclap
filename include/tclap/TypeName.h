@@ -109,6 +109,10 @@ TCLAP_DEFINE_TYPE_NAME(float, "float");
 TCLAP_DEFINE_TYPE_NAME(double, "double");
 TCLAP_DEFINE_TYPE_NAME(long double, "long double");
 TCLAP_DEFINE_TYPE_NAME(std::string, "string");
+TCLAP_DEFINE_TYPE_NAME(std::wstring, "wstring");
+TCLAP_DEFINE_TYPE_NAME(std::u8string, "u8string");
+TCLAP_DEFINE_TYPE_NAME(std::u16string, "u16string");
+TCLAP_DEFINE_TYPE_NAME(std::u32string, "u32string");
 
 #undef TCLAP_DEFINE_TYPE_NAME
 

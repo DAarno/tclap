@@ -24,6 +24,8 @@
 #ifndef TCLAP_CONSTRAINT_H
 #define TCLAP_CONSTRAINT_H
 
+#include <tclap/Unicode.h>
+
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
@@ -43,6 +45,10 @@ namespace detail {
 template <typename T>
 concept OStreamInsertable =
     requires(std::ostream &os, const T &val) { os << val; };
+
+// Generated metadata also accepts Unicode strings, transcoded to UTF-8.
+template <typename T>
+concept ConstraintFormattable = UnicodeString<T> || OStreamInsertable<T>;
 }  // namespace detail
 
 /**

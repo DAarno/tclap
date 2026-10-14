@@ -28,6 +28,7 @@
 
 #include <tclap/ArgTraits.h>
 #include <tclap/Expected.h>
+#include <tclap/Unicode.h>
 
 #include <charconv>
 #include <cctype>
@@ -64,7 +65,8 @@ concept FromCharsArithmetic =
 
 /**
  * Satisfied iff T is usable as a ValueArg/MultiArg value type: either
- * std::from_chars supports it directly, it's opted into StringLike
+ * std::from_chars supports it directly, it's a built-in Unicode string,
+ * it's opted into StringLike
  * traits (via an ArgTraits<T> specialization or by inheriting
  * StringLikeTrait), or it can be read with operator>>. T must also be
  * default_initializable, since parse_value() below always produces a
@@ -73,7 +75,7 @@ concept FromCharsArithmetic =
 template <typename T>
 concept Parseable =
     std::default_initializable<T> &&
-    (detail::FromCharsArithmetic<T> ||
+    (detail::FromCharsArithmetic<T> || detail::UnicodeString<T> ||
      std::same_as<typename ArgTraits<T>::ValueCategory, StringLike> ||
      detail::StreamExtractable<T>);
 
@@ -113,12 +115,22 @@ Expected<T, std::string> parse_value(std::string_view text) {
  * containing spaces aren't tokenized the way operator>> would.
  */
 template <typename T>
-    requires(!detail::FromCharsArithmetic<T>) &&
+    requires(!detail::FromCharsArithmetic<T>) && (!detail::UnicodeString<T>) &&
             std::same_as<typename ArgTraits<T>::ValueCategory, StringLike>
 Expected<T, std::string> parse_value(std::string_view text) {
     T value{};
     SetString(value, std::string(text));
     return value;
+}
+
+/** Unicode string values are decoded strictly from the UTF-8 token. */
+template <detail::UnicodeString T>
+Expected<T, std::string> parse_value(std::string_view text) {
+    try {
+        return FromUtf8<T>(text);
+    } catch (const UnicodeError &error) {
+        return Unexpected<std::string>(error.what());
+    }
 }
 
 /**
@@ -132,6 +144,7 @@ Expected<T, std::string> parse_value(std::string_view text) {
 template <typename T>
     requires(!detail::FromCharsArithmetic<T>) &&
             (!std::same_as<typename ArgTraits<T>::ValueCategory, StringLike>) &&
+            (!detail::UnicodeString<T>) &&
             detail::StreamExtractable<T>
 Expected<T, std::string> parse_value(std::string_view text) {
     std::istringstream is{std::string(text)};

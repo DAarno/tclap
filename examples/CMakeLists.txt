@@ -26,6 +26,11 @@ foreach(file ${TEST_FILES})
     add_example(${file_basename} ${file})
 endforeach()
 
+# MinGW requires the Unicode startup stub for the Windows wmain example.
+if(MINGW)
+    target_link_options(test131 PRIVATE -municode)
+endif()
+
 # A small Linux-only example showing how to use GNU gettext as the TCLAP
 # message translator. The example still builds when msgfmt is not installed;
 # in that case it falls back to English until a catalog is installed.

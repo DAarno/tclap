@@ -359,6 +359,16 @@ public:
      */
     ParseOutcome parse(std::vector<std::string> &args);
 
+    /** Parse UTF-16/UTF-32 wchar_t argv (for example Windows wmain).
+     * Invalid Unicode returns ParseError before processing any arguments.
+     */
+    ParseOutcome parse(int argc, const wchar_t *const *argv);
+
+    /** Parse wide strings, including the program name. Unlike the narrow
+     * mutable vector overload, this conversion overload leaves input intact.
+     */
+    ParseOutcome parse(const std::vector<std::wstring> &args);
+
     /**
      * Parses argc/argv and, for the common `int main()` case, restores the
      * pre-2.0 zero-ceremony behavior in one line: on success, returns
@@ -379,6 +389,8 @@ public:
      * \param argv - Array of arguments.
      */
     void parseOrExit(int argc, const char *const *argv);
+    void parseOrExit(int argc, const wchar_t *const *argv);
+    void parseOrExit(const std::vector<std::wstring> &args);
 
     /**
      * Same as the argc/argv overload above, for the
@@ -693,6 +705,27 @@ inline ParseOutcome CmdLine::parse(int argc, const char *const *argv) {
     return parse(args);
 }
 
+inline ParseOutcome CmdLine::parse(int argc, const wchar_t *const *argv) {
+    std::vector<std::wstring> args;
+    for (int i = 0; i < argc; ++i) args.emplace_back(argv[i]);
+    return parse(args);
+}
+
+inline ParseOutcome CmdLine::parse(const std::vector<std::wstring> &wideArgs) {
+    std::vector<std::string> args;
+    args.reserve(wideArgs.size());
+    try {
+        for (const auto &arg : wideArgs) args.push_back(ToUtf8(arg));
+    } catch (const UnicodeError &error) {
+        _pendingOutcome = std::nullopt;
+        CmdLineParseException exception(error.what());
+        _output->failure(*this, exception);
+        return {.outcome = Outcome::ParseError,
+                .error = ParseError{.message = exception.error()}};
+    }
+    return parse(args);
+}
+
 inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
     _pendingOutcome = std::nullopt;
 
@@ -885,6 +918,14 @@ inline void ExitOnOutcome(const ParseOutcome &result) {
 
 inline void CmdLine::parseOrExit(int argc, const char *const *argv) {
     internal::ExitOnOutcome(parse(argc, argv));
+}
+
+inline void CmdLine::parseOrExit(int argc, const wchar_t *const *argv) {
+    internal::ExitOnOutcome(parse(argc, argv));
+}
+
+inline void CmdLine::parseOrExit(const std::vector<std::wstring> &args) {
+    internal::ExitOnOutcome(parse(args));
 }
 
 inline void CmdLine::parseOrExit(std::vector<std::string> &args) {

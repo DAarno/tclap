@@ -46,7 +46,7 @@ public:
      * \param allowed - vector of allowed values.
      */
     explicit ValuesConstraint(const std::vector<T> &allowed)
-        requires detail::OStreamInsertable<T>;
+        requires detail::ConstraintFormattable<T>;
 
     /**
      * Virtual destructor.
@@ -84,12 +84,12 @@ protected:
 
 template <class T>
 ValuesConstraint<T>::ValuesConstraint(const std::vector<T> &allowed)
-    requires detail::OStreamInsertable<T>
+    requires detail::ConstraintFormattable<T>
     : _allowed(allowed), _typeDesc("") {
     bool first = true;
     for (const T &value : _allowed) {
         std::ostringstream os;
-        os << value;
+        detail::WriteTextValue(os, value);
 
         if (!first) _typeDesc += "|";
         _typeDesc += os.str();

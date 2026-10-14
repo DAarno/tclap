@@ -90,6 +90,15 @@ void FuzzSpacePrintDirect(const unsigned char *data, size_t size) {
     const std::string rendered = sink.str();
     Require(!rendered.empty() && rendered[rendered.size() - 1] == '\n',
             "output/wrap", "rendering did not end in a newline");
+    bool validUtf8 = true;
+    try { (void)TCLAP::FromUtf8<std::u32string>(text); }
+    catch (const TCLAP::UnicodeError &) { validUtf8 = false; }
+    if (validUtf8) {
+        try { (void)TCLAP::FromUtf8<std::u32string>(rendered); }
+        catch (const TCLAP::UnicodeError &) {
+            Require(false, "output/wrap", "wrapping split a UTF-8 sequence");
+        }
+    }
     Require(SignificantBytes(text) == SignificantBytes(rendered),
             "output/wrap", "text bytes were lost, duplicated or reordered");
 }

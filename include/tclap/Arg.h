@@ -483,7 +483,7 @@ inline Arg::Arg(std::string flag, std::string name, std::string desc, bool req,
         throw(SpecificationException("Argument name cannot be blank",
                                      Arg::toString()));
 
-    if (_flag.length() > 1)
+    if (!_flag.empty() && !detail::SingleUnicodeScalar(_flag))
         throw(SpecificationException(
             "Argument flag can only be one character long", Arg::toString()));
 

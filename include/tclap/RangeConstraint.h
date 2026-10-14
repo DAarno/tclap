@@ -38,7 +38,7 @@ namespace TCLAP {
  * otherwise requires writing a full Constraint<T> subclass by hand.
  */
 template <typename T>
-    requires std::totally_ordered<T> && detail::OStreamInsertable<T>
+    requires std::totally_ordered<T> && detail::ConstraintFormattable<T>
 class RangeConstraint : public Constraint<T> {
 public:
     /**
@@ -49,14 +49,21 @@ public:
     RangeConstraint(T min, T max)
         : _min(std::move(min)), _max(std::move(max)), _shortId() {
         std::ostringstream os;
-        os << '[' << _min << '-' << _max << ']';
+        os << '[';
+        detail::WriteTextValue(os, _min);
+        os << '-';
+        detail::WriteTextValue(os, _max);
+        os << ']';
         _shortId = os.str();
     }
 
     [[nodiscard]] std::string description() const override {
         std::ostringstream os;
-        os << "value must be between " << _min << " and " << _max
-           << " (inclusive)";
+        os << "value must be between ";
+        detail::WriteTextValue(os, _min);
+        os << " and ";
+        detail::WriteTextValue(os, _max);
+        os << " (inclusive)";
         return os.str();
     }
 

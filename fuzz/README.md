@@ -261,3 +261,9 @@ non-negative floor at the top of `fmtPrintLine` (a negative value is treated
 as "no indent/offset", the sane fallback), and clamp the
 `maxChars -= secondLineOffset` subtraction to 0 via
 `std::min(maxChars, secondLineOffset)` instead of ever letting it underflow.
+
+Unicode regression (`fuzz_unicode`) checks UTF-8 validity using an independent
+byte-range oracle, all four Unicode string conversions, exact byte/scalar
+preservation, Unicode ValueArg matching and reset/recovery. Unicode wrapping
+seeds also exercise `fuzz_stdoutput`. These checks run in ordinary CTest and
+in optional Clang libFuzzer/ASan/UBSan builds.

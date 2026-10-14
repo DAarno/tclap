@@ -28,6 +28,7 @@
 #include <tclap/ArgGroup.h>
 #include <tclap/CmdLineInterface.h>
 #include <tclap/CmdLineOutput.h>
+#include <tclap/Unicode.h>
 
 #include <algorithm>
 #include <cctype>
@@ -149,8 +150,8 @@ inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
 }
 
 inline bool cmpSwitch(const char &a, const char &b) {
-    int lowa = std::tolower(a);
-    int lowb = std::tolower(b);
+    int lowa = std::tolower(static_cast<unsigned char>(a));
+    int lowb = std::tolower(static_cast<unsigned char>(b));
 
     if (lowa == lowb) {
         return a < b;
@@ -255,8 +256,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     std::ostringstream outp;
     outp << _cmd.programName() + " ";
 
-    std::string switches = _cmd.dialect().flagPrefix;
-    bool hasShortSwitches = false;
+    std::vector<std::string> switches;
 
     std::list<ArgGroup *> exclusiveGroups;
     std::list<ArgGroup *> nonExclusiveGroups;
@@ -290,15 +290,24 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     for (ArgGroup *group : nonExclusiveGroups) {
         for (Arg *arg : *group) {
             if (internal::IsVisibleShortSwitch(*arg)) {
-                switches += arg->flag();
-                hasShortSwitches = true;
+                switches.push_back(arg->flag());
             }
         }
 
-        std::ranges::sort(switches, cmpSwitch);
     }
 
-    if (hasShortSwitches) outp << std::format(" [{}]", switches);
+    // Sort complete flags, never the bytes within a UTF-8 scalar. ASCII keeps
+    // its historical AaBb ordering; other flags follow scalar order.
+    std::ranges::sort(switches, [](const std::string &a, const std::string &b) {
+        if (a.size() == 1 && b.size() == 1) return cmpSwitch(a[0], b[0]);
+        std::size_t apos = 0, bpos = 0;
+        return detail::DecodeUtf8(a, apos) < detail::DecodeUtf8(b, bpos);
+    });
+    if (!switches.empty()) {
+        outp << " [" << _cmd.dialect().flagPrefix;
+        for (const auto &flag : switches) outp << flag;
+        outp << ']';
+    }
 
     // Now do long switches (e.g., --version, but no -v)
     std::vector<Arg *> longSwitches;
@@ -368,7 +377,8 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     }
 
     // if the program name is too long, then adjust the second line offset
-    int secondLineOffset = static_cast<int>(_cmd.programName().length()) + 2;
+    int secondLineOffset =
+        static_cast<int>(detail::TextLength(_cmd.programName())) + 2;
     if (secondLineOffset > 75 / 2) secondLineOffset = static_cast<int>(75 / 2);
 
     spacePrint(os, outp.str(), 75, 3, secondLineOffset);
@@ -471,7 +481,9 @@ inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
     size_t to = 0;
     size_t end = s.length();
     for (;;) {
-        if (end - from <= maxChars) {
+        const auto limit = from + detail::TextPrefixBytes(
+                                      std::string_view(s).substr(from), maxChars);
+        if (end <= limit) {
             // Rest of string fits on line, just print the remainder
             os << std::format("{}{}", indentString, s.substr(from))
                << std::endl;
@@ -482,30 +494,27 @@ inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
         // (to) by finding the place where it is too late (tooFar) and
         // taking the previous one.
         size_t tooFar = to;
-        while (tooFar - from <= maxChars && tooFar != std::string::npos) {
+        while (tooFar != std::string::npos && tooFar <= limit) {
             to = tooFar;
             tooFar = s.find_first_of(splitChars, to + 1);
         }
 
-        if (to == from) {
-            // In case there was no good place to break the string,
-            // just break it in the middle of a word at line length.
-            // maxChars is unsigned and can be 0 here (when indentSpaces
-            // >= maxWidth), so guard the subtraction: falling back to
-            // "from" instead of underflowing to SIZE_MAX keeps the
-            // s[to] access below in bounds.
-            to = maxChars > 0 ? from + maxChars - 1 : from;
-        }
-
-        if (s[to] != ' ') {
-            // Include delimiter before line break, unless it's a space
-            to++;
+        const bool hardBreak = to == from;
+        if (hardBreak) {
+            // Even with zero available width, consume one complete scalar to
+            // guarantee progress. Invalid narrow bytes remain byte preserving.
+            to = from + detail::TextPrefixBytes(
+                            std::string_view(s).substr(from),
+                            std::max<std::size_t>(maxChars, 1));
+        } else if (s[to] != ' ') {
+            // Include an ASCII delimiter before the break, unless a space.
+            ++to;
         }
 
         os << std::format("{}{}\n", indentString, s.substr(from, to - from));
 
         // Avoid printing extra white space at start of a line
-        for (; s[to] == ' '; to++) {
+        for (; to < end && s[to] == ' '; to++) {
         }
         from = to;
 

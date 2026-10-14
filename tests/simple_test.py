@@ -18,7 +18,7 @@ def test(target, args, head=None, expect_fail=False):
     test = subprocess.Popen([test_bin] + args,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
-                            universal_newlines=True)
+                            universal_newlines=True, encoding="utf-8")
     (stdout, _) = test.communicate()
     if expect_fail:
         if test.returncode == 0:
@@ -31,7 +31,7 @@ def test(target, args, head=None, expect_fail=False):
         sys.exit(1)
 
     got = stdout.split('\n')[:head]
-    with open(os.path.join(os.path.dirname(sys.argv[0]), test_name) + '.out') as inp:
+    with open(os.path.join(os.path.dirname(sys.argv[0]), test_name) + '.out', encoding='utf-8') as inp:
         want = inp.read().split('\n')
 
     if got == want:

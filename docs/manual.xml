@@ -998,6 +998,62 @@ using its owned argument references and registered arguments' dialect.
 </para>
 </sect1>
 
+<sect1 id="UNICODE">
+<title>Unicode text and wide command lines</title>
+<para>TCLAP uses UTF-8 in argument names, descriptions, translated messages,
+help, errors and metadata snapshots. Registration syntax is unchanged.
+Use <literal>ToUtf8(L"名前")</literal> or <literal>ToUtf8(u8"名前")</literal>
+to convert wide or C++20 UTF-8 literals to a specification's
+<literal>std::string</literal> fields. Include <literal>tclap/Unicode.h</literal>
+when using the conversion utilities on their own.</para>
+<programlisting><![CDATA[
+TCLAP::ValueArg<std::wstring> name({
+    .flag = TCLAP::ToUtf8(L"雪"),
+    .name = TCLAP::ToUtf8(L"名前"),
+    .description = TCLAP::ToUtf8(L"氏名"),
+});
+TCLAP::CmdLine cmd({.message = "Unicode example"});
+cmd.add(name);
+cmd.parseOrExit(argc, argv);
+std::cout << TCLAP::ToUtf8(name.value()) << '\n';
+]]></programlisting>
+<para>On Windows, use <literal>int wmain(int argc, wchar_t **argv)</literal>
+to receive the native UTF-16 command line; the wide <literal>parse</literal>
+and <literal>parseOrExit</literal> overloads convert it to UTF-8 without depending
+on the ANSI code page. On POSIX, ordinary <literal>main</literal> receives bytes;
+supply UTF-8 for Unicode text. The wide vector overload accepts a
+<literal>const std::vector&lt;std::wstring&gt;&amp;</literal> including the program
+name and leaves it intact. The narrow mutable vector overload still erases the
+program name. Call <literal>reset()</literal> before parser reuse.</para>
+<para>All four value argument families accept <literal>std::wstring</literal>,
+<literal>std::u8string</literal>, <literal>std::u16string</literal> and
+<literal>std::u32string</literal>. Tokens are decoded from UTF-8 and preserve
+spaces, embedded NULs, byte-order marks and combining sequences. Values,
+range and comparison constraints also support these types and generate UTF-8
+help. Predicate constraints receive the native string value.</para>
+<para>Conversion utilities <literal>ToUtf8</literal> and
+<literal>FromUtf8&lt;String&gt;</literal> are locale independent.
+<literal>wchar_t</literal> uses UTF-16 on 16-bit platforms and UTF-32 on 32-bit
+platforms. Invalid sequences throw <literal>UnicodeError</literal>, derived
+from <literal>std::invalid_argument</literal>. Parsing malformed Unicode values
+returns <literal>ParseError</literal> with ordinary failure output. Malformed
+wide command lines fail conversion before any arguments are matched.
+Ordinary <literal>std::string</literal> values remain byte preserving, including
+non-UTF-8 POSIX filenames. There is no normalization or case folding; option
+matching remains exact.</para>
+<para>A short flag can be one Unicode scalar; combined flags such as
+<literal>-é😀</literal> work with switches and repeated switches. Delimiters and
+short prefixes retain their single-byte syntax. Help wrapping counts Unicode
+scalars and never splits a valid UTF-8 sequence; it does not calculate terminal
+cell widths or grapheme clusters. Applications needing specialized typography
+can supply a custom output implementation.</para>
+<para>Output uses UTF-8 bytes, including DocBook output and redirected streams.
+A Windows application may configure its console output code page for UTF-8
+when displaying these bytes. TCLAP does not change console settings, locales
+or other process-global state. See <literal>examples/test131.cpp</literal> for
+an example using native Windows wide input and UTF-8 output.</para>
+</sect1>
+
 <sect1 id="CONSTRAINT">
 <title>I want to constrain the values allowed for a particular
 argument...</title>
@@ -1101,8 +1157,9 @@ allows infinite values, while a finite range rejects them. No bound arithmetic
 is used, avoiding overflow at integer limits.
 </para>
 <para>
-The types must support the corresponding comparisons and insertion into an
-output stream for generated text. Strings use their lexicographic ordering.
+The types must support the corresponding comparisons and either insertion into
+an output stream or the built-in Unicode string conversion for generated text.
+Strings use their usual lexicographic code-unit ordering, without collation.
 Short IDs such as <code>[&gt;0]</code> and <code>[-1-9]</code> are formatted once
 at construction; descriptions such as <quote>value must be greater than 0</quote>
 are formatted on request. Keep constraints alive and at a stable address while
@@ -1110,8 +1167,9 @@ arguments borrow them. Constraints still check supplied values only; omitted
 optional defaults and parser reset behavior are unchanged. See
 <filename>examples/test130.cpp</filename> for a complete program.
 </para>
-<para>Comparison constraints require a totally ordered, streamable value
-type. They copy lvalue bounds and move rvalue bounds, including move-only
+<para>Comparison constraints require a totally ordered value type that supports
+stream insertion or is one of the supported Unicode string types. They copy
+lvalue bounds and move rvalue bounds, including move-only
 objects. The inclusive range also owns its bounds.</para>
 </sect2>
 
@@ -1598,7 +1656,11 @@ category. Every parse creates a fresh <code>T{}</code>; supplying an explicit
 <para>
 Ordinary arithmetic types use <function>std::from_chars</function>, except
 bool and plain char that use stream extraction. Wide/UTF character types do
-not automatically satisfy Parseable. A custom ValueLike type
+not automatically satisfy Parseable. Unicode string types
+(<literal>std::wstring</literal>, <literal>std::u8string</literal>,
+<literal>std::u16string</literal> and <literal>std::u32string</literal>) are
+supported directly by UTF-8 conversion; see <link linkend="UNICODE">Unicode
+support</link>. A custom ValueLike type
 needs <code>operator&gt;&gt;(std::istream&amp;, T&amp;)</code>. A StringLike type
 is selected by an <classname>ArgTraits&lt;T&gt;</classname> specialization or
 <code>T::ValueCategory</code> (including inheritance from

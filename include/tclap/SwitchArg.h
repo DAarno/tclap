@@ -178,15 +178,14 @@ inline bool SwitchArg::combinedSwitchesMatch(
     // ok, we're not specifying a ValueArg, so we know that we have
     // a combined switch list.
     if (!_flag.empty() && _flag[0] != Arg::flagStartString()[0]) {
-        for (std::string::size_type i = 1; i < combinedSwitches.size(); i++) {
-            if (!consumed[i] && combinedSwitches[i] == _flag[0]) {
-                // Claim this position so no other Arg's match attempt
-                // (SwitchArg combining further, or a ValueArg/MultiArg
-                // via _hasConsumedChars()) sees it as still available.
-                _setBy = Arg::flagStartString() + combinedSwitches[i];
-                consumed[i] = true;
+        for (std::size_t i = 1; i < combinedSwitches.size();) {
+            const auto next = detail::NextTextPosition(combinedSwitches, i);
+            if (!consumed[i] && combinedSwitches.substr(i, next - i) == _flag) {
+                _setBy = Arg::flagStartString() + _flag;
+                for (auto j = i; j < next; ++j) consumed[j] = true;
                 return true;
             }
+            i = next;
         }
     }
 

@@ -38,7 +38,7 @@ namespace internal {
 template <class T>
 concept OrderedConstraintValue =
     std::totally_ordered<T> &&
-    requires(std::ostream &out, const T &value) { out << value; };
+    detail::ConstraintFormattable<T>;
 
 // A single owned threshold supplies validation and both forms of help text.
 template <class T, class Compare>
@@ -51,14 +51,17 @@ public:
                    const std::string &symbol)
         : _bound(std::forward<Bound>(bound)), _relation(relation), _shortId() {
         std::ostringstream out;
-        out << '[' << symbol << _bound << ']';
+        out << '[' << symbol;
+        detail::WriteTextValue(out, _bound);
+        out << ']';
         _shortId = out.str();
     }
 
     bool operator()(const T &value) const { return Compare()(value, _bound); }
     std::string description() const {
         std::ostringstream out;
-        out << "value must be " << _relation << ' ' << _bound;
+        out << "value must be " << _relation << ' ';
+        detail::WriteTextValue(out, _bound);
         return out.str();
     }
     std::string shortID() const { return _shortId; }
@@ -90,8 +93,9 @@ protected:
 
 /**
  * Accepts values strictly less than an owned upper bound.
- * T must be totally ordered and support ostream insertion for generated help
- * text. Lvalue bounds are copied; rvalue bounds are moved and owned.
+ * T must be totally ordered and support ostream insertion or be a supported
+ * Unicode string type for generated help text. Lvalue bounds are copied;
+ * rvalue bounds are moved and owned.
  * Short IDs are cached at construction; descriptions are formatted on request.
  * Floating-point unordered comparisons fail, including NaN bounds/values.
  * Args borrow these constraints just as they borrow any Constraint<T>.

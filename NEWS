@@ -1,3 +1,11 @@
+Unicode text and wide input
+---------------------------
+
+* UTF-8/UTF-16/UTF-32/wstring values and native Windows wchar_t argv support.
+* Locale-independent Unicode.h conversion utilities reject malformed text.
+* Unicode short flags, combined switches and UTF-8 constraint metadata.
+* Help wrapping preserves UTF-8 scalar boundaries; raw string bytes remain intact.
+
 Ordered value constraints
 -------------------------
 
