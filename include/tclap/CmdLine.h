@@ -38,6 +38,7 @@
 #include <tclap/StdOutput.h>
 
 #include <tclap/Constraint.h>
+#include <tclap/PredicateConstraint.h>
 #include <tclap/ValuesConstraint.h>
 
 #include <tclap/ArgGroup.h>
