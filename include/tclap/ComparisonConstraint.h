@@ -25,20 +25,31 @@
 
 #include <tclap/PredicateConstraint.h>
 
+#include <concepts>
 #include <functional>
+#include <ostream>
 #include <sstream>
 #include <string>
+#include <utility>
 
 namespace TCLAP {
 namespace internal {
 
+template <class T>
+concept OrderedConstraintValue =
+    std::totally_ordered<T> &&
+    requires(std::ostream &out, const T &value) { out << value; };
+
 // A single owned threshold supplies validation and both forms of help text.
 template <class T, class Compare>
+    requires OrderedConstraintValue<T>
 class ComparisonRule {
 public:
-    ComparisonRule(const T &bound, const std::string &relation,
+    template <class Bound>
+        requires std::constructible_from<T, Bound &&>
+    ComparisonRule(Bound &&bound, const std::string &relation,
                    const std::string &symbol)
-        : _bound(bound), _relation(relation), _shortId() {
+        : _bound(std::forward<Bound>(bound)), _relation(relation), _shortId() {
         std::ostringstream out;
         out << '[' << symbol << _bound << ']';
         _shortId = out.str();
@@ -59,15 +70,19 @@ private:
 };
 
 template <class T, class Compare>
+    requires OrderedConstraintValue<T>
 class ComparisonConstraintBase
     : public PredicateConstraint<T, ComparisonRule<T, Compare>,
                                  RuleConstraintText> {
 protected:
-    ComparisonConstraintBase(const T &bound, const std::string &relation,
+    template <class Bound>
+        requires std::constructible_from<T, Bound &&>
+    ComparisonConstraintBase(Bound &&bound, const std::string &relation,
                              const std::string &symbol)
         : PredicateConstraint<T, ComparisonRule<T, Compare>,
                               RuleConstraintText>(
-              ComparisonRule<T, Compare>(bound, relation, symbol),
+              ComparisonRule<T, Compare>(std::forward<Bound>(bound), relation,
+                                         symbol),
               RuleConstraintText()) {}
 };
 
@@ -75,48 +90,61 @@ protected:
 
 /**
  * Accepts values strictly less than an owned upper bound.
- * T must support comparison and ostream insertion for generated help text.
+ * T must be totally ordered and support ostream insertion for generated help
+ * text. Lvalue bounds are copied; rvalue bounds are moved and owned.
  * Short IDs are cached at construction; descriptions are formatted on request.
  * Floating-point unordered comparisons fail, including NaN bounds/values.
  * Args borrow these constraints just as they borrow any Constraint<T>.
  */
 template <class T>
+    requires internal::OrderedConstraintValue<T>
 class LessThanConstraint
     : public internal::ComparisonConstraintBase<T, std::less<T> > {
 public:
-    explicit LessThanConstraint(const T &bound)
+    template <class Bound>
+        requires std::constructible_from<T, Bound &&>
+    explicit LessThanConstraint(Bound &&bound)
         : internal::ComparisonConstraintBase<T, std::less<T> >(
-              bound, "less than", "<") {}
+              std::forward<Bound>(bound), "less than", "<") {}
 };
 
 /** Accepts values less than or equal to an owned upper bound. */
 template <class T>
+    requires internal::OrderedConstraintValue<T>
 class LessThanOrEqualConstraint
     : public internal::ComparisonConstraintBase<T, std::less_equal<T> > {
 public:
-    explicit LessThanOrEqualConstraint(const T &bound)
+    template <class Bound>
+        requires std::constructible_from<T, Bound &&>
+    explicit LessThanOrEqualConstraint(Bound &&bound)
         : internal::ComparisonConstraintBase<T, std::less_equal<T> >(
-              bound, "less than or equal to", "<=") {}
+              std::forward<Bound>(bound), "less than or equal to", "<=") {}
 };
 
 /** Accepts values strictly greater than an owned lower bound. */
 template <class T>
+    requires internal::OrderedConstraintValue<T>
 class GreaterThanConstraint
     : public internal::ComparisonConstraintBase<T, std::greater<T> > {
 public:
-    explicit GreaterThanConstraint(const T &bound)
+    template <class Bound>
+        requires std::constructible_from<T, Bound &&>
+    explicit GreaterThanConstraint(Bound &&bound)
         : internal::ComparisonConstraintBase<T, std::greater<T> >(
-              bound, "greater than", ">") {}
+              std::forward<Bound>(bound), "greater than", ">") {}
 };
 
 /** Accepts values greater than or equal to an owned lower bound. */
 template <class T>
+    requires internal::OrderedConstraintValue<T>
 class GreaterThanOrEqualConstraint
     : public internal::ComparisonConstraintBase<T, std::greater_equal<T> > {
 public:
-    explicit GreaterThanOrEqualConstraint(const T &bound)
+    template <class Bound>
+        requires std::constructible_from<T, Bound &&>
+    explicit GreaterThanOrEqualConstraint(Bound &&bound)
         : internal::ComparisonConstraintBase<T, std::greater_equal<T> >(
-              bound, "greater than or equal to", ">=") {}
+              std::forward<Bound>(bound), "greater than or equal to", ">=") {}
 };
 
 }  // namespace TCLAP

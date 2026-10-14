@@ -972,8 +972,9 @@ arguments borrow them. Constraints still check supplied values only; omitted
 optional defaults and parser reset behavior are unchanged. See
 <filename>examples/test130.cpp</filename> for a complete program.
 </para>
-<para>The implementation supports C++98 and copies its bounds. Types need
-not be default constructible merely to construct a constraint.</para>
+<para>Comparison constraints require a totally ordered, streamable value
+type. They copy lvalue bounds and move rvalue bounds, including move-only
+objects. The inclusive range also owns its bounds.</para>
 </sect2>
 
 <sect2 id="PREDICATE_CONSTRAINT">

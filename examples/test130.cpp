@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
                                &positive);
         TCLAP::ValueArg<int> n("n", "number", "integer from -1 to 9", true, 0,
                                &interval);
-        TCLAP::CmdLine cmd("ordered constraints", ' ', "1.4");
+        TCLAP::CmdLine cmd("ordered constraints", ' ', "1.6");
         cmd.add(p);
         cmd.add(n);
         cmd.parse(argc, argv);

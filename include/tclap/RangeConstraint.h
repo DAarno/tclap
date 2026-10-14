@@ -25,8 +25,11 @@
 
 #include <tclap/Constraint.h>
 
+#include <concepts>
+#include <ostream>
 #include <sstream>
 #include <string>
+#include <utility>
 
 namespace TCLAP {
 
@@ -34,11 +37,10 @@ namespace TCLAP {
  * A Constraint that requires a value to fall within a closed
  * [min, max] range, for the common "between X and Y" case that
  * otherwise requires writing a full Constraint<T> subclass by hand.
- * T must support <= and ostream insertion. Bounds are copied and owned.
- * Short IDs are cached; descriptions are formatted on request. Reversed or
- * unordered bounds accept no values; omitted optional defaults are unchecked.
  */
-template <class T>
+template <typename T>
+    requires std::totally_ordered<T> &&
+             requires(std::ostream &out, const T &value) { out << value; }
 class RangeConstraint : public Constraint<T> {
 public:
     /**
@@ -46,23 +48,23 @@ public:
      * \param min - The smallest value that satisfies the constraint.
      * \param max - The largest value that satisfies the constraint.
      */
-    RangeConstraint(const T &min, const T &max)
-        : _min(min), _max(max), _shortId() {
+    RangeConstraint(T min, T max)
+        : _min(std::move(min)), _max(std::move(max)), _shortId() {
         std::ostringstream os;
         os << '[' << _min << '-' << _max << ']';
         _shortId = os.str();
     }
 
-    std::string description() const {
+    [[nodiscard]] std::string description() const override {
         std::ostringstream os;
         os << "value must be between " << _min << " and " << _max
            << " (inclusive)";
         return os.str();
     }
 
-    std::string shortID() const { return _shortId; }
+    [[nodiscard]] std::string shortID() const override { return _shortId; }
 
-    bool check(const T &value) const {
+    bool check(const T &value) const override {
         // Positive comparisons also reject unordered floating-point values.
         return _min <= value && value <= _max;
     }
