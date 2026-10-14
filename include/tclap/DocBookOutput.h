@@ -337,6 +337,23 @@ inline void DocBookOutput::printLongArg(const ArgGroup &group) const {
         std::cout << "</option>\n";
         std::cout << "</term>\n";
 
+        for (const auto &alias : a.aliases()) {
+            for (int spelling = 0; spelling < 2; ++spelling) {
+                const std::string &label =
+                    spelling == 0 ? alias.flag : alias.name;
+                if (label.empty()) continue;
+                std::cout << "<term><option>"
+                          << escapeXml((spelling == 0 ? a.flagStartString()
+                                                      : a.nameStartString()) +
+                                       label);
+                if (a.isValueRequired())
+                    std::cout << escapeXml(std::string(1, theDelimiter))
+                              << "<replaceable>" << escapeXml(valueLabel(a))
+                              << "</replaceable>";
+                std::cout << "</option></term>\n";
+            }
+        }
+
         std::cout << "<listitem>\n";
         std::cout << "<para>\n";
         std::cout << escapeXml(desc) << '\n';

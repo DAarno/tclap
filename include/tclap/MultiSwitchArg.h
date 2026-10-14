@@ -54,6 +54,8 @@ struct MultiSwitchArgSpec {
     /// An optional callback invoked as soon as this Arg is matched. You
     /// probably should not use this unless you have a very good reason.
     Arg::Callback onMatch = nullptr;
+    /// Additional spellings configured before registration.
+    std::vector<ArgAlias> aliases = {};
 };
 
 /**
@@ -124,6 +126,7 @@ inline MultiSwitchArg::MultiSwitchArg(MultiSwitchArgSpec spec)
           .description = std::move(spec.description),
           .defaultValue = false,
           .onMatch = std::move(spec.onMatch),
+          .aliases = std::move(spec.aliases),
       }),
       _value(spec.initialValue),
       _default(spec.initialValue) {}

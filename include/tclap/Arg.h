@@ -36,6 +36,7 @@
 #include <tclap/StandardTraits.h>
 #include <tclap/ValueParsing.h>
 
+#include <algorithm>
 #include <concepts>
 #include <cstdio>
 #include <functional>
@@ -48,6 +49,12 @@
 #include <vector>
 
 namespace TCLAP {
+
+/** An additional short flag and/or long name for the same argument. */
+struct ArgAlias {
+    std::string flag;
+    std::string name;
+};
 
 /**
  * A virtual base class that defines the essential data for all arguments.
@@ -99,7 +106,20 @@ private:
     static inline const std::string kDefaultFlagPrefix = "-";
     static inline const std::string kDefaultNamePrefix = "--";
 
+private:
+    std::vector<ArgAlias> _aliases;
+    // Registration validates against the destination parser's conventions.
+    void _validateAliases(char delimiter, const std::string &flagPrefix,
+                          const std::string &namePrefix) const;
+    bool _matchesDeclaredToken(const std::string &token,
+                               const std::string &flagPrefix,
+                               const std::string &namePrefix) const;
+    bool _aliasConflictsWith(const Arg &other, const std::string &flagPrefix,
+                             const std::string &namePrefix) const;
+
 protected:
+    [[nodiscard]] bool matchesShortFlag(const std::string &flag) const noexcept;
+    [[nodiscard]] bool matchesLongName(const std::string &name) const noexcept;
     /**
      * The single char flag used to identify the argument.
      * This value (preceded by a dash {-}), can be used to identify
@@ -206,6 +226,19 @@ protected:
         bool valreq, Callback onMatch = nullptr);
 
 public:
+    /** Add equivalent spellings before registration. Either may be blank,
+     * but not both. Positional arguments cannot have aliases. Registration
+     * freezes aliases; reset() retains them. Values, callbacks and group
+     * membership are shared with the canonical argument. Spec::aliases also
+     * configures spellings during construction, including for addOwned().
+     */
+    Arg &addAlias(std::string flag, std::string name = {});
+
+    /** Alias spellings in insertion order; no prefixes are stored. */
+    [[nodiscard]] const std::vector<ArgAlias> &aliases() const noexcept {
+        return _aliases;
+    }
+
     /**
      * Destructor.
      */
@@ -462,7 +495,8 @@ using ArgVectorIterator = std::vector<Arg *>::const_iterator;
 
 inline Arg::Arg(std::string flag, std::string name, std::string desc, bool req,
                 bool valreq, Callback onMatch)
-    : _flag(std::move(flag)),
+    : _aliases(),
+      _flag(std::move(flag)),
       _name(std::move(name)),
       _description(std::move(desc)),
       _required(req),
@@ -522,24 +556,141 @@ inline std::string Arg::shortID(const std::string &valueId) const {
 inline std::string Arg::longID(const std::string &valueId) const {
     std::string id = "";
 
-    if (!_flag.empty()) {
+    if (_flag != "") {
         id += Arg::flagStartString() + _flag;
 
-        if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+        if (_valueRequired) id += std::string(1, delimiter()) + valueId;
 
         id += ",  ";
     }
 
     id += Arg::nameStartString() + _name;
 
-    if (_valueRequired) id += std::string(1, Arg::delimiter()) + valueId;
+    if (_valueRequired) id += std::string(1, delimiter()) + valueId;
 
+    for (const auto &alias : _aliases) {
+        if (!alias.flag.empty()) {
+            id += ",  " + flagStartString() + alias.flag;
+            if (_valueRequired) id += std::string(1, delimiter()) + valueId;
+        }
+        if (!alias.name.empty()) {
+            id += ",  " + nameStartString() + alias.name;
+            if (_valueRequired) id += std::string(1, delimiter()) + valueId;
+        }
+    }
     return id;
 }
 
-inline bool Arg::conflictsWith(const Arg &other) const noexcept {
-    return this == &other || _name == other._name ||
-           (!_flag.empty() && _flag == other._flag);
+inline bool Arg::_matchesDeclaredToken(const std::string &token,
+                                       const std::string &flagPrefix,
+                                       const std::string &namePrefix) const {
+    if ((!_flag.empty() && token == flagPrefix + _flag) ||
+        token == namePrefix + _name)
+        return true;
+    for (const auto &alias : _aliases)
+        if ((!alias.flag.empty() && token == flagPrefix + alias.flag) ||
+            (!alias.name.empty() && token == namePrefix + alias.name))
+            return true;
+    return false;
+}
+
+inline bool Arg::_aliasConflictsWith(const Arg &other,
+                                     const std::string &flagPrefix,
+                                     const std::string &namePrefix) const {
+    for (const auto &alias : _aliases)
+        if ((!alias.flag.empty() &&
+             other._matchesDeclaredToken(flagPrefix + alias.flag, flagPrefix,
+                                         namePrefix)) ||
+            (!alias.name.empty() &&
+             other._matchesDeclaredToken(namePrefix + alias.name, flagPrefix,
+                                         namePrefix)))
+            return true;
+    return false;
+}
+
+inline void Arg::_validateAliases(char delimiter, const std::string &flagPrefix,
+                                  const std::string &namePrefix) const {
+    if (_aliases.empty()) return;
+    std::vector<std::string> tokens;
+    if (!_flag.empty()) tokens.push_back(flagPrefix + _flag);
+    tokens.push_back(namePrefix + _name);
+    for (const auto &alias : _aliases) {
+        if ((!alias.flag.empty() &&
+             (alias.flag == flagPrefix || alias.flag == namePrefix)) ||
+            (!alias.name.empty() &&
+             ((!flagPrefix.empty() && alias.name.find(flagPrefix) == 0) ||
+              (!namePrefix.empty() && alias.name.find(namePrefix) == 0))) ||
+            (_valueRequired &&
+             (alias.flag.find(delimiter) != std::string::npos ||
+              alias.name.find(delimiter) != std::string::npos)))
+            throw SpecificationException("Alias conflicts with parser dialect",
+                                         toString());
+        for (int spelling = 0; spelling < 2; ++spelling) {
+            const std::string &label = spelling == 0 ? alias.flag : alias.name;
+            if (label.empty()) continue;
+            const std::string token =
+                (spelling == 0 ? flagPrefix : namePrefix) + label;
+            for (const auto &existing : tokens)
+                if (existing == token)
+                    throw SpecificationException(
+                        "Duplicate argument alias token", toString());
+            tokens.push_back(token);
+        }
+    }
+}
+
+inline bool Arg::matchesShortFlag(const std::string &flag) const noexcept {
+    if (flag.empty()) return false;
+    if (flag == _flag) return true;
+    for (const auto &alias : _aliases)
+        if (flag == alias.flag) return true;
+    return false;
+}
+
+inline bool Arg::matchesLongName(const std::string &name) const noexcept {
+    if (name.empty()) return false;
+    if (name == _name) return true;
+    for (const auto &alias : _aliases)
+        if (name == alias.name) return true;
+    return false;
+}
+
+inline Arg &Arg::addAlias(std::string flag, std::string name) {
+    if (_dialect)
+        throw SpecificationException(
+            "Aliases must be added before registration", toString());
+    if (!hasLabel())
+        throw SpecificationException("Positional arguments cannot have aliases",
+                                     toString());
+    if ((flag.empty() && name.empty()) ||
+        (!flag.empty() && !detail::SingleUnicodeScalar(flag)) ||
+        flag == flagStartString() || flag == nameStartString() ||
+        flag.find_first_of(" \t\r\n\v\f\a") != std::string::npos ||
+        flag.find('\0') != std::string::npos ||
+        name.find_first_of(" \t\r\n\v\f") != std::string::npos ||
+        name.find('\0') != std::string::npos ||
+        (!name.empty() && (name.find(flagStartString()) == 0 ||
+                           name.find(nameStartString()) == 0)))
+        throw SpecificationException("Invalid argument alias", toString());
+    const std::string labels = flag + name;
+    for (unsigned char c : labels)
+        if (c < 0x20 || c == '\x7f')
+            throw SpecificationException("Control byte in argument alias",
+                                         toString());
+    if (matchesShortFlag(flag) || matchesLongName(name))
+        throw SpecificationException("Duplicate argument alias", toString());
+    _aliases.push_back({std::move(flag), std::move(name)});
+    return *this;
+}
+
+inline bool Arg::conflictsWith(const Arg &a) const noexcept {
+    if (this == &a || _name == a._name || matchesLongName(a._name) ||
+        matchesShortFlag(a._flag))
+        return true;
+    for (const auto &alias : a._aliases)
+        if (matchesShortFlag(alias.flag) || matchesLongName(alias.name))
+            return true;
+    return false;
 }
 
 inline const std::string &Arg::flag() const noexcept { return _flag; }
@@ -555,8 +706,13 @@ inline bool Arg::isSet() const noexcept { return _alreadySet; }
 inline bool Arg::isIgnoreable() const noexcept { return _ignoreable; }
 
 inline bool Arg::argMatches(const std::string &argFlag) const {
-    return (argFlag == Arg::flagStartString() + _flag && !_flag.empty()) ||
-           argFlag == Arg::nameStartString() + _name;
+    const std::string shortPrefix = flagStartString();
+    const std::string longPrefix = nameStartString();
+    return argFlag == longPrefix + _name ||
+           (argFlag.find(shortPrefix) == 0 &&
+            matchesShortFlag(argFlag.substr(shortPrefix.size()))) ||
+           (argFlag.find(longPrefix) == 0 &&
+            matchesLongName(argFlag.substr(longPrefix.size())));
 }
 
 inline std::string Arg::toString() const {

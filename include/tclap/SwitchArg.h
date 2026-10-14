@@ -59,6 +59,8 @@ struct SwitchArgSpec {
     /// An optional callback invoked as soon as this Arg is matched. You
     /// probably should not use this unless you have a very good reason.
     Arg::Callback onMatch = nullptr;
+    /// Additional spellings configured before registration.
+    std::vector<ArgAlias> aliases = {};
 };
 
 /**
@@ -149,7 +151,10 @@ inline SwitchArg::SwitchArg(SwitchArgSpec spec)
     : Arg(std::move(spec.flag), std::move(spec.name),
           std::move(spec.description), false, false, std::move(spec.onMatch)),
       _value(spec.defaultValue),
-      _default(spec.defaultValue) {}
+      _default(spec.defaultValue) {
+    for (auto &alias : spec.aliases)
+        addAlias(std::move(alias.flag), std::move(alias.name));
+}
 
 inline bool SwitchArg::lastCombined(const std::string &combinedSwitches,
                                     const std::vector<bool> &consumed) {
@@ -177,16 +182,16 @@ inline bool SwitchArg::combinedSwitchesMatch(
 
     // ok, we're not specifying a ValueArg, so we know that we have
     // a combined switch list.
-    if (!_flag.empty() && _flag[0] != Arg::flagStartString()[0]) {
-        for (std::size_t i = 1; i < combinedSwitches.size();) {
-            const auto next = detail::NextTextPosition(combinedSwitches, i);
-            if (!consumed[i] && combinedSwitches.substr(i, next - i) == _flag) {
-                _setBy = Arg::flagStartString() + _flag;
-                for (auto j = i; j < next; ++j) consumed[j] = true;
-                return true;
-            }
-            i = next;
+    for (std::size_t i = 1; i < combinedSwitches.size();) {
+        const auto next = detail::NextTextPosition(combinedSwitches, i);
+        const auto flag = combinedSwitches.substr(i, next - i);
+        if (!consumed[i] && flag != Arg::flagStartString() &&
+            matchesShortFlag(flag)) {
+            _setBy = Arg::flagStartString() + flag;
+            for (auto j = i; j < next; ++j) consumed[j] = true;
+            return true;
         }
+        i = next;
     }
 
     // none of the switches passed in the list match.

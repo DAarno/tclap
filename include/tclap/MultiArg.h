@@ -71,6 +71,8 @@ struct MultiArgSpec {
     /// An optional callback invoked as soon as this Arg is matched. You
     /// probably should not use this unless you have a very good reason.
     Arg::Callback onMatch = nullptr;
+    /// Additional spellings configured before registration.
+    std::vector<ArgAlias> aliases = {};
 };
 
 /**
@@ -196,6 +198,8 @@ MultiArg<T>::MultiArg(MultiArgSpec<T> spec)
       _constraint(spec.constraint),
       _allowMore(false) {
     _acceptsMultipleValues = true;
+    for (auto &alias : spec.aliases)
+        addAlias(std::move(alias.flag), std::move(alias.name));
 }
 
 template <class T>

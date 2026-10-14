@@ -78,6 +78,8 @@ struct ValueArgSpec {
     /// An optional callback invoked as soon as this Arg is matched. You
     /// probably should not use this unless you have a very good reason.
     Arg::Callback onMatch = nullptr;
+    /// Additional spellings configured before registration.
+    std::vector<ArgAlias> aliases = {};
 };
 
 /**
@@ -192,7 +194,10 @@ ValueArg<T>::ValueArg(ValueArgSpec<T> spec)
       _typeDesc(spec.constraint != nullptr
                     ? Constraint<T>::shortID(spec.constraint)
                     : std::move(spec.typeDesc)),
-      _constraint(spec.constraint) {}
+      _constraint(spec.constraint) {
+    for (auto &alias : spec.aliases)
+        addAlias(std::move(alias.flag), std::move(alias.name));
+}
 
 /**
  * Implementation of processArg().

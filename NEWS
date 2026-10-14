@@ -23,3 +23,10 @@ Callable constraints
 * MakeRuleConstraint shares rule state with computed descriptions and short IDs.
 * C++20 MakeConstraint supports capturing lambdas, move-only callable
   state and const invocation. Empty callable objects fail at construction.
+
+Argument aliases
+----------------
+
+* Arg::addAlias and labeled specs' aliases field add equivalent spellings.
+* Unicode short aliases work in bundles; all aliases share argument state.
+* Detailed text/DocBook help lists typed aliases; metadata snapshots own them.

@@ -605,8 +605,16 @@ public:
     }
 
     void add(Arg &arg) {
-        if (std::ranges::any_of(_args, [&arg](const Arg *existing) {
-                return arg.conflictsWith(*existing);
+        arg._validateAliases(_cmd._dialect.delimiter, _cmd._dialect.flagPrefix,
+                             _cmd._dialect.namePrefix);
+        if (std::ranges::any_of(_args, [&arg, this](const Arg *existing) {
+                return arg.conflictsWith(*existing) ||
+                       arg._aliasConflictsWith(*existing,
+                                               _cmd._dialect.flagPrefix,
+                                               _cmd._dialect.namePrefix) ||
+                       existing->_aliasConflictsWith(arg,
+                                                     _cmd._dialect.flagPrefix,
+                                                     _cmd._dialect.namePrefix);
             })) {
             throw SpecificationException(
                 "Argument with same flag/name already exists!", arg.longID());

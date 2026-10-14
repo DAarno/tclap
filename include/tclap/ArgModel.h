@@ -67,6 +67,8 @@ struct ArgModel {
     /// / "--name <string>".
     std::string shortID;
     std::string longID;
+    /// Owned alias spellings in insertion order (without prefixes).
+    std::vector<ArgAlias> aliases;
 };
 
 /**
@@ -125,6 +127,7 @@ struct ArgGroupModel {
                 .visibleInHelp = arg->visibleInHelp(),
                 .shortID = arg->shortID(),
                 .longID = arg->longID(),
+                .aliases = arg->aliases(),
             });
         }
         groups.push_back(std::move(groupModel));
