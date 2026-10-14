@@ -199,14 +199,14 @@ void TestRules(Testing &t) {
     if (!throwingText.check(1))
         ERROR(t, "Rule metadata was called while checking");
     try {
-        throwingText.description();
+        static_cast<void>(throwingText.description());
         ERROR(t, "Description exception swallowed");
     } catch (const std::runtime_error &e) {
         if (std::string(e.what()) != "description sentinel")
             ERROR(t, "Description exception changed");
     }
     try {
-        throwingText.shortID();
+        static_cast<void>(throwingText.shortID());
         ERROR(t, "Short-ID exception swallowed");
     } catch (const std::logic_error &e) {
         if (std::string(e.what()) != "short ID sentinel")

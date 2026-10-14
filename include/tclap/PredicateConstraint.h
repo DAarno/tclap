@@ -25,6 +25,11 @@
 
 #include <tclap/Constraint.h>
 
+#include <concepts>
+#include <functional>
+#include <type_traits>
+#include <utility>
+
 #include <stdexcept>
 #include <string>
 
@@ -34,9 +39,8 @@ namespace internal {
 // Text policies receive the stored callable so a rule owns its state once.
 class FixedConstraintText {
 public:
-    FixedConstraintText(const std::string &description,
-                        const std::string &shortId)
-        : _description(description), _shortId(shortId) {}
+    FixedConstraintText(std::string description, std::string shortId)
+        : _description(std::move(description)), _shortId(std::move(shortId)) {}
 
     template <class Function>
     std::string description(const Function &) const {
@@ -54,10 +58,16 @@ private:
 
 struct RuleConstraintText {
     template <class Rule>
+        requires requires(const Rule &rule) {
+            { rule.description() } -> std::convertible_to<std::string>;
+        }
     std::string description(const Rule &rule) const {
         return rule.description();
     }
     template <class Rule>
+        requires requires(const Rule &rule) {
+            { rule.shortID() } -> std::convertible_to<std::string>;
+        }
     std::string shortID(const Rule &rule) const {
         return rule.shortID();
     }
@@ -66,42 +76,30 @@ struct RuleConstraintText {
 // Only known empty representations are checked; a functor's operator bool()
 // may have a meaning unrelated to whether it can be called.
 template <class Function>
-struct ValidateConstraintPredicate {
-    template <class Actual>
-    static void check(const Actual &) {}
-};
+struct IsConstraintStdFunction : std::false_type {};
+
+template <class Signature>
+struct IsConstraintStdFunction<std::function<Signature>> : std::true_type {};
 
 template <class Function>
-struct ValidateConstraintPredicate<const Function>
-    : ValidateConstraintPredicate<Function> {};
-template <class Function>
-struct ValidateConstraintPredicate<volatile Function>
-    : ValidateConstraintPredicate<Function> {};
-template <class Function>
-struct ValidateConstraintPredicate<const volatile Function>
-    : ValidateConstraintPredicate<Function> {};
-
-template <class Result, class Argument>
-struct ValidateConstraintPredicate<Result (*)(Argument)> {
-    static void check(Result (*function)(Argument)) {
+void ValidateConstraintPredicate(const Function &function) {
+    if constexpr ((std::is_pointer_v<Function> &&
+                   std::is_function_v<std::remove_pointer_t<Function>>) ||
+                  std::is_member_pointer_v<Function> ||
+                  IsConstraintStdFunction<std::remove_cv_t<Function>>::value) {
         if (!function)
             throw std::invalid_argument(
                 "PredicateConstraint requires a non-empty callable");
     }
-};
+}
 
-// noexcept is part of a function pointer's type since C++17. Keep the
-// C++98 branch safe when a consumer uses a newer language standard too.
-#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-template <class Result, class Argument>
-struct ValidateConstraintPredicate<Result (*)(Argument) noexcept> {
-    static void check(Result (*function)(Argument) noexcept) {
-        if (!function)
-            throw std::invalid_argument(
-                "PredicateConstraint requires a non-empty callable");
-    }
-};
-#endif
+template <class T, class Function, class Text>
+concept ConstraintPredicate =
+    std::predicate<const Function &, const T &> &&
+    requires(const Text &text, const Function &function) {
+        { text.description(function) } -> std::convertible_to<std::string>;
+        { text.shortID(function) } -> std::convertible_to<std::string>;
+    };
 
 }  // namespace internal
 
@@ -109,41 +107,59 @@ struct ValidateConstraintPredicate<Result (*)(Argument) noexcept> {
  * Adapts an owned function or const function object to Constraint<T>.
  *
  * Function must accept const T& and return a value convertible to bool. The
- * adapter copies the supplied callable; explicitly borrowed state inside it
+ * adapter copies lvalues and moves rvalues; explicitly borrowed state inside it
  * must remain alive. Args borrow the constraint itself: declare it before
  * the arguments using it and do not move it after binding its address.
- * Null function pointers are rejected with std::invalid_argument. Exceptions
- * from the callable or text policy propagate unchanged from these methods.
+ * Null function/member pointers and empty std::function objects are rejected
+ * with std::invalid_argument. Exceptions from the callable or text policy
+ * propagate unchanged from these methods.
  *
  * MakeConstraint() deduces Function. MakeRuleConstraint() also obtains
  * description()/shortID() from the same stored callable. Ordinary callers
  * supply separate description and short-ID strings and need no text policy.
  */
-template <class T, class Function = bool (*)(const T &),
+template <class T, class Function = std::function<bool(const T &)>,
           class Text = internal::FixedConstraintText>
+    requires internal::ConstraintPredicate<T, Function, Text>
 class PredicateConstraint : public Constraint<T> {
 public:
-    typedef Function Predicate;
+    using Predicate = Function;
 
-    /** Copies the callable and the two independently supplied strings. */
-    PredicateConstraint(const std::string &description,
-                        const std::string &shortId, const Function &function)
-        : _function(function), _text(description, shortId) {
-        internal::ValidateConstraintPredicate<Function>::check(_function);
+    /** Owns the callable and separate presentation strings. */
+    template <class F>
+        requires std::constructible_from<Function, F &&> &&
+                     std::constructible_from<Text, std::string, std::string>
+    PredicateConstraint(std::string description, std::string shortId,
+                        F &&function)
+        : _function(std::forward<F>(function)),
+          _text(std::move(description), std::move(shortId)) {
+        internal::ValidateConstraintPredicate(_function);
     }
 
     /** Advanced form used by the rule factory to share validation/text state.
      */
-    PredicateConstraint(const Function &function, const Text &text)
-        : _function(function), _text(text) {
-        internal::ValidateConstraintPredicate<Function>::check(_function);
+    template <class F>
+        requires std::constructible_from<Function, F &&>
+    PredicateConstraint(F &&function, Text text)
+        : _function(std::forward<F>(function)), _text(std::move(text)) {
+        internal::ValidateConstraintPredicate(_function);
     }
 
-    virtual ~PredicateConstraint() {}
+    PredicateConstraint(const PredicateConstraint &) = default;
+    PredicateConstraint(PredicateConstraint &&) = default;
+    PredicateConstraint &operator=(const PredicateConstraint &) = default;
+    PredicateConstraint &operator=(PredicateConstraint &&) = default;
+    ~PredicateConstraint() override = default;
 
-    bool check(const T &value) const { return _function(value); }
-    std::string description() const { return _text.description(_function); }
-    std::string shortID() const { return _text.shortID(_function); }
+    bool check(const T &value) const override {
+        return std::invoke(_function, value);
+    }
+    [[nodiscard]] std::string description() const override {
+        return _text.description(_function);
+    }
+    [[nodiscard]] std::string shortID() const override {
+        return _text.shortID(_function);
+    }
 
 private:
     Function _function;
@@ -152,14 +168,17 @@ private:
 
 /**
  * Creates an owning constraint with fixed presentation text. T is explicit;
- * the callable type is deduced. C++98 callers normally construct the adapter
- * directly because storing a factory result requires spelling its type.
+ * the callable type is deduced and decayed. Copies lvalues, moves rvalues,
+ * and supports move-only captures. Bind the result to a named local that
+ * outlives the arguments borrowing it; moving it does not retarget those args.
  */
 template <class T, class Function>
-PredicateConstraint<T, Function> MakeConstraint(const std::string &description,
-                                                const std::string &shortId,
-                                                Function function) {
-    return PredicateConstraint<T, Function>(description, shortId, function);
+    requires std::predicate<const std::decay_t<Function> &, const T &>
+[[nodiscard]] auto MakeConstraint(std::string description, std::string shortId,
+                                  Function &&function) {
+    return PredicateConstraint<T, std::decay_t<Function>>(
+        std::move(description), std::move(shortId),
+        std::forward<Function>(function));
 }
 
 /**
@@ -168,10 +187,15 @@ PredicateConstraint<T, Function> MakeConstraint(const std::string &description,
  * Presentation observes the same rule object that validates values.
  */
 template <class T, class Rule>
-PredicateConstraint<T, Rule, internal::RuleConstraintText> MakeRuleConstraint(
-    Rule rule) {
-    return PredicateConstraint<T, Rule, internal::RuleConstraintText>(
-        rule, internal::RuleConstraintText());
+    requires std::predicate<const std::decay_t<Rule> &, const T &> &&
+             requires(const std::decay_t<Rule> &rule) {
+                 { rule.description() } -> std::convertible_to<std::string>;
+                 { rule.shortID() } -> std::convertible_to<std::string>;
+             }
+[[nodiscard]] auto MakeRuleConstraint(Rule &&rule) {
+    return PredicateConstraint<T, std::decay_t<Rule>,
+                               internal::RuleConstraintText>(
+        std::forward<Rule>(rule), internal::RuleConstraintText());
 }
 
 }  // namespace TCLAP

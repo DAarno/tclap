@@ -940,19 +940,15 @@ The description is used in errors; the short ID appears in usage.
 Include <filename>tclap/PredicateConstraint.h</filename>, or
 <filename>tclap/CmdLine.h</filename>.
 </para>
-<para>In C++98, use a free function or a function object with a const
-<methodname>operator()</methodname>. Specify the function-object type explicitly.
-<methodname>MakeConstraint&lt;T&gt;()</methodname> also deduces that type,
-but C++98 callers must spell it when storing the returned object.</para>
-<programlisting>bool positive(const int &amp;value) { return value &gt; 0; }
-struct AtLeast {
-    explicit AtLeast(int minimum) : minimum(minimum) {}
-    bool operator()(const int &amp;value) const { return value &gt;= minimum; }
-    int minimum;
-};
-TCLAP::PredicateConstraint&lt;int&gt; positiveInput(&quot;must be positive&quot;, &quot;positive&quot;, positive);
-TCLAP::PredicateConstraint&lt;int, AtLeast&gt; minimum(
-    &quot;must be at least 3&quot;, &quot;at-least-3&quot;, AtLeast(3));
+<para><methodname>MakeConstraint&lt;T&gt;()</methodname> deduces
+and owns the callable type, including capturing lambdas and move-only objects.
+It copies lvalues and moves rvalues. This example uses <filename>memory</filename>
+for a move-only capture:</para>
+<programlisting>auto minimum = TCLAP::MakeConstraint&lt;int&gt;(
+    &quot;must be at least 3&quot;, &quot;at-least-3&quot;,
+    [limit = std::make_unique&lt;int&gt;(3)](const int &amp;value) {
+        return value &gt;= *limit;
+    });
 TCLAP::ValueArg&lt;int&gt; number(&quot;n&quot;, &quot;number&quot;, &quot;number&quot;, false, 0, &amp;minimum);
 cmd.add(number);</programlisting>
 <para>
@@ -970,6 +966,11 @@ Exceptions from application code propagate from the constraint; the parser
 keeps its existing exception handling. Const invocation alone does not make
 external captured state immutable or provide synchronization.
 </para>
+<para>Null member pointers and empty <classname>std::function</classname>
+objects are also rejected. <classname>PredicateConstraint&lt;T&gt;</classname> defaults
+to an erased <classname>std::function&lt;bool(const T&amp;)&gt;</classname> callable;
+use the deducing factory for move-only state. An erased callable or reference wrapper can
+still refer to mutable state through a const wrapper.</para>
 <para>
 For a rule with computed help text, <methodname>MakeRuleConstraint&lt;T&gt;()</methodname>
 uses the same owned rule object for validation, <methodname>description()</methodname>
@@ -982,8 +983,7 @@ by the wrapper. For example:
     std::string description() const { return &quot;must be positive&quot;; }
     std::string shortID() const { return &quot;positive&quot;; }
 };
-TCLAP::PredicateConstraint&lt;int, PositiveRule, TCLAP::internal::RuleConstraintText&gt;
-    positive = TCLAP::MakeRuleConstraint&lt;int&gt;(PositiveRule());</programlisting>
+auto positive = TCLAP::MakeRuleConstraint&lt;int&gt;(PositiveRule());</programlisting>
 <para>
 Callable constraints check supplied values, not omitted optional defaults.
 Repeated arguments check each value independently. The installed
