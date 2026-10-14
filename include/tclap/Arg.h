@@ -626,10 +626,9 @@ inline bool Arg::_matchesDeclaredToken(const std::string &token,
     if ((!_flag.empty() && token == flagPrefix + _flag) ||
         token == namePrefix + _name)
         return true;
-    for (std::vector<ArgAlias>::const_iterator it = _aliases.begin();
-         it != _aliases.end(); ++it)
-        if ((!it->flag.empty() && token == flagPrefix + it->flag) ||
-            (!it->name.empty() && token == namePrefix + it->name))
+    for (const auto &alias : _aliases)
+        if ((!alias.flag.empty() && token == flagPrefix + alias.flag) ||
+            (!alias.name.empty() && token == namePrefix + alias.name))
             return true;
     return false;
 }
@@ -637,13 +636,12 @@ inline bool Arg::_matchesDeclaredToken(const std::string &token,
 inline bool Arg::_aliasConflictsWith(const Arg &other,
                                      const std::string &flagPrefix,
                                      const std::string &namePrefix) const {
-    for (std::vector<ArgAlias>::const_iterator it = _aliases.begin();
-         it != _aliases.end(); ++it)
-        if ((!it->flag.empty() &&
-             other._matchesDeclaredToken(flagPrefix + it->flag, flagPrefix,
+    for (const auto &alias : _aliases)
+        if ((!alias.flag.empty() &&
+             other._matchesDeclaredToken(flagPrefix + alias.flag, flagPrefix,
                                          namePrefix)) ||
-            (!it->name.empty() &&
-             other._matchesDeclaredToken(namePrefix + it->name, flagPrefix,
+            (!alias.name.empty() &&
+             other._matchesDeclaredToken(namePrefix + alias.name, flagPrefix,
                                          namePrefix)))
             return true;
     return false;
@@ -655,26 +653,23 @@ inline void Arg::_validateAliases(char delimiter, const std::string &flagPrefix,
     std::vector<std::string> tokens;
     if (!_flag.empty()) tokens.push_back(flagPrefix + _flag);
     tokens.push_back(namePrefix + _name);
-    for (std::vector<ArgAlias>::const_iterator it = _aliases.begin();
-         it != _aliases.end(); ++it) {
-        if ((!it->flag.empty() &&
-             (it->flag == flagPrefix || it->flag == namePrefix)) ||
-            (!it->name.empty() &&
-             ((!flagPrefix.empty() && it->name.find(flagPrefix) == 0) ||
-              (!namePrefix.empty() && it->name.find(namePrefix) == 0))) ||
-            (_valueRequired && (it->flag.find(delimiter) != std::string::npos ||
-                                it->name.find(delimiter) != std::string::npos)))
+    for (const auto &alias : _aliases) {
+        if ((!alias.flag.empty() &&
+             (alias.flag == flagPrefix || alias.flag == namePrefix)) ||
+            (!alias.name.empty() &&
+             ((!flagPrefix.empty() && alias.name.find(flagPrefix) == 0) ||
+              (!namePrefix.empty() && alias.name.find(namePrefix) == 0))) ||
+            (_valueRequired && (alias.flag.find(delimiter) != std::string::npos ||
+                                alias.name.find(delimiter) != std::string::npos)))
             throw SpecificationException("Alias conflicts with parser dialect",
                                          toString());
         for (int spelling = 0; spelling < 2; ++spelling) {
-            const std::string &label = spelling == 0 ? it->flag : it->name;
+            const std::string &label = spelling == 0 ? alias.flag : alias.name;
             if (label.empty()) continue;
             const std::string token =
                 (spelling == 0 ? flagPrefix : namePrefix) + label;
-            for (std::vector<std::string>::const_iterator tokenIt =
-                     tokens.begin();
-                 tokenIt != tokens.end(); ++tokenIt)
-                if (*tokenIt == token)
+            for (const auto &existing : tokens)
+                if (existing == token)
                     throw SpecificationException(
                         "Duplicate argument alias token", toString());
             tokens.push_back(token);
@@ -713,9 +708,8 @@ inline Arg &Arg::addAlias(std::string flag, std::string name) {
                           name.find(nameStartString()) == 0)))
         throw SpecificationException("Invalid argument alias", toString());
     const std::string labels = flag + name;
-    for (std::string::const_iterator it = labels.begin(); it != labels.end();
-         ++it)
-        if (static_cast<unsigned char>(*it) < 0x20 || *it == '\x7f')
+    for (unsigned char c : labels)
+        if (c < 0x20 || c == '\x7f')
             throw SpecificationException("Control byte in argument alias",
                                          toString());
     if (matchesShortFlag(flag) || matchesLongName(name))
