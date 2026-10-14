@@ -1,3 +1,12 @@
+Ordered value constraints
+-------------------------
+
+* Ready-made LessThanConstraint, LessThanOrEqualConstraint,
+  GreaterThanConstraint and GreaterThanOrEqualConstraint own comparison bounds
+  and generate usage/error text through the predicate core.
+* RangeConstraint provides inclusive bounds with C++98 support.
+* Ordered comparisons reject NaN values/bounds and avoid bound arithmetic.
+
 Callable constraints
 --------------------
 
