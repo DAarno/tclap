@@ -17,3 +17,10 @@ Callable constraints
 * C++20 MakeConstraint supports capturing lambdas and move-only state.
   Calls use const invocation; null function/member pointers and empty
   std::function targets fail at construction.
+
+Argument aliases
+----------------
+
+* Arg::addAlias adds equivalent short and/or long spellings before registration.
+* Aliases share values, visitors, required status and groups; collisions are
+  rejected. Detailed text/DocBook help lists aliases with value placeholders.

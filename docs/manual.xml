@@ -1416,4 +1416,29 @@ distribution.
 </para>
 
 </chapter>
+<chapter id="ARGUMENT_ALIASES"><title>Argument aliases</title>
+<para>Call <literal>arg.addAlias("?", "usage")</literal> before registering an
+argument to add a short flag, a long name, or both. Either string may be empty,
+but not both. For example:</para>
+<programlisting>SwitchArg verbose("v", "verbose", "Verbose output");
+verbose.addAlias("V", "chatty");
+cmd.add(verbose);</programlisting>
+<para>Aliases share the original argument's value, required status, visitor,
+constraints, and group membership. Repeating a canonical spelling and an alias
+has the same effect as repeating the canonical spelling. Short switch aliases
+work in combined switches. Positional arguments cannot have aliases. Aliases
+must be nonempty short flags or long names without whitespace, NUL bytes, or
+prefixes; short flags contain one character. These checks are stricter than
+some historical canonical-name validation. Aliases must be unique within the argument and across registered arguments, including
+built-in help and version arguments. Registration freezes the alias list;
+reset retains it. Use a constructor without a parser parameter, configure
+aliases, and then register the argument.</para>
+<para>The compact usage synopsis uses the canonical spelling. Detailed help
+lists all spellings, in insertion order, with the same value placeholder.
+DocBook output lists them as terms for one option. Custom output can inspect
+<literal>arg.aliases()</literal>, a read-only vector of <literal>ArgAlias</literal>
+objects with unprefixed <literal>flag</literal> and <literal>name</literal> fields.
+<literal>setBy()</literal> records the spelling actually used; diagnostics retain
+the canonical identity.</para>
+</chapter>
 </book>
