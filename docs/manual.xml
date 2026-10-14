@@ -1063,6 +1063,71 @@ help/usage for the <classname>Arg</classname> therefore lists the
 allowable values.  Because of this, you might want to keep the list
 relatively small, however there is no limit on this.
 </para>
+
+<sect2 id="PREDICATE_CONSTRAINT">
+<title>Predicates and validation rules</title>
+<para>
+<classname>PredicateConstraint</classname> owns a validation callable and
+separate description and short-ID strings. The callable accepts
+<code>const T&amp;</code> and returns true to accept a value, false to reject it.
+The description is used in errors; the short ID appears in usage.
+Include <filename>tclap/PredicateConstraint.h</filename>, or
+<filename>tclap/CmdLine.h</filename>.
+</para>
+<para><methodname>MakeConstraint&lt;T&gt;()</methodname> deduces
+and owns the callable type, including capturing lambdas and move-only objects.
+It copies lvalues and moves rvalues. This example uses <filename>memory</filename>
+for a move-only capture:</para>
+<programlisting>auto minimum = TCLAP::MakeConstraint&lt;int&gt;(
+    &quot;must be at least 3&quot;, &quot;at-least-3&quot;,
+    [limit = std::make_unique&lt;int&gt;(3)](const int &amp;value) {
+        return value &gt;= *limit;
+    });
+TCLAP::ValueArg&lt;int&gt; number({.flag = &quot;n&quot;, .name = &quot;number&quot;,
+                           .defaultValue = 0, .constraint = &amp;minimum});
+cmd.add(number);</programlisting>
+<para>
+Declare each constraint before the arguments borrowing it. A factory returns
+an object, not an owning pointer; keep the named object alive and at the same
+address while the arguments can use it. The callable owns copied/captured
+values, but pointers, references and explicit reference wrappers inside it
+remain borrowed. Do not move a constraint after binding its address.
+</para>
+<para>
+The wrapper invokes the stored callable as const. It does not make a functor
+mutable to accommodate a non-const call operator. Null function pointers
+are rejected with <classname>std::invalid_argument</classname> at construction.
+Exceptions from application code propagate from the constraint; the parser
+keeps its existing exception handling. Const invocation alone does not make
+external captured state immutable or provide synchronization.
+</para>
+<para>Null member pointers and empty <classname>std::function</classname>
+objects are also rejected. <classname>PredicateConstraint&lt;T&gt;</classname> defaults
+to an erased <classname>std::function&lt;bool(const T&amp;)&gt;</classname> callable;
+use the deducing factory for move-only state. <methodname>MakeConstraint&lt;T&gt;()</methodname> returns a
+<classname>PredicateConstraint</classname> with the deduced, owned predicate type;
+its concrete type may differ from the default erased specialization. An erased callable or reference wrapper can
+still refer to mutable state through a const wrapper.</para>
+<para>
+For a rule with computed help text, <methodname>MakeRuleConstraint&lt;T&gt;()</methodname>
+uses the same owned rule object for validation, <methodname>description()</methodname>
+and <methodname>shortID()</methodname>. Both text methods must be const and
+return strings; they run when the text is requested rather than being cached
+by the wrapper. For example:
+</para>
+<programlisting>struct PositiveRule {
+    bool operator()(const int &amp;value) const { return value &gt; 0; }
+    std::string description() const { return &quot;must be positive&quot;; }
+    std::string shortID() const { return &quot;positive&quot;; }
+};
+auto positive = TCLAP::MakeRuleConstraint&lt;int&gt;(PositiveRule());</programlisting>
+<para>
+Callable constraints check supplied values, not omitted optional defaults.
+Repeated arguments check each value independently. The installed
+<classname>ValuesConstraint</classname> and other existing constraints remain
+available. See <filename>examples/test129.cpp</filename> for a complete program.
+</para>
+</sect2>
 </sect1>
 
 

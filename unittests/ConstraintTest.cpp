@@ -102,9 +102,10 @@ void TestPredicateConstraint(Testing &t) {
 }
 
 void TestMakeConstraint(Testing &t) {
-    auto even = MakeConstraint<int>("must be even", "even",
-                                    [](int v) { return v % 2 == 0; });
-    static_assert(std::is_same_v<decltype(even), PredicateConstraint<int>>);
+    const auto predicate = [](int v) { return v % 2 == 0; };
+    auto even = MakeConstraint<int>("must be even", "even", predicate);
+    static_assert(std::is_same_v<decltype(even),
+        PredicateConstraint<int, std::decay_t<decltype(predicate)>>>);
 
     if (!even.check(4)) ERROR(t, "MakeConstraint: 4 should pass");
     if (even.check(3)) ERROR(t, "MakeConstraint: 3 should not pass");

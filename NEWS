@@ -1,0 +1,8 @@
+Callable constraints
+--------------------
+
+* PredicateConstraint adapts owned functions and function objects; independent
+  description and short ID strings supply error and usage text.
+* MakeRuleConstraint shares rule state with computed descriptions and short IDs.
+* C++20 MakeConstraint supports capturing lambdas, move-only callable
+  state and const invocation. Empty callable objects fail at construction.
