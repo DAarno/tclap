@@ -334,10 +334,9 @@ inline void DocBookOutput::printLongArg(const ArgGroup &group) const {
         std::cout << "</option>\n";
         std::cout << "</term>\n";
 
-        for (std::vector<ArgAlias>::const_iterator alias = a.aliases().begin();
-             alias != a.aliases().end(); ++alias) {
+        for (const auto &alias : a.aliases()) {
             for (int spelling = 0; spelling < 2; ++spelling) {
-                const std::string &label = spelling == 0 ? alias->flag : alias->name;
+                const std::string &label = spelling == 0 ? alias.flag : alias.name;
                 if (label.empty()) continue;
                 std::cout << "<term><option>"
                           << escapeXml((spelling == 0 ? a.flagStartString()

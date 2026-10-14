@@ -57,7 +57,8 @@ namespace TCLAP {
 struct ArgAlias {
     std::string flag;
     std::string name;
-    ArgAlias(const std::string &f, const std::string &n) : flag(f), name(n) {}
+    ArgAlias(std::string f, std::string n)
+        : flag(std::move(f)), name(std::move(n)) {}
 };
 
 /**
@@ -194,10 +195,10 @@ public:
      * For self-registering constructors, use a non-registering constructor
      * instead, add aliases, then call parser.add(arg).
      */
-    Arg &addAlias(const std::string &flag, const std::string &name = "");
+    Arg &addAlias(std::string flag, std::string name = {});
 
     /** Alias spellings in insertion order; no prefixes are stored. */
-    const std::vector<ArgAlias> &aliases() const { return _aliases; }
+    [[nodiscard]] const std::vector<ArgAlias> &aliases() const noexcept { return _aliases; }
 
     /**
      * Destructor.
@@ -598,14 +599,13 @@ inline std::string Arg::longID(const std::string &valueId) const {
 
     if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
 
-    for (std::vector<ArgAlias>::const_iterator it = _aliases.begin();
-         it != _aliases.end(); ++it) {
-        if (!it->flag.empty()) {
-            id += ",  " + flagStartString() + it->flag;
+    for (const auto &alias : _aliases) {
+        if (!alias.flag.empty()) {
+            id += ",  " + flagStartString() + alias.flag;
             if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
         }
-        if (!it->name.empty()) {
-            id += ",  " + nameStartString() + it->name;
+        if (!alias.name.empty()) {
+            id += ",  " + nameStartString() + alias.name;
             if (_valueRequired) id += std::string(1, getDelimiter()) + valueId;
         }
     }
@@ -615,22 +615,20 @@ inline std::string Arg::longID(const std::string &valueId) const {
 inline bool Arg::matchesShortFlag(const std::string &flag) const {
     if (flag.empty()) return false;
     if (flag == _flag) return true;
-    for (std::vector<ArgAlias>::const_iterator it = _aliases.begin();
-         it != _aliases.end(); ++it)
-        if (flag == it->flag) return true;
+    for (const auto &alias : _aliases)
+        if (flag == alias.flag) return true;
     return false;
 }
 
 inline bool Arg::matchesLongName(const std::string &name) const {
     if (name.empty()) return false;
     if (name == _name) return true;
-    for (std::vector<ArgAlias>::const_iterator it = _aliases.begin();
-         it != _aliases.end(); ++it)
-        if (name == it->name) return true;
+    for (const auto &alias : _aliases)
+        if (name == alias.name) return true;
     return false;
 }
 
-inline Arg &Arg::addAlias(const std::string &flag, const std::string &name) {
+inline Arg &Arg::addAlias(std::string flag, std::string name) {
     if (_parserDelimiter)
         throw SpecificationException("Aliases must be added before registration", toString());
     if (!hasLabel())
@@ -646,16 +644,15 @@ inline Arg &Arg::addAlias(const std::string &flag, const std::string &name) {
         throw SpecificationException("Invalid argument alias", toString());
     if (matchesShortFlag(flag) || matchesLongName(name))
         throw SpecificationException("Duplicate argument alias", toString());
-    _aliases.push_back(ArgAlias(flag, name));
+    _aliases.emplace_back(std::move(flag), std::move(name));
     return *this;
 }
 
 inline bool Arg::conflictsWith(const Arg &a) const noexcept {
     if (this == &a || _name == a._name || matchesLongName(a._name) || matchesShortFlag(a._flag))
         return true;
-    for (std::vector<ArgAlias>::const_iterator it = a._aliases.begin();
-         it != a._aliases.end(); ++it)
-        if (matchesShortFlag(it->flag) || matchesLongName(it->name)) return true;
+    for (const auto &alias : a._aliases)
+        if (matchesShortFlag(alias.flag) || matchesLongName(alias.name)) return true;
     return false;
 }
 
