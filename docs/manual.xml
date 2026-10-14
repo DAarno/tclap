@@ -1463,7 +1463,9 @@ work in combined switches. Positional arguments cannot have aliases. Aliases
 must be nonempty short flags or long names without whitespace, NUL bytes, or
 prefixes; short flags contain one character. These checks are stricter than
 some historical canonical-name validation. Aliases must be unique within the argument and across registered arguments, including
-built-in help and version arguments. Registration freezes the alias list;
+built-in help and version arguments. Registration validates aliases against the destination delimiter and prefixes,
+rejecting ambiguous rendered tokens. Value-taking aliases cannot contain the
+value delimiter. Alias labels cannot contain control bytes. Registration freezes the alias list;
 reset retains it. Use a constructor without a parser parameter, configure
 aliases, and then register the argument.</para>
 <para>The compact usage synopsis uses the canonical spelling. Detailed help

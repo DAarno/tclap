@@ -506,8 +506,14 @@ public:
     }
 
     void add(Arg &arg) {
+        arg._validateAliases(_cmd._delimiter, Arg::flagStartString(),
+                             Arg::nameStartString());
         for (ArgListIterator it = _args.begin(); it != _args.end(); ++it)
-            if (arg.conflictsWith(**it))
+            if (arg.conflictsWith(**it) ||
+                arg._aliasConflictsWith(**it, Arg::flagStartString(),
+                                        Arg::nameStartString()) ||
+                (*it)->_aliasConflictsWith(arg, Arg::flagStartString(),
+                                           Arg::nameStartString()))
                 throw SpecificationException(
                     "Argument with same flag/name already exists!", arg.longID());
         if (!arg.hasLabel()) {
