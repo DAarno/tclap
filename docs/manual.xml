@@ -963,6 +963,68 @@ help/usage for the <classname>Arg</classname> therefore lists the
 allowable values.  Because of this, you might want to keep the list 
 relatively small, however there is no limit on this.
 </para>
+
+<sect2 id="PREDICATE_CONSTRAINT">
+<title>Predicates and validation rules</title>
+<para>
+<classname>PredicateConstraint</classname> owns a validation callable and
+separate description and short-ID strings. The callable accepts
+<code>const T&amp;</code> and returns true to accept a value, false to reject it.
+The description is used in errors; the short ID appears in usage.
+Include <filename>tclap/PredicateConstraint.h</filename>, or
+<filename>tclap/CmdLine.h</filename>.
+</para>
+<para>In C++98, use a free function or a function object with a const
+<methodname>operator()</methodname>. Specify the function-object type explicitly.
+<methodname>MakeConstraint&lt;T&gt;()</methodname> also deduces that type,
+but C++98 callers must spell it when storing the returned object.</para>
+<programlisting>bool positive(const int &amp;value) { return value &gt; 0; }
+struct AtLeast {
+    explicit AtLeast(int minimum) : minimum(minimum) {}
+    bool operator()(const int &amp;value) const { return value &gt;= minimum; }
+    int minimum;
+};
+TCLAP::PredicateConstraint&lt;int&gt; positiveInput(&quot;must be positive&quot;, &quot;positive&quot;, positive);
+TCLAP::PredicateConstraint&lt;int, AtLeast&gt; minimum(
+    &quot;must be at least 3&quot;, &quot;at-least-3&quot;, AtLeast(3));
+TCLAP::ValueArg&lt;int&gt; number(&quot;n&quot;, &quot;number&quot;, &quot;number&quot;, false, 0, &amp;minimum);
+cmd.add(number);</programlisting>
+<para>
+Declare each constraint before the arguments borrowing it. A factory returns
+an object, not an owning pointer; keep the named object alive and at the same
+address while the arguments can use it. The callable owns copied/captured
+values, but pointers, references and explicit reference wrappers inside it
+remain borrowed. Do not move a constraint after binding its address.
+</para>
+<para>
+The wrapper invokes the stored callable as const. It does not make a functor
+mutable to accommodate a non-const call operator. Null function pointers
+are rejected with <classname>std::invalid_argument</classname> at construction.
+Exceptions from application code propagate from the constraint; the parser
+keeps its existing exception handling. Const invocation alone does not make
+external captured state immutable or provide synchronization.
+</para>
+<para>
+For a rule with computed help text, <methodname>MakeRuleConstraint&lt;T&gt;()</methodname>
+uses the same owned rule object for validation, <methodname>description()</methodname>
+and <methodname>shortID()</methodname>. Both text methods must be const and
+return strings; they run when the text is requested rather than being cached
+by the wrapper. For example:
+</para>
+<programlisting>struct PositiveRule {
+    bool operator()(const int &amp;value) const { return value &gt; 0; }
+    std::string description() const { return &quot;must be positive&quot;; }
+    std::string shortID() const { return &quot;positive&quot;; }
+};
+TCLAP::PredicateConstraint&lt;int, PositiveRule, TCLAP::internal::RuleConstraintText&gt;
+    positive = TCLAP::MakeRuleConstraint&lt;int&gt;(PositiveRule());</programlisting>
+<para>
+Callable constraints check supplied values, not omitted optional defaults.
+Repeated arguments check each value independently. The installed
+<classname>ValuesConstraint</classname> and other existing constraints remain
+available. See <filename>examples/test129.cpp</filename> for a complete program.
+</para>
+</sect2>
 </sect1>
 
 
