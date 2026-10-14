@@ -15,3 +15,10 @@ Callable constraints
 * MakeRuleConstraint shares rule state with computed descriptions and short IDs.
 * The implementation and examples support C++98. Null function pointers fail
   at construction rather than at the first check.
+
+Argument aliases
+----------------
+
+* Arg::addAlias adds equivalent short and/or long spellings before registration.
+* Aliases share values, visitors, required status and groups; collisions are
+  rejected. Detailed text/DocBook help lists aliases with value placeholders.
