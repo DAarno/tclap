@@ -964,6 +964,52 @@ allowable values.  Because of this, you might want to keep the list
 relatively small, however there is no limit on this.
 </para>
 
+<sect2 id="ORDERED_CONSTRAINTS">
+<title>Ready-made comparisons and ranges</title>
+<para>
+Use these constraints when a value must be positive, below a limit, or inside
+an interval. They own their bounds and implement <classname>Constraint&lt;T&gt;</classname>;
+no function object or subclass is required. Include
+<filename>tclap/ComparisonConstraint.h</filename> for the comparisons,
+<filename>tclap/RangeConstraint.h</filename> for the range, or
+<filename>tclap/CmdLine.h</filename> for both.
+</para>
+<informaltable><tgroup cols="2"><tbody>
+<row><entry><classname>LessThanConstraint&lt;T&gt;(bound)</classname></entry><entry>value &lt; bound</entry></row>
+<row><entry><classname>LessThanOrEqualConstraint&lt;T&gt;(bound)</classname></entry><entry>value &lt;= bound</entry></row>
+<row><entry><classname>GreaterThanConstraint&lt;T&gt;(bound)</classname></entry><entry>value &gt; bound</entry></row>
+<row><entry><classname>GreaterThanOrEqualConstraint&lt;T&gt;(bound)</classname></entry><entry>value &gt;= bound</entry></row>
+<row><entry><classname>RangeConstraint&lt;T&gt;(min, max)</classname></entry><entry>min &lt;= value &lt;= max</entry></row>
+</tbody></tgroup></informaltable>
+<para>For example:</para>
+<programlisting>TCLAP::GreaterThanConstraint&lt;int&gt; positive(0);
+TCLAP::RangeConstraint&lt;int&gt; interval(-1, 9);
+TCLAP::ValueArg&lt;int&gt; p(&quot;p&quot;, &quot;positive&quot;, &quot;positive integer&quot;, true, 0, &amp;positive);
+TCLAP::ValueArg&lt;int&gt; n(&quot;n&quot;, &quot;number&quot;, &quot;integer from -1 to 9&quot;, false, 0, &amp;interval);
+cmd.add(p);
+cmd.add(n);</programlisting>
+<para>
+Ranges include both endpoints; equal endpoints allow that one value. A reversed
+range accepts no values, preserving the existing range contract. Ordered
+floating-point comparisons reject NaN values and bounds. Infinities follow the
+specified comparisons: an inclusive range from negative to positive infinity
+allows infinite values, while a finite range rejects them. No bound arithmetic
+is used, avoiding overflow at integer limits.
+</para>
+<para>
+The types must support the corresponding comparisons and insertion into an
+output stream for generated text. Strings use their lexicographic ordering.
+Short IDs such as <code>[&gt;0]</code> and <code>[-1-9]</code> are formatted once
+at construction; descriptions such as <quote>value must be greater than 0</quote>
+are formatted on request. Keep constraints alive and at a stable address while
+arguments borrow them. Constraints still check supplied values only; omitted
+optional defaults and parser reset behavior are unchanged. See
+<filename>examples/test130.cpp</filename> for a complete program.
+</para>
+<para>The implementation supports C++98 and copies its bounds. Types need
+not be default constructible merely to construct a constraint.</para>
+</sect2>
+
 <sect2 id="PREDICATE_CONSTRAINT">
 <title>Predicates and validation rules</title>
 <para>
