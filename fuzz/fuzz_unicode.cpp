@@ -6,6 +6,13 @@
 #include <tclap/CmdLine.h>
 
 namespace {
+// An incorrectly encoded wide recovery literal makes every seed fail, even
+// when the input itself is invalid. Catch that build configuration directly.
+static_assert(std::string_view("雪😀") == "\xe9\x9b\xaa\xf0\x9f\x98\x80" &&
+                  std::wstring_view(L"雪😀") == L"\u96ea\U0001f600",
+              "Unicode fuzz tests require UTF-8 source and execution encodings "
+              "(use /utf-8 with MSVC)");
+
 // Independent well-formedness oracle from Unicode Table 3-7. Deliberately
 // uses byte-range rules rather than the library's scalar decoder.
 bool ReferenceUtf8(std::string_view input, std::u32string &scalars) {

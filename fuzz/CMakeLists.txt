@@ -29,6 +29,10 @@ if(BUILD_FUZZ_REGRESSION)
 
 		add_executable(${regress_target} ${file} StandaloneFuzzTargetMain.cpp)
 		target_include_directories(${regress_target} PUBLIC ../include/ ${PROJECT_BINARY_DIR})
+        # Match examples/unit tests: Unicode literals must use UTF-8 for both
+        # source and execution character sets on MSVC.
+        target_compile_options(${regress_target} PRIVATE
+            "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 		if(BUILD_TESTING)
 			file(GLOB seed_files "${CMAKE_CURRENT_SOURCE_DIR}/seeds/${target_name}/*")
@@ -62,6 +66,8 @@ if(BUILD_FUZZERS)
 
 		add_executable(${fuzzer_target} ${file})
 		target_include_directories(${fuzzer_target} PUBLIC ../include/ ${PROJECT_BINARY_DIR})
+        target_compile_options(${fuzzer_target} PRIVATE
+            "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 		target_compile_options(${fuzzer_target} PRIVATE -fsanitize=fuzzer,address,undefined -g -O1)
 		target_link_options(${fuzzer_target} PRIVATE -fsanitize=fuzzer,address,undefined)
 	endforeach()
