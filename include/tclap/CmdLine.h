@@ -40,6 +40,7 @@
 #include <tclap/ValuesConstraint.h>
 
 #include <tclap/ArgGroup.h>
+#include <tclap/Command.h>
 #include <tclap/DeferDelete.h>
 #include <tclap/Dialect.h>
 #include <tclap/ParseOutcome.h>
@@ -86,6 +87,43 @@ struct CmdLineSpec {
  * along the parsing to the appropriate Arg classes.
  */
 class CmdLine : public CmdLineInterface {
+    friend class Command;
+    class Invocation;
+    std::vector<std::unique_ptr<Command>> _commands{};
+    Command *_selected = nullptr;
+    CmdLineInterface *_activeView = nullptr;
+    bool _commandBusy = false;
+    class InvocationGuard {
+        CmdLine &_root;
+
+    public:
+        InvocationGuard(CmdLine &root, CmdLineInterface &view) : _root(root) {
+            _root._commandBusy = true;
+            _root._activeView = &view;
+        }
+        InvocationGuard(const InvocationGuard &) = delete;
+        InvocationGuard &operator=(const InvocationGuard &) = delete;
+        ~InvocationGuard() {
+            _root._activeView = nullptr;
+            _root._commandBusy = false;
+        }
+    };
+    void checkCommandMutation() const;
+    Command &addCommand(Command *parent, CommandSpec spec);
+    void checkCommandArgument(Arg &arg, Command *scope) const;
+    Command *groupScope(ArgGroup &group) const;
+    ArgContainer &addCommandGroup(Command &scope, ArgGroup &group);
+    ParseOutcome parseCommands(std::vector<std::string> &args);
+    ParseOutcome parseArguments(std::vector<std::string> &args,
+                                const std::list<Arg *> &arguments,
+                                const std::list<ArgGroup *> &groups,
+                                int numRequired, CmdLineInterface &view);
+    void missingArgsException(const std::list<ArgGroup *> &missing,
+                              const std::list<Arg *> &arguments);
+    CmdLineInterface &outputView() {
+        return _activeView ? *_activeView : *this;
+    }
+
 protected:
     /**
      * The list of arguments that will be tested against the
@@ -211,7 +249,6 @@ protected:
     /**
      * Throws an exception listing the missing args.
      */
-    void missingArgsException(const std::list<ArgGroup *> &missing);
 
     /**
      * Checks whether a combined-switch token has been fully claimed --
@@ -277,6 +314,21 @@ public:
      * coexist in the same program.
      */
     explicit CmdLine(CmdLineSpec spec);
+
+    /// Register an owned command. Options follow the complete command path.
+    Command &addCommand(CommandSpec spec) {
+        return addCommand(nullptr, std::move(spec));
+    }
+    const std::vector<std::unique_ptr<Command>> &commands() const {
+        return _commands;
+    }
+    const Command *selectedCommand() const { return _selected; }
+    std::vector<CommandInfo> commandChildren() const override;
+    bool requiresCommand() const override { return !_commands.empty(); }
+
+    /// Parse once and invoke the selected action only on success. Never exits.
+    template <typename... Args>
+    DispatchOutcome dispatch(Args &&...args);
 
     /**
      * Deletes any resources allocated by a CmdLine object.
@@ -451,6 +503,7 @@ public:
      */
     template <typename T>
     void setMessageTranslator(const T &translator) {
+        checkCommandMutation();
         _messageTranslator =
             std::make_unique<MessageTranslatorImpl<T>>(translator);
         if (_ignoreArg != nullptr) {
@@ -551,7 +604,7 @@ inline void CmdLine::_constructor() {
             .defaultValue = false,
             .onMatch =
                 [this] {
-                    _output->usage(*this);
+                    _output->usage(outputView());
                     _pendingOutcome = Outcome::HelpRequested;
                 },
         });
@@ -568,7 +621,7 @@ inline void CmdLine::_constructor() {
             .defaultValue = false,
             .onMatch =
                 [this] {
-                    _output->version(*this);
+                    _output->version(outputView());
                     _pendingOutcome = Outcome::VersionRequested;
                 },
         });
@@ -588,11 +641,13 @@ inline void CmdLine::_constructor() {
 // dialect, and the destructor restores the original pointers on failure.
 class CmdLine::Registration {
 public:
-    explicit Registration(CmdLine &cmd)
+    explicit Registration(CmdLine &cmd, Command *scope = nullptr)
         : _cmd(cmd),
-          _args(cmd._argList),
-          _numRequired(cmd._numRequired),
-          _hasOptionalUnlabeledArg(cmd._hasOptionalUnlabeledArg),
+          _scope(scope),
+          _args(scope ? scope->_args : cmd._argList),
+          _numRequired(scope ? scope->_required : cmd._numRequired),
+          _hasOptionalUnlabeledArg(scope ? scope->_optionalPositional
+                                         : cmd._hasOptionalUnlabeledArg),
           _bindings() {}
 
     Registration(const Registration &) = delete;
@@ -605,6 +660,8 @@ public:
     }
 
     void add(Arg &arg) {
+        _cmd.checkCommandMutation();
+        _cmd.checkCommandArgument(arg, _scope);
         arg._validateAliases(_cmd._dialect.delimiter, _cmd._dialect.flagPrefix,
                              _cmd._dialect.namePrefix);
         if (std::ranges::any_of(_args, [&arg, this](const Arg *existing) {
@@ -644,14 +701,21 @@ public:
     }
 
     void commit() noexcept {
-        _cmd._argList.swap(_args);
-        _cmd._numRequired = _numRequired;
-        _cmd._hasOptionalUnlabeledArg = _hasOptionalUnlabeledArg;
+        if (_scope) {
+            _scope->_args.swap(_args);
+            _scope->_required = _numRequired;
+            _scope->_optionalPositional = _hasOptionalUnlabeledArg;
+        } else {
+            _cmd._argList.swap(_args);
+            _cmd._numRequired = _numRequired;
+            _cmd._hasOptionalUnlabeledArg = _hasOptionalUnlabeledArg;
+        }
         _bindings.clear();  // Retain the successful dialect bindings.
     }
 
 private:
     CmdLine &_cmd;
+    Command *_scope;
     std::list<Arg *> _args;
     int _numRequired;
     bool _hasOptionalUnlabeledArg;
@@ -659,6 +723,7 @@ private:
 };
 
 inline ArgContainer &CmdLine::add(ArgGroup &group) {
+    checkCommandMutation();
     if (group._parser) {
         throw SpecificationException("Arg group can have only one parser");
     }
@@ -681,7 +746,7 @@ inline void CmdLine::registerGroupMember(ArgGroup &group, Arg &arg) {
     }
 
     std::list<Arg *> addedMember{&arg};
-    Registration registration(*this);
+    Registration registration(*this, groupScope(group));
     registration.add(arg);
 
     registration.commit();
@@ -691,6 +756,8 @@ inline void CmdLine::registerGroupMember(ArgGroup &group, Arg &arg) {
 inline ArgContainer &CmdLine::add(Arg &a) { return add(&a); }
 
 inline ArgContainer &CmdLine::add(Arg *a) {
+    checkCommandMutation();
+    if (!a) throw SpecificationException("Null argument");
     _standaloneArgs.add(a);
 
     return *this;
@@ -698,6 +765,7 @@ inline ArgContainer &CmdLine::add(Arg *a) {
 
 template <typename ArgType>
 ArgType &CmdLine::addOwned(typename ArgType::Spec spec) {
+    checkCommandMutation();
     auto owned = std::make_unique<ArgType>(std::move(spec));
     auto *arg = owned.get();
     _deleteOnExit(std::move(owned));
@@ -720,6 +788,8 @@ inline ParseOutcome CmdLine::parse(int argc, const wchar_t *const *argv) {
 }
 
 inline ParseOutcome CmdLine::parse(const std::vector<std::wstring> &wideArgs) {
+    checkCommandMutation();
+    _selected = nullptr;
     std::vector<std::string> args;
     args.reserve(wideArgs.size());
     try {
@@ -735,37 +805,32 @@ inline ParseOutcome CmdLine::parse(const std::vector<std::wstring> &wideArgs) {
 }
 
 inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
+    checkCommandMutation();
+    _selected = nullptr;
     _pendingOutcome = std::nullopt;
+    if (!_commands.empty()) return parseCommands(args);
+    if (args.empty()) {
+        CmdLineParseException error(
+            "The args vector must not be empty, "
+            "the first entry should contain the program's name.");
+        _output->failure(*this, error);
+        return {.outcome = Outcome::ParseError,
+                .error = ParseError{.message = error.error(),
+                                    .argId = error.rawArgId()}};
+    }
+    _progName = basename(args.front());
+    args.erase(args.begin());
+    return parseArguments(args, _argList, _argGroups, _numRequired, *this);
+}
 
+inline ParseOutcome CmdLine::parseArguments(std::vector<std::string> &args,
+                                            const std::list<Arg *> &arguments,
+                                            const std::list<ArgGroup *> &groups,
+                                            int numRequired,
+                                            CmdLineInterface &view) {
     try {
-        if (args.empty()) {
-            // https://sourceforge.net/p/tclap/bugs/30/
-            throw CmdLineParseException(
-                "The args vector must not be empty, "
-                "the first entry should contain the "
-                "program's name.");
-        }
-
-        // TODO(macbishop): Maybe store the full name somewhere?
-        _progName = basename(args.front());
-        args.erase(args.begin());
-
         int requiredCount = 0;
         std::list<ArgGroup *> missingArgGroups;
-
-        // Check that the right amount of arguments are provided for
-        // each ArgGroup, and if there are any required arguments
-        // missing, store them for later. Other errors will cause an
-        // exception to be thrown and parse will exit early.
-        /*
-        for (std::list<ArgGroup*>::iterator it = _argGroups.begin();
-             it != _argGroups.end(); ++it) {
-            bool missingRequired = (*it)->validate(args);
-            if (missingRequired) {
-                missingArgGroups.push_back(*it);
-            }
-        }
-        */
 
         for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
             bool matched = false;
@@ -773,7 +838,7 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
             // threaded through every Arg's processArg() call below --
             // see Arg::processArg()'s doc comment. Fresh for each token.
             std::vector<bool> consumed(args[i].size(), false);
-            for (Arg *argPtr : _argList) {
+            for (Arg *argPtr : arguments) {
                 Arg &arg = *argPtr;
                 // We check if the argument was already set (e.g., for
                 // a Multi-Arg) since then we don't want to count it as
@@ -809,18 +874,18 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
 
         // Once all arguments have been parsed, check that we don't
         // violate any constraints.
-        for (ArgGroup *group : _argGroups) {
+        for (ArgGroup *group : groups) {
             bool missingRequired = group->validate();
             if (missingRequired) {
                 missingArgGroups.push_back(group);
             }
         }
 
-        if (requiredCount < _numRequired || !missingArgGroups.empty()) {
-            missingArgsException(missingArgGroups);
+        if (requiredCount < numRequired || !missingArgGroups.empty()) {
+            missingArgsException(missingArgGroups, arguments);
         }
 
-        if (requiredCount > _numRequired) {
+        if (requiredCount > numRequired) {
             throw(CmdLineParseException(
                 translateMessage("too_many_arguments", "Too many arguments!")));
         }
@@ -833,7 +898,7 @@ inline ParseOutcome CmdLine::parse(std::vector<std::string> &args) {
         // makes that invariant structural rather than incidental.
         throw;
     } catch (ArgException &e) {
-        _output->failure(*this, e);
+        _output->failure(view, e);
         return ParseOutcome{
             .outcome = Outcome::ParseError,
             .error = ParseError{.message = e.error(), .argId = e.rawArgId()},
@@ -855,12 +920,12 @@ inline bool CmdLine::_emptyCombined(const std::string &s,
     return true;
 }
 
-inline void CmdLine::missingArgsException(
-    const std::list<ArgGroup *> &missing) {
+inline void CmdLine::missingArgsException(const std::list<ArgGroup *> &missing,
+                                          const std::list<Arg *> &arguments) {
     int count = 0;
 
     std::string missingArgList;
-    for (Arg *arg : _argList) {
+    for (Arg *arg : arguments) {
         if (arg->isRequired() && !arg->isSet()) {
             missingArgList += arg->name();
             missingArgList += ", ";
@@ -889,9 +954,21 @@ inline void CmdLine::missingArgsException(
     throw(CmdLineParseException(msg));
 }
 
-inline void CmdLine::setOutput(CmdLineOutput *co) { _output = co; }
+inline void CmdLine::setOutput(CmdLineOutput *co) {
+    checkCommandMutation();
+    _output = co;
+}
 
 inline void CmdLine::reset() {
+    checkCommandMutation();
+    _selected = nullptr;
+    auto resetCommands = [&](auto &&self, const auto &commands) -> void {
+        for (const auto &command : commands) {
+            for (Arg *arg : command->_args) arg->reset();
+            self(self, command->_children);
+        }
+    };
+    resetCommands(resetCommands, _commands);
     for (Arg *arg : _argList) arg->reset();
 
     _progName.clear();
@@ -903,6 +980,7 @@ inline void CmdLine::reset() {
 }
 
 inline void CmdLine::ignoreUnmatched(const bool ignore) {
+    checkCommandMutation();
     _ignoreUnmatched = ignore;
 }
 
@@ -938,6 +1016,340 @@ inline void CmdLine::parseOrExit(const std::vector<std::wstring> &args) {
 
 inline void CmdLine::parseOrExit(std::vector<std::string> &args) {
     internal::ExitOnOutcome(parse(args));
+}
+
+inline void CmdLine::checkCommandMutation() const {
+    if (_commandBusy)
+        throw SpecificationException(
+            "Cannot mutate or recursively parse an active command invocation");
+}
+
+inline std::vector<CommandInfo> CmdLine::commandChildren() const {
+    std::vector<CommandInfo> result;
+    for (const auto &command : _commands) result.push_back(command->_info);
+    return result;
+}
+
+inline Command &CmdLine::addCommand(Command *parent, CommandSpec spec) {
+    checkCommandMutation();
+    if (parent && parent->_action)
+        throw SpecificationException(
+            "An executable command cannot have subcommands");
+    const std::string &name = spec.name.get();
+    bool invalid =
+        name.empty() || name.starts_with(_dialect.flagPrefix) ||
+        (!_dialect.namePrefix.empty() && name.starts_with(_dialect.namePrefix));
+    try {
+        for (std::size_t pos = 0; pos < name.size();) {
+            auto scalar = detail::DecodeUtf8(name, pos);
+            invalid |= scalar <= 32 || (scalar >= 127 && scalar <= 0x9f) ||
+                       scalar == 0xa0 || scalar == 0x1680 ||
+                       (scalar >= 0x2000 && scalar <= 0x200a) ||
+                       scalar == 0x2028 || scalar == 0x2029 ||
+                       scalar == 0x202f || scalar == 0x205f || scalar == 0x3000;
+        }
+    } catch (const UnicodeError &) {
+        invalid = true;
+    }
+    if (invalid) throw SpecificationException("Invalid command name", name);
+    auto &children = parent ? parent->_children : _commands;
+    for (const auto &child : children)
+        if (child->name() == name)
+            throw SpecificationException("Duplicate command name", name);
+    const auto &arguments = parent ? parent->_args : _argList;
+    for (Arg *arg : arguments)
+        if (!arg->hasLabel())
+            throw SpecificationException(
+                "A command namespace cannot have positional arguments",
+                arg->name());
+    auto command =
+        std::unique_ptr<Command>(new Command(*this, parent, std::move(spec)));
+    command->_standalone._parser = this;
+    auto &result = *command;
+    children.push_back(std::move(command));
+    return result;
+}
+
+inline Command &Command::addCommand(CommandSpec spec) {
+    return _root.addCommand(this, std::move(spec));
+}
+inline void Command::setAction(
+    std::function<int(const CommandContext &)> action) {
+    _root.checkCommandMutation();
+    if (!action || !_children.empty())
+        throw SpecificationException(
+            "An action requires an executable command without subcommands");
+    _action = std::move(action);
+}
+inline ArgContainer &Command::add(Arg &arg) { return add(&arg); }
+inline ArgContainer &Command::add(Arg *arg) {
+    _root.checkCommandMutation();
+    if (!arg) throw SpecificationException("Null argument");
+    _standalone.add(arg);
+    return *this;
+}
+inline ArgContainer &Command::add(ArgGroup &group) {
+    return _root.addCommandGroup(*this, group);
+}
+template <typename ArgType>
+ArgType &Command::addOwned(typename ArgType::Spec spec) {
+    _root.checkCommandMutation();
+    auto arg = std::make_unique<ArgType>(std::move(spec));
+    auto *result = arg.get();
+    // Ownership storage is allocated before registration can publish pointers.
+    std::list<std::unique_ptr<Arg>> staged;
+    staged.push_back(std::move(arg));
+    add(*result);
+    _owned.splice(_owned.end(), staged);
+    return *result;
+}
+
+inline Command *CmdLine::groupScope(ArgGroup &group) const {
+    Command *result = nullptr;
+    auto visit = [&](auto &&self, const auto &commands) -> void {
+        for (const auto &command : commands) {
+            if (std::find(command->_groups.begin(), command->_groups.end(),
+                          &group) != command->_groups.end())
+                result = command.get();
+            self(self, command->_children);
+        }
+    };
+    visit(visit, _commands);
+    return result;
+}
+
+inline void CmdLine::checkCommandArgument(Arg &arg, Command *scope) const {
+    if (_commands.empty() && !scope)
+        return;  // Keep ordinary parser rules unchanged.
+    const auto &children = scope ? scope->_children : _commands;
+    if (!arg.hasLabel() && !children.empty())
+        throw SpecificationException(
+            "A command namespace cannot have positional arguments", arg.name());
+    if (arg._dialect)
+        throw SpecificationException(
+            "An argument can belong to only one command scope/parser",
+            arg.name());
+    auto ancestor = [](const Command *a, const Command *b) {
+        if (!a) return true;
+        for (; b; b = b->_parent)
+            if (a == b) return true;
+        return false;
+    };
+    auto conflicts = [&](const auto &arguments, const Command *other) {
+        for (const Arg *existing : arguments) {
+            if (existing == &arg)
+                throw SpecificationException(
+                    "An argument can belong to only one command scope",
+                    arg.name());
+            if ((ancestor(scope, other) || ancestor(other, scope)) &&
+                (arg.conflictsWith(*existing) ||
+                 arg._aliasConflictsWith(*existing, _dialect.flagPrefix,
+                                         _dialect.namePrefix) ||
+                 existing->_aliasConflictsWith(arg, _dialect.flagPrefix,
+                                               _dialect.namePrefix)))
+                throw SpecificationException(
+                    "Argument conflicts with an inherited or command-specific "
+                    "argument",
+                    arg.name());
+        }
+    };
+    conflicts(_argList, nullptr);
+    auto visit = [&](auto &&self, const auto &commands) -> void {
+        for (const auto &command : commands) {
+            conflicts(command->_args, command.get());
+            self(self, command->_children);
+        }
+    };
+    visit(visit, _commands);
+}
+
+inline ArgContainer &CmdLine::addCommandGroup(Command &scope, ArgGroup &group) {
+    checkCommandMutation();
+    if (group._parser)
+        throw SpecificationException("Arg group can have only one parser");
+    std::list<ArgGroup *> added{&group};
+    Registration registration(*this, &scope);
+    for (Arg *arg : group) registration.add(*arg);
+    registration.commit();
+    scope._groups.splice(scope._groups.end(), added);
+    group._parser = this;
+    return scope;
+}
+
+// A read-only registration facade with the complete active argument namespace.
+// Its lifetime is one parse/action. All mutable parsing state belongs to root.
+class CmdLine::Invocation : public CmdLineInterface {
+public:
+    CmdLine &root;
+    std::list<Arg *> arguments;
+    std::list<ArgGroup *> groups;
+    std::vector<const Command *> path{};
+    int required;
+    explicit Invocation(CmdLine &cmd)
+        : root(cmd),
+          arguments(cmd._argList),
+          groups(cmd._argGroups),
+          required(cmd._numRequired) {}
+    void enter(const Command &command) {
+        arguments.insert(arguments.end(), command._args.begin(),
+                         command._args.end());
+        groups.insert(groups.end(), command._groups.begin(),
+                      command._groups.end());
+        path.push_back(&command);
+        required += command._required;
+    }
+    std::string programName() const override { return root.programName(); }
+    std::string invocationName() const override {
+        auto result = root.programName();
+        for (const auto *command : path) result += " " + command->name();
+        return result;
+    }
+    std::string message() const override {
+        return path.empty() ? root.message() : path.back()->description();
+    }
+    std::string version() const override { return root.version(); }
+    std::vector<CommandInfo> commandChildren() const override {
+        if (path.empty()) return root.commandChildren();
+        std::vector<CommandInfo> result;
+        for (const auto &command : path.back()->_children)
+            result.push_back(command->_info);
+        return result;
+    }
+    bool requiresCommand() const override {
+        return path.empty() ? !root._commands.empty()
+                            : !path.back()->_children.empty();
+    }
+    const std::list<Arg *> &argList() const override { return arguments; }
+    std::list<ArgGroup *> argGroups() override {
+        auto result = groups;
+        result.push_back(&root._autoArgs);
+        return result;
+    }
+    char delimiter() const override { return root.delimiter(); }
+    const Dialect &dialect() const override { return root.dialect(); }
+    bool hasHelpAndVersion() const override { return root.hasHelpAndVersion(); }
+    std::string translateMessage(const std::string &id,
+                                 const std::string &fallback) const override {
+        return root.translateMessage(id, fallback);
+    }
+    void beginIgnoring() override { root.beginIgnoring(); }
+    bool ignoreRest() override { return root.ignoreRest(); }
+    ArgContainer &add(Arg &) override { reject(); }
+    ArgContainer &add(Arg *) override { reject(); }
+    ArgContainer &add(ArgGroup &) override { reject(); }
+    void setOutput(CmdLineOutput *) override { reject(); }
+    void reset() override { reject(); }
+    ParseOutcome parse(int, const char *const *) override { reject(); }
+
+protected:
+    void registerGroupMember(ArgGroup &, Arg &) override { reject(); }
+
+private:
+    [[noreturn]] static void reject() {
+        throw SpecificationException("Command invocation view is read-only");
+    }
+};
+
+inline ParseOutcome CmdLine::parseCommands(std::vector<std::string> &args) {
+    // A failed conversion/specification/parse must never leave stale selection.
+    _selected = nullptr;
+    auto validate = [&](auto &&self, const auto &commands) -> void {
+        for (const auto &command : commands) {
+            if (command->_children.empty() && !command->_action)
+                throw SpecificationException(
+                    "Command has no action or subcommands", command->name());
+            self(self, command->_children);
+        }
+    };
+    validate(validate, _commands);
+    Invocation view(*this);
+    InvocationGuard guard(*this, view);
+    try {
+        if (args.empty())
+            throw CmdLineParseException(
+                "The args vector must include the program name");
+        _progName = basename(args.front());
+        args.erase(args.begin());
+        auto *children = &_commands;
+        while (!children->empty()) {
+            if (args.empty())
+                throw CmdLineParseException(
+                    translateMessage("command_missing",
+                                     "Missing command after ") +
+                    view.invocationName());
+            const auto &token = args.front();
+            SwitchArg *builtin =
+                _helpArg && _helpArg->argMatches(token)         ? _helpArg
+                : _versionArg && _versionArg->argMatches(token) ? _versionArg
+                                                                : nullptr;
+            if (builtin) {
+                std::vector<bool> consumed(token.size(), false);
+                int index = 0;
+                builtin->processArg(&index, args, consumed);
+                return {.outcome = *_pendingOutcome};
+            }
+            Command *next = nullptr;
+            for (const auto &child : *children)
+                if (child->name() == token) {
+                    next = child.get();
+                    break;
+                }
+            if (!next) {
+                if (token.starts_with(_dialect.flagPrefix) ||
+                    (!_dialect.namePrefix.empty() &&
+                     token.starts_with(_dialect.namePrefix)))
+                    throw CmdLineParseException(
+                        translateMessage(
+                            "option_before_command",
+                            "Options must follow the complete command path; "
+                            "expected a command after ") +
+                            view.invocationName() + ". " +
+                            translateMessage(
+                                "command_order_hint",
+                                "Place all command words before options."),
+                        token);
+                throw CmdLineParseException(
+                    translateMessage("unknown_command",
+                                     "Unknown command after ") +
+                        view.invocationName(),
+                    token);
+            }
+            view.enter(*next);
+            args.erase(args.begin());
+            children = &next->_children;
+        }
+    } catch (SpecificationException &) {
+        throw;
+    } catch (ArgException &error) {
+        _output->failure(view, error);
+        return {.outcome = Outcome::ParseError,
+                .error = ParseError{.message = error.error(),
+                                    .argId = error.rawArgId()}};
+    }
+    auto result =
+        parseArguments(args, view.arguments, view.groups, view.required, view);
+    if (result.outcome == Outcome::Success)
+        _selected = const_cast<Command *>(view.path.back());
+    return result;
+}
+
+template <typename... Args>
+DispatchOutcome CmdLine::dispatch(Args &&...args) {
+    checkCommandMutation();
+    if (_commands.empty())
+        throw SpecificationException("dispatch requires registered commands");
+    auto result = parse(std::forward<Args>(args)...);
+    if (result.outcome != Outcome::Success)
+        return {std::move(result), std::nullopt};
+    Invocation view(*this);
+    std::vector<const Command *> path{};
+    for (const Command *node = _selected; node; node = node->_parent)
+        path.push_back(node);
+    std::reverse(path.begin(), path.end());
+    for (const auto *node : path) view.enter(*node);
+    InvocationGuard guard(*this, view);
+    const CommandContext context(*this, view, view.path);
+    return {std::move(result), _selected->_action(context)};
 }
 
 }  // namespace TCLAP

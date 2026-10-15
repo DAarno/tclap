@@ -1,0 +1,9 @@
+PARSE ERROR: Argument: --format
+             Options must follow the complete command path; expected a command after test132. Place all command words before options.
+
+Brief USAGE: 
+   test132  <command> ... [-h] [--version] [--format <string>]
+
+For complete USAGE and HELP type: 
+   test132 --help
+

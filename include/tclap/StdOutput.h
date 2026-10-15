@@ -120,6 +120,24 @@ inline void StdOutput::usage(CmdLineInterface &_cmd) {
     std::cout << std::format(
         "\n\n{}\n\n", _cmd.translateMessage("where_header", "Where: "));
 
+    const auto children = _cmd.commandChildren();
+    if (_cmd.requiresCommand()) {
+        std::cout << _cmd.translateMessage("commands_header", "Commands:")
+                  << "\n\n";
+        for (const auto &command : children) {
+            if (!command.visible) continue;
+            spacePrint(std::cout, command.name, 75, 3, 0);
+            spacePrint(std::cout, command.description, 75, 5, 0);
+            std::cout << '\n';
+        }
+        spacePrint(
+            std::cout,
+            _cmd.translateMessage("command_option_order",
+                                  "All options, including global options, must "
+                                  "follow the complete command path."),
+            75, 3, 0);
+        std::cout << '\n';
+    }
     _longUsage(_cmd, std::cout);
 
     std::cout << '\n' << std::flush;
@@ -137,12 +155,12 @@ inline void StdOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
 
         _shortUsage(_cmd, std::cerr);
 
-        std::cerr << std::format(
-                          "\n{}\n   {} {}help\n\n",
-                          _cmd.translateMessage(
-                              "complete_usage_hint",
-                              "For complete USAGE and HELP type: "),
-                          _cmd.programName(), _cmd.dialect().namePrefix)
+        std::cerr << std::format("\n{}\n   {} {}help\n\n",
+                                 _cmd.translateMessage(
+                                     "complete_usage_hint",
+                                     "For complete USAGE and HELP type: "),
+                                 _cmd.invocationName(),
+                                 _cmd.dialect().namePrefix)
                   << std::flush;
     } else {
         usage(_cmd);
@@ -254,7 +272,10 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     std::list<ArgGroup *> argSets = _cmd.argGroups();
 
     std::ostringstream outp;
-    outp << _cmd.programName() + " ";
+    outp << _cmd.invocationName() + " ";
+    if (_cmd.requiresCommand())
+        outp << " <" << _cmd.translateMessage("command_label", "command")
+             << "> ...";
 
     std::vector<std::string> switches;
 
@@ -378,7 +399,7 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
     // if the program name is too long, then adjust the second line offset
     int secondLineOffset =
-        static_cast<int>(detail::TextLength(_cmd.programName())) + 2;
+        static_cast<int>(detail::TextLength(_cmd.invocationName())) + 2;
     if (secondLineOffset > 75 / 2) secondLineOffset = static_cast<int>(75 / 2);
 
     spacePrint(os, outp.str(), 75, 3, secondLineOffset);

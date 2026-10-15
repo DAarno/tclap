@@ -88,26 +88,11 @@ struct ArgGroupModel {
     std::vector<ArgModel> members;
 };
 
-/**
- * Builds an ArgGroupModel for every ArgGroup registered with `cmd` --
- * including the CmdLine's own built-in groups for plainly cmd.add()'d
- * Args and for the auto-added --help/--version/-- args -- in the same
- * group and member order CmdLineInterface::argGroups() produces. This
- * is the order StdOutput/DocBookOutput actually render in; it is *not*
- * the same order as CmdLineInterface::argList()'s flat iteration (that
- * list is maintained separately and can interleave differently, e.g.
- * when a plain Arg is added, then an ArgGroup, then another plain Arg).
- *
- * A consumer that only wants a flat list of every Arg, without caring
- * about grouping, can get one with a single nested loop over the
- * result -- there's no separate flat-only entry point, so there's only
- * one traversal to keep correct.
- * \param cmd - The CmdLine to snapshot.
- */
-[[nodiscard]] inline std::vector<ArgGroupModel> BuildArgGroupModels(
-    CmdLineInterface &cmd) {
+namespace detail {
+inline std::vector<ArgGroupModel> SnapshotArgGroups(
+    const std::list<ArgGroup *> &source) {
     std::vector<ArgGroupModel> groups;
-    for (ArgGroup *group : cmd.argGroups()) {
+    for (ArgGroup *group : source) {
         ArgGroupModel groupModel{
             .isExclusive = group->isExclusive(),
             .isRequired = group->isRequired(),
@@ -133,6 +118,29 @@ struct ArgGroupModel {
         groups.push_back(std::move(groupModel));
     }
     return groups;
+}
+
+}  // namespace detail
+
+/**
+ * Builds an ArgGroupModel for every ArgGroup registered with `cmd` --
+ * including the CmdLine's own built-in groups for plainly cmd.add()'d
+ * Args and for the auto-added --help/--version/-- args -- in the same
+ * group and member order CmdLineInterface::argGroups() produces. This
+ * is the order StdOutput/DocBookOutput actually render in; it is *not*
+ * the same order as CmdLineInterface::argList()'s flat iteration (that
+ * list is maintained separately and can interleave differently, e.g.
+ * when a plain Arg is added, then an ArgGroup, then another plain Arg).
+ *
+ * A consumer that only wants a flat list of every Arg, without caring
+ * about grouping, can get one with a single nested loop over the
+ * result -- there's no separate flat-only entry point, so there's only
+ * one traversal to keep correct.
+ * \param cmd - The CmdLine to snapshot.
+ */
+[[nodiscard]] inline std::vector<ArgGroupModel> BuildArgGroupModels(
+    CmdLineInterface &cmd) {
+    return detail::SnapshotArgGroups(cmd.argGroups());
 }
 
 }  // namespace TCLAP

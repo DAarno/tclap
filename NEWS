@@ -1,3 +1,10 @@
+Commands and subcommands (2.0)
+- Register nested commands with inherited global/parent options and local args.
+- Explicit dispatch invokes a command action after successful validation; parse
+  remains action-free. Text and DocBook help follow the selected command path.
+- All options follow the complete command path; misplaced options report a clear
+  error. Applications without commands retain their existing behavior.
+
 Unicode text and wide input
 ---------------------------
 

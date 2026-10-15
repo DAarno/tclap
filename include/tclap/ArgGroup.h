@@ -41,6 +41,7 @@ namespace TCLAP {
  */
 class ArgGroup : public ArgContainer {
     friend class CmdLine;
+    friend class Command;
 
 public:
     using Container = std::list<Arg *>;

@@ -26,6 +26,7 @@
 #define TCLAP_CMD_LINE_INTERFACE_H
 
 #include <tclap/ArgContainer.h>
+#include <tclap/CommandInfo.h>
 #include <tclap/Dialect.h>
 #include <tclap/ParseOutcome.h>
 
@@ -161,6 +162,16 @@ public:
      * instance can be reused.
      */
     virtual void reset() = 0;
+
+    /// Complete command path for contextual help; ordinary parsers use
+    /// basename.
+    [[nodiscard]] virtual std::string invocationName() const {
+        return programName();
+    }
+    [[nodiscard]] virtual std::vector<CommandInfo> commandChildren() const {
+        return {};
+    }
+    [[nodiscard]] virtual bool requiresCommand() const { return false; }
 
     /**
      * Begin ignoring arguments since the "--" argument was specified.

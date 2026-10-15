@@ -157,7 +157,7 @@ inline void DocBookOutput::printShortGroup(const ArgGroup &group, bool labelsOnl
 
 inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
     std::list<ArgGroup *> argSets = _cmd.argGroups();
-    std::string progName = _cmd.programName();
+    std::string progName = _cmd.invocationName();
     std::string xversion = _cmd.version();
     theDelimiter = _cmd.delimiter();
 
@@ -183,6 +183,12 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
     std::cout << "<cmdsynopsis>\n";
 
     std::cout << "<command>" << escapeXml(progName) << "</command>\n";
+
+    if (_cmd.requiresCommand())
+        std::cout << "<arg choice='req'><replaceable>"
+                  << escapeXml(
+                         _cmd.translateMessage("command_label", "command"))
+                  << "</replaceable></arg>\n";
 
     for (std::list<ArgGroup *>::const_iterator it = argSets.begin();
          it != argSets.end(); ++it) {
@@ -223,6 +229,25 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
     std::cout << "</refsect1>\n";
 
     std::cout << "<refsect1>\n";
+    if (_cmd.requiresCommand()) {
+        std::cout << "<title>"
+                  << escapeXml(
+                         _cmd.translateMessage("commands_header", "Commands:"))
+                  << "</title>\n<variablelist>\n";
+        for (const auto &command : _cmd.commandChildren()) {
+            if (!command.visible) continue;
+            std::cout << "<varlistentry><term>" << escapeXml(command.name)
+                      << "</term><listitem><para>"
+                      << escapeXml(command.description)
+                      << "</para></listitem></varlistentry>\n";
+        }
+        std::cout << "</variablelist><para>"
+                  << escapeXml(_cmd.translateMessage(
+                         "command_option_order",
+                         "All options, including global options, must follow "
+                         "the complete command path."))
+                  << "</para></refsect1>\n<refsect1>\n";
+    }
     std::cout << "<title>Options</title>\n";
 
     std::cout << "<variablelist>\n";

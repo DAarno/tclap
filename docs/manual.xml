@@ -1845,4 +1845,124 @@ objects with unprefixed <literal>flag</literal> and <literal>name</literal> fiel
 <literal>setBy()</literal> records the spelling actually used; diagnostics retain
 the canonical identity.</para>
 </chapter>
+<chapter id="COMMANDS"><title>Commands and subcommands</title>
+<para>Register commands with <literal>cmd.addCommand()</literal>, and register
+subcommands on the returned <literal>Command</literal>. The parser owns commands;
+returned references remain valid until parser destruction. A command is either a
+namespace containing subcommands, or an executable leaf with an action.</para>
+<programlisting>ValueArg&lt;std::string&gt; format({.flag = "", .name = "format",
+    .description = "Output format", .defaultValue = "text"});
+ValueArg&lt;std::string&gt; project({.flag = "", .name = "project",
+    .description = "Project", .defaultValue = "default"});
+ValueArg&lt;std::string&gt; name({.flag = "", .name = "name",
+    .description = "Asset name", .required = true});
+CmdLine cmd({.message = "Manage resources"});
+cmd.add(format);                           // global: every command
+
+auto &amp;assets = cmd.addCommand({.name = "assets",
+                               .description = "Manage assets"});
+assets.add(project);                       // assets and all descendants
+auto &amp;reg = assets.addCommand({.name = "register",
+                              .description = "Register an asset"});
+reg.add(name);                             // assets register only
+reg.setAction([&amp;](const CommandContext &amp;context) -&gt; int {
+    // Every active argument has been parsed and validated.
+    return registerAsset(name.value(), project.value(), format.value());
+});
+return cmd.dispatch(argc, argv).exitCode();</programlisting>
+<para>See <filename>examples/test132.cpp</filename> for a complete register/list
+example. Borrowed arguments, groups and callback captures follow the ordinary
+parser lifetime rules; declare borrowed arguments before the parser when practical.
+<literal>command.addOwned&lt;ArgType&gt;(spec)</literal> constructs an owned argument.</para>
+<section><title>Order and scope</title>
+<para><emphasis>All command words must precede all options and positional
+arguments, including global options.</emphasis> For example:</para>
+<programlisting>mycmd assets register --name chair --project demo --format json
+mycmd assets list --project demo --format json</programlisting>
+<para><literal>mycmd --format json assets list</literal> and
+<literal>mycmd assets --format json list</literal> produce a parse error explaining
+that options must follow the complete command path. The parser does not move or
+skip options while looking for commands.</para>
+<para>Root options apply to every command. Options registered on a parent apply
+to every descendant. Leaf options apply only to that leaf. The selected callback
+can read all these values through ordinary typed argument references. Inactive
+siblings are neither parsed nor validated. A required inherited option is required
+for every selected descendant, but is not required for help or version output.</para>
+<para>Names and aliases cannot shadow an ancestor or descendant argument;
+independent siblings may reuse spellings. An argument or group belongs to only
+one scope. Groups may contain members only from their own scope. Positional
+arguments are allowed only on executable leaves. Command names are exact,
+case-sensitive UTF-8 names without whitespace, control characters or option
+prefixes. Command aliases, abbreviations and implicit default commands are not
+supported. All scopes share the root parser's dialect.</para>
+<para>A missing or unknown command is a parse error. At a namespace,
+<literal>--</literal> cannot replace a command. After a leaf has been selected,
+all tokens use ordinary argument semantics, including value consumption, switch
+bundles, aliases and ignore-rest. A value equal to <literal>--help</literal> is not
+mistaken for a request for help when consumed by a value-taking argument.</para>
+</section>
+<section><title>Parsing and dispatch</title>
+<para><literal>parse()</literal> selects a command and parses its active arguments
+but never invokes a command action. <literal>parseOrExit()</literal> retains that
+same separation. <literal>selectedCommand()</literal> returns the selected leaf
+only after a successful command parse; reset and every new parse clear it.</para>
+<para><literal>dispatch()</literal> parses once and invokes exactly the selected
+action on success. It requires registered commands and returns a
+<literal>DispatchOutcome</literal>, containing <literal>parse</literal> and an
+optional <literal>applicationStatus</literal>. The status is present only if the
+action returned. <literal>exitCode()</literal> returns the application status,
+zero for help/version, or one for parse errors. The caller chooses whether to
+return that code from main. Help, version and parse errors never invoke actions.
+Exceptions from application actions propagate.</para>
+<para><literal>CommandContext::root()</literal> returns the owning CmdLine;
+<literal>parser()</literal> returns a contextual CmdLineInterface view containing
+only active arguments/groups. <literal>command()</literal> and
+<literal>path()</literal> identify the selected command. <literal>arguments()</literal>
+includes inherited options, leaf arguments and built-ins. Use
+<literal>BuildArgGroupModels(context.parser())</literal> for owned argument
+snapshots. Do not retain a CommandContext or its parser view after the action.</para>
+<para>Argument onMatch callbacks remain eager and may run before later validation
+fails; command actions run after validation. Parsing is not transactional and does
+not reset arguments automatically. Call <literal>reset()</literal> before reuse;
+it resets every scope, including inactive branches. Registration, reset and
+recursive parsing/dispatch are prohibited during a command invocation, including
+its action. Arbitrary custom argument-hook side effects are not rolled back.
+Concurrent access to one mutable parser requires application synchronization.</para>
+<para>The mutable narrow vector overload consumes the program name and every
+successfully selected command word. It leaves the remaining argument suffix to
+ordinary parsing, including any changes made by custom argument processors. On
+selection failure it leaves the offending token and its suffix; at namespace
+help/version it leaves the help/version token. Wide vectors remain unchanged.
+Narrow and wide argc/argv entry points are also supported.</para>
+</section>
+<section><title>Help, documentation and introspection</title>
+<para><literal>mycmd --help</literal> lists root commands;
+<literal>mycmd assets --help</literal> lists asset subcommands;
+<literal>mycmd assets register --help</literal> shows register arguments plus
+inherited options. Built-in help/version spellings follow the configured dialect
+and can be disabled with the ordinary parser spec. Hidden commands remain
+selectable and support explicit help, but are omitted from parent listings.</para>
+<para>StdOutput and DocBookOutput receive the same contextual scope. Help shows
+the full command path, immediate children and applicable options. To generate
+DocBook for every command, traverse <literal>cmd.commands()</literal> recursively,
+reset the parser before each invocation, and parse each command path followed by
+its help option with a DocBookOutput installed. Save each invocation as a separate
+XML document; concatenating refentry documents does not produce a single XML
+file. No command action is invoked by those help parses.</para>
+<para>Include <filename>tclap/CommandModel.h</filename> and call
+<literal>BuildCommandModels(cmd)</literal> for owned tree metadata. Its
+<literal>globalGroups</literal> describe root options; each command has
+<literal>info</literal>, <literal>localGroups</literal> and <literal>children</literal>.
+Inheritance follows the tree; callbacks are not copied into snapshots. Existing
+BuildArgGroupModels and root argList retain their existing scope.</para>
+<para>Custom CmdLineOutput implementations receive a contextual argument view and
+can use <literal>invocationName()</literal>, <literal>requiresCommand()</literal>
+and <literal>commandChildren()</literal> to render command listings. These new
+CmdLineInterface methods have defaults, preserving existing implementations.
+An existing custom renderer must opt in to displaying new command metadata.
+Applications without registered commands retain their existing parsing and help
+behavior.</para>
+</section>
+</chapter>
+
 </book>

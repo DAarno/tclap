@@ -1,0 +1,6 @@
+assets
+register
+-n
+3
+--format
+json

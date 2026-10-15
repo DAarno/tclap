@@ -1,0 +1,37 @@
+
+USAGE: 
+
+   test132 assets  <command> ... [-h] [--version] [--format <string>]
+                   [--project <string>]
+
+
+Where: 
+
+Commands:
+
+   register
+     Register an asset
+
+   list
+     List assets
+
+   All options, including global options, must follow the complete command
+   path.
+
+   --format <string>
+     Output format for every command
+
+   --project <string>
+     Project for all asset commands
+
+   --,  --ignore_rest
+     Ignores the rest of the labeled arguments following this flag.
+
+   --version
+     Displays version information and exits.
+
+   -h,  --help
+     Displays usage information and exits.
+
+   Manage assets
+
