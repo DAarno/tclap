@@ -62,7 +62,6 @@ public:
     StandaloneArgs() {}
 
     ArgContainer &add(Arg *arg) {
-        // std::cerr << "Adding " << arg->getName() << " to StandaloneArgs\n";
         for (iterator it = begin(); it != end(); it++) {
             if (arg->conflictsWith(**it)) {
                 throw SpecificationException(
@@ -514,22 +513,8 @@ public:
     void add(Arg &arg) {
         arg._validateAliases(_cmd._delimiter, Arg::flagStartString(),
                              Arg::nameStartString());
-        for (ArgListIterator it = _args.begin(); it != _args.end(); ++it)
-            if (arg.conflictsWith(**it) ||
-                arg._aliasConflictsWith(**it, Arg::flagStartString(),
-                                        Arg::nameStartString()) ||
-                (*it)->_aliasConflictsWith(arg, Arg::flagStartString(),
-                                           Arg::nameStartString()))
-                throw SpecificationException(
-                    "Argument with same flag/name already exists!", arg.longID());
-        if (!arg.hasLabel()) {
-            if (_hasOptionalUnlabeledArg)
-                throw SpecificationException(
-                    "You can't specify ANY Unlabeled Arg following an optional "
-                    "Unlabeled Arg", arg.longID());
-            if (!arg.isRequired() && !arg.acceptsMultipleValues())
-                _hasOptionalUnlabeledArg = true;
-        }
+        validateConflicts(arg);
+        validatePositionalOrder(arg);
         _bindings.push_back(std::make_pair(&arg, arg._parserDelimiter));
         arg._parserDelimiter = &_cmd._delimiter;
         arg.addToList(_args);
@@ -544,6 +529,28 @@ public:
     }
 
 private:
+    void validateConflicts(const Arg &arg) const {
+        for (ArgListIterator it = _args.begin(); it != _args.end(); ++it)
+            if (arg.conflictsWith(**it) ||
+                arg._aliasConflictsWith(**it, Arg::flagStartString(),
+                                        Arg::nameStartString()) ||
+                (*it)->_aliasConflictsWith(arg, Arg::flagStartString(),
+                                           Arg::nameStartString()))
+                throw SpecificationException(
+                    "Argument with same flag/name already exists!", arg.longID());
+    }
+
+    void validatePositionalOrder(Arg &arg) {
+        if (!arg.hasLabel()) {
+            if (_hasOptionalUnlabeledArg)
+                throw SpecificationException(
+                    "You can't specify ANY Unlabeled Arg following an optional "
+                    "Unlabeled Arg", arg.longID());
+            if (!arg.isRequired() && !arg.acceptsMultipleValues())
+                _hasOptionalUnlabeledArg = true;
+        }
+    }
+
     Registration(const Registration &);
     Registration &operator=(const Registration &);
     typedef std::vector<std::pair<Arg *, const char *> > Bindings;
