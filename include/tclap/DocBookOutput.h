@@ -121,6 +121,16 @@ protected:
     void printLongArg(const ArgGroup &it) const;
 
     char theDelimiter;
+
+private:
+    void _printSynopsis(CmdLineInterface &cmd,
+                        const std::list<ArgGroup *> &groups,
+                        const std::string &programName);
+    static ArgGroup *_findArgGroup(const std::list<ArgGroup *> &groups,
+                                   const Arg *arg);
+    void _printLongEntry(Arg &arg, bool forceRequired) const;
+    void _printAliasTerms(const Arg &arg) const;
+    void _printValuePlaceholder(const Arg &arg) const;
 };
 
 inline void DocBookOutput::version(CmdLineInterface &_cmd) {
@@ -179,41 +189,7 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
     std::cout << "<refpurpose>" << escapeXml(_cmd.getMessage()) << "</refpurpose>\n";
     std::cout << "</refnamediv>\n";
 
-    std::cout << "<refsynopsisdiv>\n";
-    std::cout << "<cmdsynopsis>\n";
-
-    std::cout << "<command>" << escapeXml(progName) << "</command>\n";
-
-    for (std::list<ArgGroup *>::const_iterator it = argSets.begin();
-         it != argSets.end(); ++it) {
-        const ArgGroup &group = **it;
-        if (group.isExclusive() && hasVisiblePositional(group)) continue;
-        printShortGroup(group, true);
-    }
-    const std::list<Arg *> operands = _cmd.getArgList();
-    std::list<ArgGroup *> shown;
-    for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
-        Arg *arg = *it;
-        if (arg->hasLabel() || !arg->visibleInHelp()) continue;
-        ArgGroup *owner = NULL;
-        for (std::list<ArgGroup *>::const_iterator group = argSets.begin();
-             group != argSets.end(); ++group)
-            if (std::find((*group)->begin(), (*group)->end(), arg) != (*group)->end()) {
-                owner = *group;
-                break;
-            }
-        if (owner && owner->isExclusive()) {
-            if (std::find(shown.begin(), shown.end(), owner) == shown.end()) {
-                printShortGroup(*owner, false);
-                shown.push_back(owner);
-            }
-        } else {
-            printShortArg(arg, arg->isRequired());
-        }
-    }
-
-    std::cout << "</cmdsynopsis>\n";
-    std::cout << "</refsynopsisdiv>\n";
+    _printSynopsis(_cmd, argSets, progName);
 
     std::cout << "<refsect1>\n";
     std::cout << "<title>Description</title>\n";
@@ -245,6 +221,50 @@ inline void DocBookOutput::usage(CmdLineInterface &_cmd) {
     std::cout << "</refentry>" << std::endl;
 }
 
+inline void DocBookOutput::_printSynopsis(CmdLineInterface &cmd,
+                                          const std::list<ArgGroup *> &groups,
+                                          const std::string &programName) {
+    std::cout << "<refsynopsisdiv>\n";
+    std::cout << "<cmdsynopsis>\n";
+
+    std::cout << "<command>" << escapeXml(programName) << "</command>\n";
+
+    for (std::list<ArgGroup *>::const_iterator it = groups.begin();
+         it != groups.end(); ++it) {
+        const ArgGroup &group = **it;
+        if (group.isExclusive() && hasVisiblePositional(group)) continue;
+        printShortGroup(group, true);
+    }
+    const std::list<Arg *> operands = cmd.getArgList();
+    std::list<ArgGroup *> shown;
+    for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
+        Arg *arg = *it;
+        if (arg->hasLabel() || !arg->visibleInHelp()) continue;
+        ArgGroup *owner = _findArgGroup(groups, arg);
+        if (owner && owner->isExclusive()) {
+            if (std::find(shown.begin(), shown.end(), owner) == shown.end()) {
+                printShortGroup(*owner, false);
+                shown.push_back(owner);
+            }
+        } else {
+            printShortArg(arg, arg->isRequired());
+        }
+    }
+
+    std::cout << "</cmdsynopsis>\n";
+    std::cout << "</refsynopsisdiv>\n";
+}
+
+inline ArgGroup *DocBookOutput::_findArgGroup(
+    const std::list<ArgGroup *> &groups, const Arg *arg) {
+    for (std::list<ArgGroup *>::const_iterator group = groups.begin();
+         group != groups.end(); ++group)
+        if (std::find((*group)->begin(), (*group)->end(), arg) !=
+            (*group)->end())
+            return *group;
+    return NULL;
+}
+
 inline void DocBookOutput::failure(CmdLineInterface &_cmd, ArgException &e) {
     static_cast<void>(_cmd);  // unused
     std::cout << e.what() << std::endl;
@@ -269,7 +289,6 @@ inline void DocBookOutput::removeChar(std::string &s, char r) const {
 
 inline void DocBookOutput::printShortArg(Arg *a, bool required) {
 
-
     std::string choice = "opt";
     if (required) {
         choice = "plain";
@@ -290,15 +309,12 @@ inline void DocBookOutput::printShortArg(Arg *a, bool required) {
     else
         std::cout << escapeXml(a->nameStartString() + a->getName());
     if (a->isValueRequired()) {
-        std::string arg = valueLabel(*a);
-        std::cout << escapeXml(std::string(1, theDelimiter));
-        std::cout << "<replaceable>" << escapeXml(arg) << "</replaceable>";
+        _printValuePlaceholder(*a);
     }
     std::cout << "</arg>" << std::endl;
 }
 
 inline void DocBookOutput::printLongArg(const ArgGroup &group) const {
-
 
     bool forceRequired = group.isRequired() && CountVisibleArgs(group) == 1;
     for (ArgGroup::const_iterator it = group.begin(); it != group.end(); ++it) {
@@ -306,63 +322,75 @@ inline void DocBookOutput::printLongArg(const ArgGroup &group) const {
         if (!a.visibleInHelp()) {
             continue;
         }
+        _printLongEntry(a, forceRequired);
+    }
+}
 
-        std::string desc = a.getDescription(forceRequired || a.isRequired());
+inline void DocBookOutput::_printLongEntry(Arg &a, bool forceRequired) const {
+    std::string desc = a.getDescription(forceRequired || a.isRequired());
 
+    std::cout << "<varlistentry>\n";
+    if (!a.hasLabel()) {
+        std::cout << "<term><replaceable>" << escapeXml(a.getName())
+                  << "</replaceable></term>\n<listitem><para>"
+                  << escapeXml(desc) << "</para></listitem>\n</varlistentry>"
+                  << std::endl;
+        return;
+    }
 
-        std::cout << "<varlistentry>\n";
-        if (!a.hasLabel()) {
-            std::cout << "<term><replaceable>" << escapeXml(a.getName())
-                      << "</replaceable></term>\n<listitem><para>"
-                      << escapeXml(desc) << "</para></listitem>\n</varlistentry>"
-                      << std::endl;
-            continue;
-        }
-
-        if (!a.getFlag().empty()) {
-            std::cout << "<term>\n";
-            std::cout << "<option>";
-            std::cout << escapeXml(std::string(1, a.flagStartChar()) + a.getFlag());
-            std::cout << "</option>\n";
-            std::cout << "</term>\n";
-        }
-
+    if (!a.getFlag().empty()) {
         std::cout << "<term>\n";
         std::cout << "<option>";
-        std::cout << escapeXml(a.nameStartString() + a.getName());
-        if (a.isValueRequired()) {
-            std::string arg = valueLabel(a);
-            std::cout << escapeXml(std::string(1, theDelimiter));
-            std::cout << "<replaceable>" << escapeXml(arg) << "</replaceable>";
-        }
-
+        std::cout << escapeXml(std::string(1, a.flagStartChar()) + a.getFlag());
         std::cout << "</option>\n";
         std::cout << "</term>\n";
-
-        for (std::vector<ArgAlias>::const_iterator alias = a.aliases().begin();
-             alias != a.aliases().end(); ++alias) {
-            for (int spelling = 0; spelling < 2; ++spelling) {
-                const std::string &label = spelling == 0 ? alias->flag : alias->name;
-                if (label.empty()) continue;
-                std::cout << "<term><option>"
-                          << escapeXml((spelling == 0 ? a.flagStartString()
-                                                       : a.nameStartString()) + label);
-                if (a.isValueRequired())
-                    std::cout << escapeXml(std::string(1, theDelimiter))
-                              << "<replaceable>" << escapeXml(valueLabel(a))
-                              << "</replaceable>";
-                std::cout << "</option></term>\n";
-            }
-        }
-
-        std::cout << "<listitem>\n";
-        std::cout << "<para>\n";
-        std::cout << escapeXml(desc) << '\n';
-        std::cout << "</para>\n";
-        std::cout << "</listitem>\n";
-
-        std::cout << "</varlistentry>" << std::endl;
     }
+
+    std::cout << "<term>\n";
+    std::cout << "<option>";
+    std::cout << escapeXml(a.nameStartString() + a.getName());
+    if (a.isValueRequired()) {
+        _printValuePlaceholder(a);
+    }
+
+    std::cout << "</option>\n";
+    std::cout << "</term>\n";
+
+    _printAliasTerms(a);
+
+    std::cout << "<listitem>\n";
+    std::cout << "<para>\n";
+    std::cout << escapeXml(desc) << '\n';
+    std::cout << "</para>\n";
+    std::cout << "</listitem>\n";
+
+    std::cout << "</varlistentry>" << std::endl;
+}
+
+inline void DocBookOutput::_printAliasTerms(const Arg &a) const {
+    for (std::vector<ArgAlias>::const_iterator alias = a.aliases().begin();
+         alias != a.aliases().end(); ++alias) {
+        for (int spelling = 0; spelling < 2; ++spelling) {
+            const std::string &label =
+                spelling == 0 ? alias->flag : alias->name;
+            if (label.empty()) continue;
+            std::cout << "<term><option>"
+                      << escapeXml((spelling == 0 ? a.flagStartString()
+                                                  : a.nameStartString()) +
+                                   label);
+            if (a.isValueRequired())
+                std::cout << escapeXml(std::string(1, theDelimiter))
+                          << "<replaceable>" << escapeXml(valueLabel(a))
+                          << "</replaceable>";
+            std::cout << "</option></term>\n";
+        }
+    }
+}
+
+inline void DocBookOutput::_printValuePlaceholder(const Arg &arg) const {
+    const std::string label = valueLabel(arg);
+    std::cout << escapeXml(std::string(1, theDelimiter));
+    std::cout << "<replaceable>" << escapeXml(label) << "</replaceable>";
 }
 
 }  // namespace TCLAP
