@@ -214,6 +214,12 @@ private:
      */
     void _constructor();
 
+    void _setProgramName(std::vector<std::string> &args);
+    int _parseArguments(std::vector<std::string> &args);
+    bool _processArgument(int &index, std::vector<std::string> &args,
+                          int &requiredCount);
+    void _validateRequiredArguments(int requiredCount);
+
     /**
      * Whether or not to automatically create help and version switches.
      */
@@ -594,87 +600,9 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
     int estat = 0;
 
     try {
-        if (args.empty()) {
-            // https://sourceforge.net/p/tclap/bugs/30/
-            throw CmdLineParseException(
-                "The args vector must not be empty, "
-                "the first entry should contain the "
-                "program's name.");
-        }
-
-        // TODO(macbishop): Maybe store the full name somewhere?
-        _progName = basename(args.front());
-        args.erase(args.begin());
-
-        int requiredCount = 0;
-        std::list<ArgGroup *> missingArgGroups;
-
-        // Check that the right amount of arguments are provided for
-        // each ArgGroup, and if there are any required arguments
-        // missing, store them for later. Other errors will cause an
-        // exception to be thrown and parse will exit early.
-        /*
-        for (std::list<ArgGroup*>::iterator it = _argGroups.begin();
-             it != _argGroups.end(); ++it) {
-            bool missingRequired = (*it)->validate(args);
-            if (missingRequired) {
-                missingArgGroups.push_back(*it);
-            }
-        }
-        */
-
-        for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
-            bool matched = false;
-            for (ArgListIterator it = _argList.begin(); it != _argList.end();
-                 it++) {
-                Arg &arg = **it;
-                // We check if the argument was already set (e.g., for
-                // a Multi-Arg) since then we don't want to count it
-                // as required again. This is a hack/workaround to
-                // make isRequired() imutable so it can be used to
-                // display help correctly (also it's a good idea).
-                //
-                // TODO: This logic should probably be refactored to
-                // remove this logic from here.
-                bool alreadySet = arg.isSet();
-                bool ignore = arg.isIgnoreable() && ignoreRest();
-                if (!ignore && arg.processArg(&i, args)) {
-                    requiredCount += (!alreadySet && arg.isRequired()) ? 1 : 0;
-                    matched = true;
-                    break;
-                }
-            }
-
-            // checks to see if the argument is an empty combined
-            // switch and if so, then we've actually matched it
-            if (!matched && _emptyCombined(args[i])) matched = true;
-
-            if (!matched && !ignoreRest() && !_ignoreUnmatched)
-                throw(
-                    CmdLineParseException("Couldn't find match "
-                                          "for argument",
-                                          args[i]));
-        }
-
-        // Once all arguments have been parsed, check that we don't
-        // violate any constraints.
-        for (std::list<ArgGroup *>::iterator it = _argGroups.begin();
-             it != _argGroups.end(); ++it) {
-            bool missingRequired = (*it)->validate();
-            if (missingRequired) {
-                missingArgGroups.push_back(*it);
-            }
-        }
-
-        if (requiredCount < _numRequired || !missingArgGroups.empty()) {
-            missingArgsException(missingArgGroups);
-        }
-
-        if (requiredCount > _numRequired) {
-            throw(CmdLineParseException(
-                translateMessage("too_many_arguments",
-                                 "Too many arguments!")));
-        }
+        _setProgramName(args);
+        const int requiredCount = _parseArguments(args);
+        _validateRequiredArguments(requiredCount);
     } catch (ArgException &e) {
         // If we're not handling the exceptions, rethrow.
         if (!_handleExceptions) {
@@ -698,6 +626,78 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
     }
 
     if (shouldExit) exit(estat);
+}
+
+inline void CmdLine::_setProgramName(std::vector<std::string> &args) {
+    if (args.empty()) {
+        // https://sourceforge.net/p/tclap/bugs/30/
+        throw CmdLineParseException(
+            "The args vector must not be empty, "
+            "the first entry should contain the "
+            "program's name.");
+    }
+
+    // TODO(macbishop): Maybe store the full name somewhere?
+    _progName = basename(args.front());
+    args.erase(args.begin());
+}
+
+inline int CmdLine::_parseArguments(std::vector<std::string> &args) {
+    int requiredCount = 0;
+    for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
+        bool matched = _processArgument(i, args, requiredCount);
+
+        // checks to see if the argument is an empty combined
+        // switch and if so, then we've actually matched it
+        if (!matched && _emptyCombined(args[i])) matched = true;
+
+        if (!matched && !ignoreRest() && !_ignoreUnmatched)
+            throw(
+                CmdLineParseException("Couldn't find match "
+                                      "for argument",
+                                      args[i]));
+    }
+
+    return requiredCount;
+}
+
+inline bool CmdLine::_processArgument(int &index,
+                                      std::vector<std::string> &args,
+                                      int &requiredCount) {
+    for (ArgListIterator it = _argList.begin(); it != _argList.end(); it++) {
+        Arg &arg = **it;
+        // Count a required argument only on its first match.
+        bool alreadySet = arg.isSet();
+        bool ignore = arg.isIgnoreable() && ignoreRest();
+        if (!ignore && arg.processArg(&index, args)) {
+            requiredCount += (!alreadySet && arg.isRequired()) ? 1 : 0;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+inline void CmdLine::_validateRequiredArguments(int requiredCount) {
+    std::list<ArgGroup *> missingArgGroups;
+    // Once all arguments have been parsed, check that we don't
+    // violate any constraints.
+    for (std::list<ArgGroup *>::iterator it = _argGroups.begin();
+         it != _argGroups.end(); ++it) {
+        bool missingRequired = (*it)->validate();
+        if (missingRequired) {
+            missingArgGroups.push_back(*it);
+        }
+    }
+
+    if (requiredCount < _numRequired || !missingArgGroups.empty()) {
+        missingArgsException(missingArgGroups);
+    }
+
+    if (requiredCount > _numRequired) {
+        throw(CmdLineParseException(
+            translateMessage("too_many_arguments", "Too many arguments!")));
+    }
 }
 
 inline bool CmdLine::_emptyCombined(const std::string &s) {
