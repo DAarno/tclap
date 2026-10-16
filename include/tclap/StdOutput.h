@@ -98,6 +98,23 @@ protected:
      */
     void spacePrint(std::ostream &os, const std::string &s, int maxWidth,
                     int indentSpaces, int secondLineOffset) const;
+
+private:
+    void _partitionGroups(std::list<ArgGroup *> &groups,
+                          std::list<ArgGroup *> &exclusiveGroups,
+                          std::list<ArgGroup *> &nonExclusiveGroups) const;
+    void _printShortSwitches(std::ostream &os, std::string &switches,
+                             std::list<ArgGroup *> &groups) const;
+    void _printLongSwitches(std::ostream &os,
+                            std::list<ArgGroup *> &groups) const;
+    void _printShortOptions(std::ostream &os,
+                            std::list<ArgGroup *> &groups) const;
+    void _printShortOperands(CmdLineInterface &cmd, std::ostream &os,
+                             std::list<ArgGroup *> &groups) const;
+    void _printGroupHeading(CmdLineInterface &cmd, std::ostream &os,
+                            const ArgGroup &group) const;
+    void _printLongEntry(std::ostream &os, const Arg &arg, bool required,
+                         int indent) const;
 };
 
 inline void StdOutput::version(CmdLineInterface &_cmd) {
@@ -273,12 +290,34 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
     outp << _cmd.getProgramName() + " ";
 
     std::string switches = Arg::flagStartString();
-    bool hasShortSwitches = false;
-
     std::list<ArgGroup *> exclusiveGroups;
     std::list<ArgGroup *> nonExclusiveGroups;
-    for (std::list<ArgGroup *>::iterator sit = argSets.begin();
-         sit != argSets.end(); ++sit) {
+    _partitionGroups(argSets, exclusiveGroups, nonExclusiveGroups);
+    _printShortSwitches(outp, switches, nonExclusiveGroups);
+    _printLongSwitches(outp, nonExclusiveGroups);
+
+    // Exclusive groups containing operands are printed with those operands.
+    for (std::list<ArgGroup *>::iterator it = exclusiveGroups.begin();
+         it != exclusiveGroups.end(); ++it) {
+        if (!internal::HasVisiblePositional(**it))
+            internal::PrintExclusiveShortGroup(outp, **it);
+    }
+
+    _printShortOptions(outp, nonExclusiveGroups);
+    _printShortOperands(_cmd, outp, argSets);
+
+    // if the program name is too long, then adjust the second line offset
+    int secondLineOffset = static_cast<int>(_cmd.getProgramName().length()) + 2;
+    if (secondLineOffset > 75 / 2) secondLineOffset = static_cast<int>(75 / 2);
+
+    spacePrint(os, outp.str(), 75, 3, secondLineOffset);
+}
+
+inline void StdOutput::_partitionGroups(
+    std::list<ArgGroup *> &groups, std::list<ArgGroup *> &exclusiveGroups,
+    std::list<ArgGroup *> &nonExclusiveGroups) const {
+    for (std::list<ArgGroup *>::iterator sit = groups.begin();
+         sit != groups.end(); ++sit) {
         if (CountVisibleArgs(**sit) <= 0) {
             continue;
         }
@@ -303,11 +342,17 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
             ++it;
         }
     }
+}
+
+inline void StdOutput::_printShortSwitches(
+    std::ostream &os, std::string &switches,
+    std::list<ArgGroup *> &groups) const {
+    bool hasShortSwitches = false;
 
     // First short switches (needs to be special because they are all
     // stuck together).
-    for (std::list<ArgGroup *>::iterator sit = nonExclusiveGroups.begin();
-         sit != nonExclusiveGroups.end(); ++sit) {
+    for (std::list<ArgGroup *>::iterator sit = groups.begin();
+         sit != groups.end(); ++sit) {
         for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
              ++it) {
             if (internal::IsVisibleShortSwitch(**it)) {
@@ -319,12 +364,15 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
         std::sort(switches.begin(), switches.end(), cmpSwitch);
     }
 
-    if (hasShortSwitches) outp << " [" << switches << ']';
+    if (hasShortSwitches) os << " [" << switches << ']';
+}
 
+inline void StdOutput::_printLongSwitches(std::ostream &os,
+                                          std::list<ArgGroup *> &groups) const {
     // Now do long switches (e.g., --version, but no -v)
     std::vector<Arg *> longSwitches;
-    for (std::list<ArgGroup *>::iterator sit = nonExclusiveGroups.begin();
-         sit != nonExclusiveGroups.end(); ++sit) {
+    for (std::list<ArgGroup *>::iterator sit = groups.begin();
+         sit != groups.end(); ++sit) {
         for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
              ++it) {
             Arg &arg = **it;
@@ -338,20 +386,16 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
               internal::CompareShortID);
     for (std::vector<Arg *>::const_iterator it = longSwitches.begin();
          it != longSwitches.end(); ++it) {
-        outp << " [" << (**it).shortID() << ']';
+        os << " [" << (**it).shortID() << ']';
     }
+}
 
-    // Exclusive groups containing operands are printed with those operands.
-    for (std::list<ArgGroup *>::iterator it = exclusiveGroups.begin();
-         it != exclusiveGroups.end(); ++it) {
-        if (!internal::HasVisiblePositional(**it))
-            internal::PrintExclusiveShortGroup(outp, **it);
-    }
-
+inline void StdOutput::_printShortOptions(std::ostream &os,
+                                          std::list<ArgGroup *> &groups) const {
     // Next do options, we sort them later by optional first.
     std::vector<std::pair<const Arg *, bool> > options;
-    for (std::list<ArgGroup *>::iterator sit = nonExclusiveGroups.begin();
-         sit != nonExclusiveGroups.end(); ++sit) {
+    for (std::list<ArgGroup *>::iterator sit = groups.begin();
+         sit != groups.end(); ++sit) {
         for (ArgGroup::iterator it = (*sit)->begin(); it != (*sit)->end();
              ++it) {
             Arg &arg = **it;
@@ -373,37 +417,34 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
          it != options.end(); ++it) {
         const Arg &arg = *it->first;
         bool required = it->second;
-        outp << (required ? " " : " [");
-        outp << arg.shortID();
-        outp << (required ? "" : "]");
+        os << (required ? " " : " [");
+        os << arg.shortID();
+        os << (required ? "" : "]");
     }
+}
 
+inline void StdOutput::_printShortOperands(
+    CmdLineInterface &cmd, std::ostream &os,
+    std::list<ArgGroup *> &groups) const {
     // Positional order must match the order in which the parser consumes argv.
-    const std::list<Arg *> operands = _cmd.getArgList();
+    const std::list<Arg *> operands = cmd.getArgList();
     std::list<ArgGroup *> shown;
     for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
         const Arg &arg = **it;
         if (arg.hasLabel() || !arg.isValueRequired() || !arg.visibleInHelp())
             continue;
-        ArgGroup *group = internal::FindArgGroup(argSets, &arg);
+        ArgGroup *group = internal::FindArgGroup(groups, &arg);
         if (group && group->isExclusive() && CountVisibleArgs(*group) > 1) {
             if (std::find(shown.begin(), shown.end(), group) == shown.end()) {
-                internal::PrintExclusiveShortGroup(outp, *group);
+                internal::PrintExclusiveShortGroup(os, *group);
                 shown.push_back(group);
             }
             continue;
         }
         bool required = arg.isRequired() ||
                         (group && group->isRequired() && CountVisibleArgs(*group) == 1);
-        outp << (required ? " " : " [") << arg.shortID()
-             << (required ? "" : "]");
+        os << (required ? " " : " [") << arg.shortID() << (required ? "" : "]");
     }
-
-    // if the program name is too long, then adjust the second line offset
-    int secondLineOffset = static_cast<int>(_cmd.getProgramName().length()) + 2;
-    if (secondLineOffset > 75 / 2) secondLineOffset = static_cast<int>(75 / 2);
-
-    spacePrint(os, outp.str(), 75, 3, secondLineOffset);
 }
 
 inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
@@ -420,14 +461,7 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
         if (exclusive && internal::HasVisiblePositional(argGroup)) continue;
         bool forceRequired = visible == 1 && argGroup.isRequired();
         if (exclusive) {
-            spacePrint(os,
-                       argGroup.isRequired()
-                           ? _cmd.translateMessage("one_of_group",
-                                                   "One of:")
-                           : _cmd.translateMessage("either_of_group",
-                                                   "Either of:"),
-                       75,
-                       3, 0);
+            _printGroupHeading(_cmd, os, argGroup);
         }
 
         for (ArgGroup::iterator it = argGroup.begin(); it != argGroup.end();
@@ -442,14 +476,7 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
             }
 
             bool required = arg.isRequired() || forceRequired;
-            if (exclusive) {
-                spacePrint(os, arg.longID(), 75, 6, 3);
-                spacePrint(os, arg.getDescription(required), 75, 8, 0);
-            } else {
-                spacePrint(os, arg.longID(), 75, 3, 3);
-                spacePrint(os, arg.getDescription(required), 75, 5, 0);
-            }
-            os << '\n';
+            _printLongEntry(os, arg, required, exclusive ? 6 : 3);
         }
     }
 
@@ -462,12 +489,10 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
         if (group && group->isExclusive() && CountVisibleArgs(*group) > 1) {
             if (std::find(shown.begin(), shown.end(), group) != shown.end()) continue;
             shown.push_back(group);
-            spacePrint(os, group->isRequired()
-                               ? _cmd.translateMessage("one_of_group", "One of:")
-                               : _cmd.translateMessage("either_of_group", "Either of:"),
-                       75, 3, 0);
+            _printGroupHeading(_cmd, os, *group);
             for (ArgGroup::iterator member = group->begin(); member != group->end(); ++member) {
                 if (!(*member)->visibleInHelp()) continue;
+                // Preserve longID() before the virtual isRequired() call.
                 spacePrint(os, (*member)->longID(), 75, 6, 3);
                 spacePrint(os, (*member)->getDescription((*member)->isRequired()), 75, 8, 0);
                 os << '\n';
@@ -476,9 +501,7 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
         }
         const bool required = arg.isRequired() ||
                               (group && group->isRequired() && CountVisibleArgs(*group) == 1);
-        spacePrint(os, arg.longID(), 75, 3, 3);
-        spacePrint(os, arg.getDescription(required), 75, 5, 0);
-        os << '\n';
+        _printLongEntry(os, arg, required, 3);
     }
 
     if (!message.empty()) {
@@ -486,6 +509,23 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
     }
 
     os.flush();
+}
+
+inline void StdOutput::_printGroupHeading(CmdLineInterface &cmd,
+                                          std::ostream &os,
+                                          const ArgGroup &group) const {
+    spacePrint(os,
+               group.isRequired()
+                   ? cmd.translateMessage("one_of_group", "One of:")
+                   : cmd.translateMessage("either_of_group", "Either of:"),
+               75, 3, 0);
+}
+
+inline void StdOutput::_printLongEntry(std::ostream &os, const Arg &arg,
+                                       bool required, int indent) const {
+    spacePrint(os, arg.longID(), 75, indent, 3);
+    spacePrint(os, arg.getDescription(required), 75, indent + 2, 0);
+    os << '\n';
 }
 
 namespace {
