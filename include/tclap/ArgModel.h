@@ -89,6 +89,23 @@ struct ArgGroupModel {
 };
 
 namespace detail {
+inline ArgModel SnapshotArgument(Arg &arg) {
+    return ArgModel{
+        .flag = arg.flag(),
+        .name = arg.name(),
+        .description = arg.description(false),
+        .descriptionWhenRequired = arg.description(true),
+        .required = arg.isRequired(),
+        .valueRequired = arg.isValueRequired(),
+        .acceptsMultipleValues = arg.acceptsMultipleValues(),
+        .hasLabel = arg.hasLabel(),
+        .visibleInHelp = arg.visibleInHelp(),
+        .shortID = arg.shortID(),
+        .longID = arg.longID(),
+        .aliases = arg.aliases(),
+    };
+}
+
 inline std::vector<ArgGroupModel> SnapshotArgGroups(
     const std::list<ArgGroup *> &source) {
     std::vector<ArgGroupModel> groups;
@@ -100,20 +117,7 @@ inline std::vector<ArgGroupModel> SnapshotArgGroups(
             .members = {},
         };
         for (Arg *arg : *group) {
-            groupModel.members.push_back(ArgModel{
-                .flag = arg->flag(),
-                .name = arg->name(),
-                .description = arg->description(false),
-                .descriptionWhenRequired = arg->description(true),
-                .required = arg->isRequired(),
-                .valueRequired = arg->isValueRequired(),
-                .acceptsMultipleValues = arg->acceptsMultipleValues(),
-                .hasLabel = arg->hasLabel(),
-                .visibleInHelp = arg->visibleInHelp(),
-                .shortID = arg->shortID(),
-                .longID = arg->longID(),
-                .aliases = arg->aliases(),
-            });
+            groupModel.members.push_back(SnapshotArgument(*arg));
         }
         groups.push_back(std::move(groupModel));
     }

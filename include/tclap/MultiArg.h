@@ -236,9 +236,6 @@ bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args,
     return true;
 }
 
-/**
- *
- */
 template <class T>
 void MultiArg<T>::_extractNextValue(int *index,
                                     std::vector<std::string> &args) {
@@ -256,9 +253,6 @@ std::string MultiArg<T>::shortID(const std::string &val) const {
     return Arg::shortID("<" + _typeDesc + ">") + " ...";
 }
 
-/**
- *
- */
 template <class T>
 std::string MultiArg<T>::longID(const std::string &val) const {
     static_cast<void>(val);  // Ignore input, don't warn
