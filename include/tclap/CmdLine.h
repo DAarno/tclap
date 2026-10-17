@@ -109,6 +109,19 @@ class CmdLine : public CmdLineInterface {
         }
     };
     void checkCommandMutation() const;
+    bool hasOptionPrefix(const std::string &token) const;
+    void validateCommandName(const std::string &name) const;
+    static void validateCommandTree(
+        const std::vector<std::unique_ptr<Command>> &commands);
+    static bool isCommandAncestor(const Command *ancestor,
+                                  const Command *command);
+    void checkScopedArgumentConflicts(Arg &arg, Command *scope,
+                                      const std::list<Arg *> &arguments,
+                                      const Command *other) const;
+    std::optional<Outcome> selectCommandPath(std::vector<std::string> &args,
+                                             Invocation &view);
+    [[noreturn]] void throwCommandLookupError(const std::string &token,
+                                              Invocation &view) const;
     Command &addCommand(Command *parent, CommandSpec spec);
     void checkCommandArgument(Arg &arg, Command *scope) const;
     Command *groupScope(ArgGroup &group) const;
@@ -1066,15 +1079,14 @@ inline std::vector<CommandInfo> CmdLine::commandChildren() const {
     return result;
 }
 
-inline Command &CmdLine::addCommand(Command *parent, CommandSpec spec) {
-    checkCommandMutation();
-    if (parent && parent->_action)
-        throw SpecificationException(
-            "An executable command cannot have subcommands");
-    const std::string &name = spec.name.get();
-    bool invalid =
-        name.empty() || name.starts_with(_dialect.flagPrefix) ||
-        (!_dialect.namePrefix.empty() && name.starts_with(_dialect.namePrefix));
+inline bool CmdLine::hasOptionPrefix(const std::string &token) const {
+    return token.starts_with(_dialect.flagPrefix) ||
+           (!_dialect.namePrefix.empty() &&
+            token.starts_with(_dialect.namePrefix));
+}
+
+inline void CmdLine::validateCommandName(const std::string &name) const {
+    bool invalid = name.empty() || hasOptionPrefix(name);
     try {
         for (std::size_t pos = 0; pos < name.size();) {
             auto scalar = detail::DecodeUtf8(name, pos);
@@ -1088,6 +1100,54 @@ inline Command &CmdLine::addCommand(Command *parent, CommandSpec spec) {
         invalid = true;
     }
     if (invalid) throw SpecificationException("Invalid command name", name);
+}
+
+inline void CmdLine::validateCommandTree(
+    const std::vector<std::unique_ptr<Command>> &commands) {
+    for (const auto &command : commands) {
+        if (command->_children.empty() && !command->_action)
+            throw SpecificationException("Command has no action or subcommands",
+                                         command->name());
+        validateCommandTree(command->_children);
+    }
+}
+
+inline bool CmdLine::isCommandAncestor(const Command *ancestor,
+                                       const Command *command) {
+    if (!ancestor) return true;
+    for (; command; command = command->_parent)
+        if (ancestor == command) return true;
+    return false;
+}
+
+inline void CmdLine::checkScopedArgumentConflicts(
+    Arg &arg, Command *scope, const std::list<Arg *> &arguments,
+    const Command *other) const {
+    for (const Arg *existing : arguments) {
+        if (existing == &arg)
+            throw SpecificationException(
+                "An argument can belong to only one command scope", arg.name());
+        if ((isCommandAncestor(scope, other) ||
+             isCommandAncestor(other, scope)) &&
+            (arg.conflictsWith(*existing) ||
+             arg._aliasConflictsWith(*existing, _dialect.flagPrefix,
+                                     _dialect.namePrefix) ||
+             existing->_aliasConflictsWith(arg, _dialect.flagPrefix,
+                                           _dialect.namePrefix)))
+            throw SpecificationException(
+                "Argument conflicts with an inherited or command-specific "
+                "argument",
+                arg.name());
+    }
+}
+
+inline Command &CmdLine::addCommand(Command *parent, CommandSpec spec) {
+    checkCommandMutation();
+    if (parent && parent->_action)
+        throw SpecificationException(
+            "An executable command cannot have subcommands");
+    const std::string &name = spec.name.get();
+    validateCommandName(name);
     auto &children = parent ? parent->_children : _commands;
     for (const auto &child : children)
         if (child->name() == name)
@@ -1165,34 +1225,11 @@ inline void CmdLine::checkCommandArgument(Arg &arg, Command *scope) const {
         throw SpecificationException(
             "An argument can belong to only one command scope/parser",
             arg.name());
-    auto ancestor = [](const Command *a, const Command *b) {
-        if (!a) return true;
-        for (; b; b = b->_parent)
-            if (a == b) return true;
-        return false;
-    };
-    auto conflicts = [&](const auto &arguments, const Command *other) {
-        for (const Arg *existing : arguments) {
-            if (existing == &arg)
-                throw SpecificationException(
-                    "An argument can belong to only one command scope",
-                    arg.name());
-            if ((ancestor(scope, other) || ancestor(other, scope)) &&
-                (arg.conflictsWith(*existing) ||
-                 arg._aliasConflictsWith(*existing, _dialect.flagPrefix,
-                                         _dialect.namePrefix) ||
-                 existing->_aliasConflictsWith(arg, _dialect.flagPrefix,
-                                               _dialect.namePrefix)))
-                throw SpecificationException(
-                    "Argument conflicts with an inherited or command-specific "
-                    "argument",
-                    arg.name());
-        }
-    };
-    conflicts(_argList, nullptr);
+    checkScopedArgumentConflicts(arg, scope, _argList, nullptr);
     auto visit = [&](auto &&self, const auto &commands) -> void {
         for (const auto &command : commands) {
-            conflicts(command->_args, command.get());
+            checkScopedArgumentConflicts(arg, scope, command->_args,
+                                         command.get());
             self(self, command->_children);
         }
     };
@@ -1286,18 +1323,61 @@ private:
     }
 };
 
+inline std::optional<Outcome> CmdLine::selectCommandPath(
+    std::vector<std::string> &args, Invocation &view) {
+    auto *children = &_commands;
+    while (!children->empty()) {
+        if (args.empty())
+            throw CmdLineParseException(
+                translateMessage("command_missing",
+                                 "Missing command after ") +
+                view.invocationName());
+        const auto &token = args.front();
+        SwitchArg *builtin =
+            _helpArg && _helpArg->argMatches(token)         ? _helpArg
+            : _versionArg && _versionArg->argMatches(token) ? _versionArg
+                                                            : nullptr;
+        if (builtin) {
+            std::vector<bool> consumed(token.size(), false);
+            int index = 0;
+            builtin->processArg(&index, args, consumed);
+            return *_pendingOutcome;
+        }
+        Command *next = nullptr;
+        for (const auto &child : *children)
+            if (child->name() == token) {
+                next = child.get();
+                break;
+            }
+        if (!next) throwCommandLookupError(token, view);
+        view.enter(*next);
+        args.erase(args.begin());
+        children = &next->_children;
+    }
+    return std::nullopt;
+}
+
+inline void CmdLine::throwCommandLookupError(const std::string &token,
+                                             Invocation &view) const {
+    if (hasOptionPrefix(token))
+        throw CmdLineParseException(
+            translateMessage("option_before_command",
+                             "Options must follow the complete command path; "
+                             "expected a command after ") +
+                view.invocationName() + ". " +
+                translateMessage("command_order_hint",
+                                 "Place all command words before options."),
+            token);
+    throw CmdLineParseException(
+        translateMessage("unknown_command", "Unknown command after ") +
+            view.invocationName(),
+        token);
+}
+
 inline ParseOutcome CmdLine::parseCommands(std::vector<std::string> &args) {
     // A failed conversion/specification/parse must never leave stale selection.
     _selected = nullptr;
-    auto validate = [&](auto &&self, const auto &commands) -> void {
-        for (const auto &command : commands) {
-            if (command->_children.empty() && !command->_action)
-                throw SpecificationException(
-                    "Command has no action or subcommands", command->name());
-            self(self, command->_children);
-        }
-    };
-    validate(validate, _commands);
+    validateCommandTree(_commands);
     Invocation view(*this);
     InvocationGuard guard(*this, view);
     try {
@@ -1306,54 +1386,8 @@ inline ParseOutcome CmdLine::parseCommands(std::vector<std::string> &args) {
                 "The args vector must include the program name");
         _progName = basename(args.front());
         args.erase(args.begin());
-        auto *children = &_commands;
-        while (!children->empty()) {
-            if (args.empty())
-                throw CmdLineParseException(
-                    translateMessage("command_missing",
-                                     "Missing command after ") +
-                    view.invocationName());
-            const auto &token = args.front();
-            SwitchArg *builtin =
-                _helpArg && _helpArg->argMatches(token)         ? _helpArg
-                : _versionArg && _versionArg->argMatches(token) ? _versionArg
-                                                                : nullptr;
-            if (builtin) {
-                std::vector<bool> consumed(token.size(), false);
-                int index = 0;
-                builtin->processArg(&index, args, consumed);
-                return {.outcome = *_pendingOutcome};
-            }
-            Command *next = nullptr;
-            for (const auto &child : *children)
-                if (child->name() == token) {
-                    next = child.get();
-                    break;
-                }
-            if (!next) {
-                if (token.starts_with(_dialect.flagPrefix) ||
-                    (!_dialect.namePrefix.empty() &&
-                     token.starts_with(_dialect.namePrefix)))
-                    throw CmdLineParseException(
-                        translateMessage(
-                            "option_before_command",
-                            "Options must follow the complete command path; "
-                            "expected a command after ") +
-                            view.invocationName() + ". " +
-                            translateMessage(
-                                "command_order_hint",
-                                "Place all command words before options."),
-                        token);
-                throw CmdLineParseException(
-                    translateMessage("unknown_command",
-                                     "Unknown command after ") +
-                        view.invocationName(),
-                    token);
-            }
-            view.enter(*next);
-            args.erase(args.begin());
-            children = &next->_children;
-        }
+        if (auto outcome = selectCommandPath(args, view))
+            return {.outcome = *outcome};
     } catch (SpecificationException &) {
         throw;
     } catch (ArgException &error) {
