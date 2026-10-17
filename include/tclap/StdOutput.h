@@ -100,6 +100,8 @@ protected:
                     int indentSpaces, int secondLineOffset) const;
 
 private:
+    enum { _usageWidth = 75 };
+
     void _partitionGroups(std::list<ArgGroup *> &groups,
                           std::list<ArgGroup *> &exclusiveGroups,
                           std::list<ArgGroup *> &nonExclusiveGroups) const;
@@ -111,6 +113,12 @@ private:
                             std::list<ArgGroup *> &groups) const;
     void _printShortOperands(CmdLineInterface &cmd, std::ostream &os,
                              std::list<ArgGroup *> &groups) const;
+    void _printLabeledGroups(CmdLineInterface &cmd, std::ostream &os,
+                              std::list<ArgGroup *> &groups) const;
+    void _printLongOperands(CmdLineInterface &cmd, std::ostream &os,
+                             std::list<ArgGroup *> &groups) const;
+    void _printExclusiveLongGroup(CmdLineInterface &cmd, std::ostream &os,
+                                  ArgGroup &group) const;
     void _printGroupHeading(CmdLineInterface &cmd, std::ostream &os,
                             const ArgGroup &group) const;
     void _printLongEntry(std::ostream &os, const Arg &arg, bool required,
@@ -308,9 +316,9 @@ inline void StdOutput::_shortUsage(CmdLineInterface &_cmd,
 
     // if the program name is too long, then adjust the second line offset
     int secondLineOffset = static_cast<int>(_cmd.getProgramName().length()) + 2;
-    if (secondLineOffset > 75 / 2) secondLineOffset = static_cast<int>(75 / 2);
+    if (secondLineOffset > _usageWidth / 2) secondLineOffset = static_cast<int>(_usageWidth / 2);
 
-    spacePrint(os, outp.str(), 75, 3, secondLineOffset);
+    spacePrint(os, outp.str(), _usageWidth, 3, secondLineOffset);
 }
 
 inline void StdOutput::_partitionGroups(
@@ -452,8 +460,20 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
     std::string message = _cmd.getMessage();
     std::list<ArgGroup *> argSets = _cmd.getArgGroups();
 
-    for (std::list<ArgGroup *>::iterator sit = argSets.begin();
-         sit != argSets.end(); ++sit) {
+    _printLabeledGroups(_cmd, os, argSets);
+    _printLongOperands(_cmd, os, argSets);
+
+    if (!message.empty()) {
+        spacePrint(os, message, _usageWidth, 3, 0);
+    }
+
+    os.flush();
+}
+
+inline void StdOutput::_printLabeledGroups(
+    CmdLineInterface &cmd, std::ostream &os, std::list<ArgGroup *> &groups) const {
+    for (std::list<ArgGroup *>::iterator sit = groups.begin();
+         sit != groups.end(); ++sit) {
         ArgGroup &argGroup = **sit;
 
         int visible = CountVisibleArgs(argGroup);
@@ -461,7 +481,7 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
         if (exclusive && internal::HasVisiblePositional(argGroup)) continue;
         bool forceRequired = visible == 1 && argGroup.isRequired();
         if (exclusive) {
-            _printGroupHeading(_cmd, os, argGroup);
+            _printGroupHeading(cmd, os, argGroup);
         }
 
         for (ArgGroup::iterator it = argGroup.begin(); it != argGroup.end();
@@ -479,36 +499,38 @@ inline void StdOutput::_longUsage(CmdLineInterface &_cmd,
             _printLongEntry(os, arg, required, exclusive ? 6 : 3);
         }
     }
+}
 
-    const std::list<Arg *> operands = _cmd.getArgList();
+inline void StdOutput::_printLongOperands(
+    CmdLineInterface &cmd, std::ostream &os, std::list<ArgGroup *> &groups) const {
+    const std::list<Arg *> operands = cmd.getArgList();
     std::list<ArgGroup *> shown;
     for (ArgListIterator it = operands.begin(); it != operands.end(); ++it) {
         const Arg &arg = **it;
         if (arg.hasLabel() || !arg.visibleInHelp()) continue;
-        ArgGroup *group = internal::FindArgGroup(argSets, &arg);
+        ArgGroup *group = internal::FindArgGroup(groups, &arg);
         if (group && group->isExclusive() && CountVisibleArgs(*group) > 1) {
             if (std::find(shown.begin(), shown.end(), group) != shown.end()) continue;
             shown.push_back(group);
-            _printGroupHeading(_cmd, os, *group);
-            for (ArgGroup::iterator member = group->begin(); member != group->end(); ++member) {
-                if (!(*member)->visibleInHelp()) continue;
-                // Preserve longID() before the virtual isRequired() call.
-                spacePrint(os, (*member)->longID(), 75, 6, 3);
-                spacePrint(os, (*member)->getDescription((*member)->isRequired()), 75, 8, 0);
-                os << '\n';
-            }
+            _printExclusiveLongGroup(cmd, os, *group);
             continue;
         }
         const bool required = arg.isRequired() ||
                               (group && group->isRequired() && CountVisibleArgs(*group) == 1);
         _printLongEntry(os, arg, required, 3);
     }
+}
 
-    if (!message.empty()) {
-        spacePrint(os, message, 75, 3, 0);
+inline void StdOutput::_printExclusiveLongGroup(
+    CmdLineInterface &cmd, std::ostream &os, ArgGroup &group) const {
+    _printGroupHeading(cmd, os, group);
+    for (ArgGroup::iterator member = group.begin(); member != group.end(); ++member) {
+        if (!(*member)->visibleInHelp()) continue;
+        // Preserve longID() before the virtual isRequired() call.
+        spacePrint(os, (*member)->longID(), _usageWidth, 6, 3);
+        spacePrint(os, (*member)->getDescription((*member)->isRequired()), _usageWidth, 8, 0);
+        os << '\n';
     }
-
-    os.flush();
 }
 
 inline void StdOutput::_printGroupHeading(CmdLineInterface &cmd,
@@ -518,76 +540,68 @@ inline void StdOutput::_printGroupHeading(CmdLineInterface &cmd,
                group.isRequired()
                    ? cmd.translateMessage("one_of_group", "One of:")
                    : cmd.translateMessage("either_of_group", "Either of:"),
-               75, 3, 0);
+               _usageWidth, 3, 0);
 }
 
 inline void StdOutput::_printLongEntry(std::ostream &os, const Arg &arg,
                                        bool required, int indent) const {
-    spacePrint(os, arg.longID(), 75, indent, 3);
-    spacePrint(os, arg.getDescription(required), 75, indent + 2, 0);
+    spacePrint(os, arg.longID(), _usageWidth, indent, 3);
+    spacePrint(os, arg.getDescription(required), _usageWidth, indent + 2, 0);
     os << '\n';
 }
 
 namespace {
-inline void fmtPrintLine(std::ostream &os, const std::string &s, int maxWidth,
+inline void fmtPrintLine(std::ostream &os, const std::string &text, int maxWidth,
                          int indentSpaces, int secondLineOffset) {
-    const std::string splitChars(" ,|");
-    // indentSpaces and secondLineOffset end up as counts passed to
-    // std::string's unsigned-count constructor/insert() below; a negative
-    // value would implicitly convert to a huge size_t and the allocation
-    // would throw std::length_error, so clamp both to a sane non-negative
-    // floor up front rather than let a caller's bad geometry crash this.
+    const std::string breakCharacters(" ,|");
+    // String indentation uses unsigned counts; clamp negative geometry first.
     indentSpaces = std::max(indentSpaces, 0);
     secondLineOffset = std::max(secondLineOffset, 0);
-    size_t maxChars = std::max(maxWidth - indentSpaces, 0);
+    size_t availableWidth = std::max(maxWidth - indentSpaces, 0);
     std::string indentString(indentSpaces, ' ');
-    size_t from = 0;
-    size_t to = 0;
-    size_t end = s.length();
+    size_t lineStart = 0;
+    size_t lineEnd = 0;
+    size_t textLength = text.length();
     for (;;) {
-        if (end - from <= maxChars) {
+        if (textLength - lineStart <= availableWidth) {
             // Rest of string fits on line, just print the remainder
-            os << indentString << s.substr(from) << std::endl;
+            os << indentString << text.substr(lineStart) << std::endl;
             return;
         }
 
-        // Find the next place where it is good to break the string
-        // (to) by finding the place where it is too late (tooFar) and
-        // taking the previous one.
-        size_t tooFar = to;
-        while (tooFar - from <= maxChars && tooFar != std::string::npos) {
-            to = tooFar;
-            tooFar = s.find_first_of(splitChars, to + 1);
+        // Keep the last delimiter that fits within the available width.
+        size_t nextBreak = lineEnd;
+        while (nextBreak - lineStart <= availableWidth &&
+               nextBreak != std::string::npos) {
+            lineEnd = nextBreak;
+            nextBreak = text.find_first_of(breakCharacters, lineEnd + 1);
         }
 
-        if (to == from) {
-            // In case there was no good place to break the string,
-            // just break it in the middle of a word at line length.
-            // maxChars is unsigned and can be 0 here (when indentSpaces
-            // >= maxWidth), so guard the subtraction: falling back to
-            // "from" instead of underflowing to SIZE_MAX keeps the
-            // s[to] access below in bounds.
-            to = maxChars > 0 ? from + maxChars - 1 : from;
+        if (lineEnd == lineStart) {
+            // Split a long word. A zero width must still consume one byte;
+            // subtracting from zero would underflow the unsigned width.
+            lineEnd = availableWidth > 0 ? lineStart + availableWidth - 1
+                                         : lineStart;
         }
 
-        if (s[to] != ' ') {
+        if (text[lineEnd] != ' ') {
             // Include delimiter before line break, unless it's a space
-            to++;
+            lineEnd++;
         }
 
-        os << indentString << s.substr(from, to - from) << '\n';
+        os << indentString << text.substr(lineStart, lineEnd - lineStart) << '\n';
 
         // Avoid printing extra white space at start of a line
-        for (; s[to] == ' '; to++) {
+        for (; text[lineEnd] == ' '; lineEnd++) {
         }
-        from = to;
+        lineStart = lineEnd;
 
         if (secondLineOffset != 0) {
             // Adjust offset for following lines
             indentString.insert(indentString.end(), secondLineOffset, ' ');
-            // A secondLineOffset larger than the remaining budget would
-            // underflow maxChars (size_t) below; clamp to 0 instead.
-            maxChars -= std::min(maxChars, static_cast<size_t>(secondLineOffset));
+            // Clamp the remaining width to prevent unsigned underflow.
+            availableWidth -=
+                std::min(availableWidth, static_cast<size_t>(secondLineOffset));
             secondLineOffset = 0;
         }
     }
