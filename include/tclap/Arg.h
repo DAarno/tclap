@@ -78,6 +78,8 @@ private:
                                     const std::string &namePrefix) const;
     void _validateAliasToken(const std::string &label, const std::string &prefix,
                              std::vector<std::string> &tokens) const;
+    void _validateAliasLabels(const std::string &flag,
+                               const std::string &name) const;
     bool _matchesDeclaredToken(const std::string &token,
                                const std::string &flagPrefix,
                                const std::string &namePrefix) const;
@@ -699,6 +701,15 @@ inline Arg &Arg::addAlias(const std::string &flag, const std::string &name) {
         throw SpecificationException("Aliases must be added before registration", toString());
     if (!hasLabel())
         throw SpecificationException("Positional arguments cannot have aliases", toString());
+    _validateAliasLabels(flag, name);
+    if (matchesShortFlag(flag) || matchesLongName(name))
+        throw SpecificationException("Duplicate argument alias", toString());
+    _aliases.push_back(ArgAlias(flag, name));
+    return *this;
+}
+
+inline void Arg::_validateAliasLabels(const std::string &flag,
+                                      const std::string &name) const {
     if ((flag.empty() && name.empty()) || flag.size() > 1 ||
         flag == flagStartString() || flag == nameStartString() ||
         flag.find_first_of(" \t\r\n\v\f\a") != std::string::npos ||
@@ -714,10 +725,6 @@ inline Arg &Arg::addAlias(const std::string &flag, const std::string &name) {
         if (static_cast<unsigned char>(*it) < 0x20 || *it == '\x7f')
             throw SpecificationException("Control byte in argument alias",
                                          toString());
-    if (matchesShortFlag(flag) || matchesLongName(name))
-        throw SpecificationException("Duplicate argument alias", toString());
-    _aliases.push_back(ArgAlias(flag, name));
-    return *this;
 }
 
 inline bool Arg::conflictsWith(const Arg &a) const {
