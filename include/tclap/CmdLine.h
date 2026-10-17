@@ -285,6 +285,9 @@ private:
      * (which is all of it).
      */
     void _constructor();
+    void createIgnoreRestArgument();
+    void createHelpAndVersionArguments();
+    void refreshBuiltinDescriptions();
 
     /**
      * Whether or not to automatically create help and version switches.
@@ -511,21 +514,7 @@ public:
         checkCommandMutation();
         _messageTranslator =
             std::make_unique<MessageTranslatorImpl<T>>(translator);
-        if (_ignoreArg != nullptr) {
-            _ignoreArg->setDescription(
-                translateMessage("ignore_rest_description",
-                                 "Ignores the rest of the labeled arguments "
-                                 "following this flag."));
-        }
-        if (_helpArg != nullptr) {
-            _helpArg->setDescription(translateMessage(
-                "help_description", "Displays usage information and exits."));
-        }
-        if (_versionArg != nullptr) {
-            _versionArg->setDescription(
-                translateMessage("version_description",
-                                 "Displays version information and exits."));
-        }
+        refreshBuiltinDescriptions();
     }
 
     /**
@@ -583,6 +572,11 @@ inline void CmdLine::_constructor() {
     // argGroups() appends the built-ins last, after all user groups.
     _autoArgs._parser = this;
 
+    createIgnoreRestArgument();
+    if (_helpAndVersion) createHelpAndVersionArguments();
+}
+
+inline void CmdLine::createIgnoreRestArgument() {
     auto ignoreOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
         .flag = _dialect.flagPrefix,
         .name = Arg::ignoreNameString(),
@@ -597,46 +591,63 @@ inline void CmdLine::_constructor() {
     _deleteOnExit(std::move(ignoreOwned));
     _autoArgs.add(ignore);
 
-    if (_helpAndVersion) {
-        // Captures `this` rather than a CmdLineOutput* snapshot, so it
-        // always sees whatever _output currently is -- including a
-        // setOutput() call made after this Arg was constructed.
-        auto helpOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
-            .flag = "h",
-            .name = "help",
-            .description = translateMessage(
-                "help_description", "Displays usage information and exits."),
-            .defaultValue = false,
-            .onMatch =
-                [this] {
-                    _output->usage(outputView());
-                    _pendingOutcome = Outcome::HelpRequested;
-                },
-        });
-        auto *help = helpOwned.get();
-        _helpArg = help;
-        _deleteOnExit(std::move(helpOwned));
+}
 
-        auto versOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
-            .flag = "",
-            .name = "version",
-            .description =
-                translateMessage("version_description",
-                                 "Displays version information and exits."),
-            .defaultValue = false,
-            .onMatch =
-                [this] {
-                    _output->version(outputView());
-                    _pendingOutcome = Outcome::VersionRequested;
-                },
-        });
-        auto *vers = versOwned.get();
-        _versionArg = vers;
-        _deleteOnExit(std::move(versOwned));
+inline void CmdLine::createHelpAndVersionArguments() {
+    // Captures `this` rather than a CmdLineOutput* snapshot, so it
+    // always sees whatever _output currently is -- including a
+    // setOutput() call made after this Arg was constructed.
+    auto helpOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
+        .flag = "h",
+        .name = "help",
+        .description = translateMessage(
+            "help_description", "Displays usage information and exits."),
+        .defaultValue = false,
+        .onMatch =
+            [this] {
+                _output->usage(outputView());
+                _pendingOutcome = Outcome::HelpRequested;
+            },
+    });
+    auto *help = helpOwned.get();
+    _helpArg = help;
+    _deleteOnExit(std::move(helpOwned));
 
-        // Preserve the existing parsing and help order of the built-ins.
-        _autoArgs.add(vers);
-        _autoArgs.add(help);
+    auto versOwned = std::make_unique<SwitchArg>(SwitchArgSpec{
+        .flag = "",
+        .name = "version",
+        .description = translateMessage(
+            "version_description", "Displays version information and exits."),
+        .defaultValue = false,
+        .onMatch =
+            [this] {
+                _output->version(outputView());
+                _pendingOutcome = Outcome::VersionRequested;
+            },
+    });
+    auto *vers = versOwned.get();
+    _versionArg = vers;
+    _deleteOnExit(std::move(versOwned));
+
+    // Preserve the existing parsing and help order of the built-ins.
+    _autoArgs.add(vers);
+    _autoArgs.add(help);
+}
+
+inline void CmdLine::refreshBuiltinDescriptions() {
+    if (_ignoreArg != nullptr) {
+        _ignoreArg->setDescription(
+            translateMessage("ignore_rest_description",
+                             "Ignores the rest of the labeled arguments "
+                             "following this flag."));
+    }
+    if (_helpArg != nullptr) {
+        _helpArg->setDescription(translateMessage(
+            "help_description", "Displays usage information and exits."));
+    }
+    if (_versionArg != nullptr) {
+        _versionArg->setDescription(translateMessage(
+            "version_description", "Displays version information and exits."));
     }
 }
 
