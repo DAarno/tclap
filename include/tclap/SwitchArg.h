@@ -114,6 +114,8 @@ public:
     void reset() override;
 
 private:
+    bool isCombinedSwitchToken(const std::string &token) const;
+
     /**
      * Checks to see if we've found the last match in
      * a combined string.
@@ -151,29 +153,14 @@ inline bool SwitchArg::lastCombined(std::string &combinedSwitches) {
 }
 
 inline bool SwitchArg::combinedSwitchesMatch(std::string &combinedSwitches) {
-    // make sure this is actually a combined switch
-    if (!combinedSwitches.empty() &&
-        combinedSwitches[0] != Arg::flagStartString()[0])
-        return false;
+    if (!isCombinedSwitchToken(combinedSwitches)) return false;
 
-    // make sure it isn't a long name
-    if (combinedSwitches.substr(0, Arg::nameStartString().length()) ==
-        Arg::nameStartString())
-        return false;
-
-    // make sure the delimiter isn't in the string
-    if (combinedSwitches.find_first_of(this->getDelimiter()) != std::string::npos)
-        return false;
-
-    // ok, we're not specifying a ValueArg, so we know that we have
-    // a combined switch list.
     for (unsigned int i = 1; i < combinedSwitches.length(); i++) {
         if (combinedSwitches[i] != Arg::flagStartString()[0] &&
             matchesShortFlag(std::string(1, combinedSwitches[i]))) {
             // update the combined switches so this one is no longer
             // present this is necessary so that no unlabeled args are
             // matched later in the processing.
-            // combinedSwitches.erase(i,1);
             _setBy = Arg::flagStartString() + combinedSwitches[i];
             combinedSwitches[i] = Arg::blankChar();
             return true;
@@ -182,6 +169,19 @@ inline bool SwitchArg::combinedSwitchesMatch(std::string &combinedSwitches) {
 
     // none of the switches passed in the list match.
     return false;
+}
+
+inline bool SwitchArg::isCombinedSwitchToken(const std::string &token) const {
+    if (!token.empty() && token[0] != Arg::flagStartString()[0]) return false;
+
+    if (token.substr(0, Arg::nameStartString().length()) ==
+        Arg::nameStartString())
+        return false;
+
+    if (token.find_first_of(this->getDelimiter()) != std::string::npos)
+        return false;
+
+    return true;
 }
 
 inline void SwitchArg::commonProcessing() {
@@ -201,7 +201,9 @@ inline bool SwitchArg::processArg(int *i, std::vector<std::string> &args) {
         commonProcessing();
 
         return true;
-    } else if (combinedSwitchesMatch(args[*i])) {
+    }
+
+    if (combinedSwitchesMatch(args[*i])) {
         // A substring matches the flag as part of a combination
         // check again to ensure we don't misinterpret
         // this as a MultiSwitchArg
@@ -211,7 +213,7 @@ inline bool SwitchArg::processArg(int *i, std::vector<std::string> &args) {
         commonProcessing();
 
         // We only want to return true if we've found the last combined
-        // match in the string, otherwise we return true so that other
+        // match in the string, otherwise return false so that other
         // switches in the combination will have a chance to match.
         return lastCombined(args[*i]);
     }

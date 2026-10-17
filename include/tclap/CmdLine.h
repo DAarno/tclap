@@ -63,7 +63,6 @@ public:
     StandaloneArgs() = default;
 
     ArgContainer &add(Arg *arg) override {
-        // std::cerr << "Adding " << arg->getName() << " to StandaloneArgs\n";
         if (std::ranges::any_of(*this, [arg](const Arg *existing) {
                 return arg->conflictsWith(*existing);
             })) {
@@ -216,6 +215,15 @@ private:
      * (which is all of it).
      */
     void _constructor();
+    void _createIgnoreRestArgument();
+    void _createHelpAndVersionArguments();
+    void _refreshBuiltinDescriptions();
+
+    void _setProgramName(std::vector<std::string> &args);
+    int _parseArguments(std::vector<std::string> &args);
+    bool _processArgument(int &index, std::vector<std::string> &args,
+                          int &requiredCount);
+    void _validateRequiredArguments(int requiredCount);
 
     /**
      * Whether or not to automatically create help and version switches.
@@ -368,21 +376,7 @@ public:
     template <typename T>
     void setMessageTranslator(const T &translator) {
         _messageTranslator = std::make_unique<MessageTranslatorImpl<T>>(translator);
-        if (_ignoreArg != nullptr) {
-            _ignoreArg->setDescription(translateMessage(
-                "ignore_rest_description",
-                "Ignores the rest of the labeled arguments following this flag."));
-        }
-        if (_helpArg != nullptr) {
-            _helpArg->setDescription(translateMessage(
-                "help_description",
-                "Displays usage information and exits."));
-        }
-        if (_versionArg != nullptr) {
-            _versionArg->setDescription(translateMessage(
-                "version_description",
-                "Displays version information and exits."));
-        }
+        _refreshBuiltinDescriptions();
     }
 
     /**
@@ -432,12 +426,14 @@ inline CmdLine::CmdLine(std::string m, char delim, std::string v, bool help)
 }
 
 inline void CmdLine::_constructor() {
-    Visitor *v;
     CmdLine::add(_standaloneArgs);
     _autoArgs._parser = this;
-    // add(_autoArgs);
+    _createIgnoreRestArgument();
+    if (_helpAndVersion) _createHelpAndVersionArguments();
+}
 
-    v = new IgnoreRestVisitor(*this);
+inline void CmdLine::_createIgnoreRestArgument() {
+    Visitor *v = new IgnoreRestVisitor(*this);
     auto *ignore = new SwitchArg(
         Arg::flagStartString(), Arg::ignoreNameString(),
         translateMessage("ignore_rest_description",
@@ -448,34 +444,120 @@ inline void CmdLine::_constructor() {
     _deleteOnExit(v);
     _autoArgs.add(ignore);
     CmdLine::addToArgList(ignore);
+}
 
-    if (_helpAndVersion) {
-        v = new HelpVisitor(this, &_output);
-        auto *help = new SwitchArg(
-            "h", "help",
-            translateMessage("help_description",
-                             "Displays usage information and exits."),
-            false, v);
-        _helpArg = help;
-        _deleteOnExit(help);
-        _deleteOnExit(v);
+inline void CmdLine::_createHelpAndVersionArguments() {
+    Visitor *v = new HelpVisitor(this, &_output);
+    auto *help =
+        new SwitchArg("h", "help",
+                      translateMessage("help_description",
+                                       "Displays usage information and exits."),
+                      false, v);
+    _helpArg = help;
+    _deleteOnExit(help);
+    _deleteOnExit(v);
 
-        v = new VersionVisitor(this, &_output);
-        auto *vers = new SwitchArg(
-            "", "version",
-            translateMessage("version_description",
-                             "Displays version information and exits."),
-            false, v);
-        _versionArg = vers;
-        _deleteOnExit(vers);
-        _deleteOnExit(v);
+    v = new VersionVisitor(this, &_output);
+    auto *vers = new SwitchArg(
+        "", "version",
+        translateMessage("version_description",
+                         "Displays version information and exits."),
+        false, v);
+    _versionArg = vers;
+    _deleteOnExit(vers);
+    _deleteOnExit(v);
 
-        // A bit of a hack on the order to make tests easier to fix,
-        // to be reverted
-        _autoArgs.add(vers);
-        CmdLine::addToArgList(vers);
-        _autoArgs.add(help);
-        CmdLine::addToArgList(help);
+    // Retain the established registration order used by help output.
+    _autoArgs.add(vers);
+    CmdLine::addToArgList(vers);
+    _autoArgs.add(help);
+    CmdLine::addToArgList(help);
+}
+
+inline void CmdLine::_refreshBuiltinDescriptions() {
+    if (_ignoreArg != nullptr) {
+        _ignoreArg->setDescription(translateMessage(
+            "ignore_rest_description",
+            "Ignores the rest of the labeled arguments following this flag."));
+    }
+    if (_helpArg != nullptr) {
+        _helpArg->setDescription(translateMessage(
+            "help_description", "Displays usage information and exits."));
+    }
+    if (_versionArg != nullptr) {
+        _versionArg->setDescription(translateMessage(
+            "version_description", "Displays version information and exits."));
+    }
+}
+
+inline void CmdLine::_setProgramName(std::vector<std::string> &args) {
+    if (args.empty()) {
+        // https://sourceforge.net/p/tclap/bugs/30/
+        throw CmdLineParseException(
+            "The args vector must not be empty, "
+            "the first entry should contain the "
+            "program's name.");
+    }
+
+    // TODO(macbishop): Maybe store the full name somewhere?
+    _progName = basename(args.front());
+    args.erase(args.begin());
+}
+
+inline int CmdLine::_parseArguments(std::vector<std::string> &args) {
+    int requiredCount = 0;
+    for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
+        bool matched = _processArgument(i, args, requiredCount);
+
+        // checks to see if the argument is an empty combined
+        // switch and if so, then we've actually matched it
+        if (!matched && _emptyCombined(args[i])) matched = true;
+
+        if (!matched && !ignoreRest() && !_ignoreUnmatched)
+            throw(
+                CmdLineParseException("Couldn't find match "
+                                      "for argument",
+                                      args[i]));
+    }
+
+    return requiredCount;
+}
+
+inline bool CmdLine::_processArgument(int &index,
+                                      std::vector<std::string> &args,
+                                      int &requiredCount) {
+    for (Arg *argPtr : _argList) {
+        Arg &arg = *argPtr;
+        // Count a required argument only on its first match.
+        bool alreadySet = arg.isSet();
+        bool ignore = arg.isIgnoreable() && ignoreRest();
+        if (!ignore && arg.processArg(&index, args)) {
+            requiredCount += (!alreadySet && arg.isRequired()) ? 1 : 0;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+inline void CmdLine::_validateRequiredArguments(int requiredCount) {
+    std::list<ArgGroup *> missingArgGroups;
+    // Once all arguments have been parsed, check that we don't
+    // violate any constraints.
+    for (ArgGroup *group : _argGroups) {
+        bool missingRequired = group->validate();
+        if (missingRequired) {
+            missingArgGroups.push_back(group);
+        }
+    }
+
+    if (requiredCount < _numRequired || !missingArgGroups.empty()) {
+        missingArgsException(missingArgGroups);
+    }
+
+    if (requiredCount > _numRequired) {
+        throw(CmdLineParseException(
+            translateMessage("too_many_arguments", "Too many arguments!")));
     }
 }
 
@@ -520,24 +602,8 @@ public:
     void add(Arg &arg) {
         arg._validateAliases(_cmd._delimiter, Arg::flagStartString(),
                              Arg::nameStartString());
-        if (std::ranges::any_of(_args, [&arg](const Arg *existing) {
-                return arg.conflictsWith(*existing) ||
-                       arg._aliasConflictsWith(*existing, Arg::flagStartString(),
-                                               Arg::nameStartString()) ||
-                       existing->_aliasConflictsWith(arg, Arg::flagStartString(),
-                                                     Arg::nameStartString());
-            })) {
-            throw SpecificationException(
-                "Argument with same flag/name already exists!", arg.longID());
-        }
-        if (!arg.hasLabel()) {
-            if (_hasOptionalUnlabeledArg)
-                throw SpecificationException(
-                    "You can't specify ANY Unlabeled Arg following an optional "
-                    "Unlabeled Arg", arg.longID());
-            if (!arg.isRequired() && !arg.acceptsMultipleValues())
-                _hasOptionalUnlabeledArg = true;
-        }
+        validateConflicts(arg);
+        validatePositionalOrder(arg);
         _bindings.emplace_back(&arg, arg._parserDelimiter);
         arg._parserDelimiter = &_cmd._delimiter;
         arg.addToList(_args);
@@ -552,6 +618,30 @@ public:
     }
 
 private:
+    void validateConflicts(const Arg &arg) const {
+        if (std::ranges::any_of(_args, [&arg](const Arg *existing) {
+                return arg.conflictsWith(*existing) ||
+                       arg._aliasConflictsWith(*existing, Arg::flagStartString(),
+                                               Arg::nameStartString()) ||
+                       existing->_aliasConflictsWith(arg, Arg::flagStartString(),
+                                                     Arg::nameStartString());
+            })) {
+            throw SpecificationException(
+                "Argument with same flag/name already exists!", arg.longID());
+        }
+    }
+
+    void validatePositionalOrder(Arg &arg) {
+        if (!arg.hasLabel()) {
+            if (_hasOptionalUnlabeledArg)
+                throw SpecificationException(
+                    "You can't specify ANY Unlabeled Arg following an optional "
+                    "Unlabeled Arg", arg.longID());
+            if (!arg.isRequired() && !arg.acceptsMultipleValues())
+                _hasOptionalUnlabeledArg = true;
+        }
+    }
+
     using Bindings = std::vector<std::pair<Arg *, const char *>>;
     CmdLine &_cmd;
     std::list<Arg *> _args;
@@ -604,85 +694,9 @@ inline void CmdLine::parse(std::vector<std::string> &args) {
     int estat = 0;
 
     try {
-        if (args.empty()) {
-            // https://sourceforge.net/p/tclap/bugs/30/
-            throw CmdLineParseException(
-                "The args vector must not be empty, "
-                "the first entry should contain the "
-                "program's name.");
-        }
-
-        // TODO(macbishop): Maybe store the full name somewhere?
-        _progName = basename(args.front());
-        args.erase(args.begin());
-
-        int requiredCount = 0;
-        std::list<ArgGroup *> missingArgGroups;
-
-        // Check that the right amount of arguments are provided for
-        // each ArgGroup, and if there are any required arguments
-        // missing, store them for later. Other errors will cause an
-        // exception to be thrown and parse will exit early.
-        /*
-        for (std::list<ArgGroup*>::iterator it = _argGroups.begin();
-             it != _argGroups.end(); ++it) {
-            bool missingRequired = (*it)->validate(args);
-            if (missingRequired) {
-                missingArgGroups.push_back(*it);
-            }
-        }
-        */
-
-        for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
-            bool matched = false;
-            for (Arg *argPtr : _argList) {
-                Arg &arg = *argPtr;
-                // We check if the argument was already set (e.g., for
-                // a Multi-Arg) since then we don't want to count it
-                // as required again. This is a hack/workaround to
-                // make isRequired() imutable so it can be used to
-                // display help correctly (also it's a good idea).
-                //
-                // TODO: This logic should probably be refactored to
-                // remove this logic from here.
-                bool alreadySet = arg.isSet();
-                bool ignore = arg.isIgnoreable() && ignoreRest();
-                if (!ignore && arg.processArg(&i, args)) {
-                    requiredCount += (!alreadySet && arg.isRequired()) ? 1 : 0;
-                    matched = true;
-                    break;
-                }
-            }
-
-            // checks to see if the argument is an empty combined
-            // switch and if so, then we've actually matched it
-            if (!matched && _emptyCombined(args[i])) matched = true;
-
-            if (!matched && !ignoreRest() && !_ignoreUnmatched)
-                throw(
-                    CmdLineParseException("Couldn't find match "
-                                          "for argument",
-                                          args[i]));
-        }
-
-        // Once all arguments have been parsed, check that we don't
-        // violate any constraints.
-        for (ArgGroup *group : _argGroups) {
-            bool missingRequired = group->validate();
-            if (missingRequired) {
-                missingArgGroups.push_back(group);
-            }
-        }
-
-        if (requiredCount < _numRequired || !missingArgGroups.empty()) {
-            missingArgsException(missingArgGroups);
-        }
-
-        if (requiredCount > _numRequired) {
-            throw(CmdLineParseException(
-                translateMessage("too_many_arguments",
-                                 "Too many arguments!")));
-        }
+        _setProgramName(args);
+        const int requiredCount = _parseArguments(args);
+        _validateRequiredArguments(requiredCount);
     } catch (ArgException &e) {
         // If we're not handling the exceptions, rethrow.
         if (!_handleExceptions) {

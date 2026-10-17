@@ -82,6 +82,14 @@ private:
     // Registration validates against the destination parser's conventions.
     void _validateAliases(char delimiter, const std::string &flagPrefix,
                           const std::string &namePrefix) const;
+    bool _aliasConflictsWithDialect(const ArgAlias &alias, char delimiter,
+                                    const std::string &flagPrefix,
+                                    const std::string &namePrefix) const;
+    void _validateAliasToken(const std::string &label,
+                             const std::string &prefix,
+                             std::vector<std::string> &tokens) const;
+    void _validateAliasLabels(const std::string &flag,
+                              const std::string &name) const;
     bool _matchesDeclaredToken(const std::string &token,
                                const std::string &flagPrefix,
                                const std::string &namePrefix) const;
@@ -654,26 +662,12 @@ inline void Arg::_validateAliases(char delimiter, const std::string &flagPrefix,
     if (!_flag.empty()) tokens.push_back(flagPrefix + _flag);
     tokens.push_back(namePrefix + _name);
     for (const auto &alias : _aliases) {
-        if ((!alias.flag.empty() &&
-             (alias.flag == flagPrefix || alias.flag == namePrefix)) ||
-            (!alias.name.empty() &&
-             ((!flagPrefix.empty() && alias.name.find(flagPrefix) == 0) ||
-              (!namePrefix.empty() && alias.name.find(namePrefix) == 0))) ||
-            (_valueRequired && (alias.flag.find(delimiter) != std::string::npos ||
-                                alias.name.find(delimiter) != std::string::npos)))
+        if (_aliasConflictsWithDialect(alias, delimiter, flagPrefix,
+                                       namePrefix))
             throw SpecificationException("Alias conflicts with parser dialect",
                                          toString());
-        for (int spelling = 0; spelling < 2; ++spelling) {
-            const std::string &label = spelling == 0 ? alias.flag : alias.name;
-            if (label.empty()) continue;
-            const std::string token =
-                (spelling == 0 ? flagPrefix : namePrefix) + label;
-            for (const auto &existing : tokens)
-                if (existing == token)
-                    throw SpecificationException(
-                        "Duplicate argument alias token", toString());
-            tokens.push_back(token);
-        }
+        _validateAliasToken(alias.flag, flagPrefix, tokens);
+        _validateAliasToken(alias.name, namePrefix, tokens);
     }
 }
 
@@ -698,6 +692,40 @@ inline Arg &Arg::addAlias(std::string flag, std::string name) {
         throw SpecificationException("Aliases must be added before registration", toString());
     if (!hasLabel())
         throw SpecificationException("Positional arguments cannot have aliases", toString());
+    _validateAliasLabels(flag, name);
+    if (matchesShortFlag(flag) || matchesLongName(name))
+        throw SpecificationException("Duplicate argument alias", toString());
+    _aliases.emplace_back(std::move(flag), std::move(name));
+    return *this;
+}
+
+inline bool Arg::_aliasConflictsWithDialect(
+    const ArgAlias &alias, char delimiter, const std::string &flagPrefix,
+    const std::string &namePrefix) const {
+    return (!alias.flag.empty() &&
+            (alias.flag == flagPrefix || alias.flag == namePrefix)) ||
+           (!alias.name.empty() &&
+            ((!flagPrefix.empty() && alias.name.find(flagPrefix) == 0) ||
+             (!namePrefix.empty() && alias.name.find(namePrefix) == 0))) ||
+           (_valueRequired &&
+            (alias.flag.find(delimiter) != std::string::npos ||
+             alias.name.find(delimiter) != std::string::npos));
+}
+
+inline void Arg::_validateAliasToken(const std::string &label,
+                                     const std::string &prefix,
+                                     std::vector<std::string> &tokens) const {
+    if (label.empty()) return;
+    const std::string token = prefix + label;
+    for (const auto &existing : tokens)
+        if (existing == token)
+            throw SpecificationException("Duplicate argument alias token",
+                                         toString());
+    tokens.push_back(token);
+}
+
+inline void Arg::_validateAliasLabels(const std::string &flag,
+                                      const std::string &name) const {
     if ((flag.empty() && name.empty()) || flag.size() > 1 ||
         flag == flagStartString() || flag == nameStartString() ||
         flag.find_first_of(" \t\r\n\v\f\a") != std::string::npos ||
@@ -712,10 +740,6 @@ inline Arg &Arg::addAlias(std::string flag, std::string name) {
         if (c < 0x20 || c == '\x7f')
             throw SpecificationException("Control byte in argument alias",
                                          toString());
-    if (matchesShortFlag(flag) || matchesLongName(name))
-        throw SpecificationException("Duplicate argument alias", toString());
-    _aliases.emplace_back(std::move(flag), std::move(name));
-    return *this;
 }
 
 inline bool Arg::conflictsWith(const Arg &a) const noexcept {
