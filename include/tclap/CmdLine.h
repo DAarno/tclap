@@ -213,6 +213,10 @@ private:
      */
     void _constructor();
 
+    void _createIgnoreRestArgument();
+    void _createHelpAndVersionArguments();
+    void _refreshBuiltinDescriptions();
+
     void _setProgramName(std::vector<std::string> &args);
     int _parseArguments(std::vector<std::string> &args);
     bool _processArgument(int &index, std::vector<std::string> &args,
@@ -363,21 +367,7 @@ public:
     void setMessageTranslator(const T &translator) {
         delete _messageTranslator;
         _messageTranslator = new MessageTranslatorImpl<T>(translator);
-        if (_ignoreArg != NULL) {
-            _ignoreArg->setDescription(translateMessage(
-                "ignore_rest_description",
-                "Ignores the rest of the labeled arguments following this flag."));
-        }
-        if (_helpArg != NULL) {
-            _helpArg->setDescription(translateMessage(
-                "help_description",
-                "Displays usage information and exits."));
-        }
-        if (_versionArg != NULL) {
-            _versionArg->setDescription(translateMessage(
-                "version_description",
-                "Displays version information and exits."));
-        }
+        _refreshBuiltinDescriptions();
     }
 
     /**
@@ -427,12 +417,14 @@ inline CmdLine::CmdLine(const std::string &m, char delim, const std::string &v,
 }
 
 inline void CmdLine::_constructor() {
-    Visitor *v;
     CmdLine::add(_standaloneArgs);
     _autoArgs._parser = this;
-    // add(_autoArgs);
+    _createIgnoreRestArgument();
+    if (_helpAndVersion) _createHelpAndVersionArguments();
+}
 
-    v = new IgnoreRestVisitor(*this);
+inline void CmdLine::_createIgnoreRestArgument() {
+    Visitor *v = new IgnoreRestVisitor(*this);
     SwitchArg *ignore = new SwitchArg(
         Arg::flagStartString(), Arg::ignoreNameString(),
         translateMessage("ignore_rest_description",
@@ -443,34 +435,51 @@ inline void CmdLine::_constructor() {
     _deleteOnExit(v);
     _autoArgs.add(ignore);
     CmdLine::addToArgList(ignore);
+}
 
-    if (_helpAndVersion) {
-        v = new HelpVisitor(this, &_output);
-        SwitchArg *help = new SwitchArg(
-            "h", "help",
-            translateMessage("help_description",
-                             "Displays usage information and exits."),
-            false, v);
-        _helpArg = help;
-        _deleteOnExit(help);
-        _deleteOnExit(v);
+inline void CmdLine::_createHelpAndVersionArguments() {
+    Visitor *v = new HelpVisitor(this, &_output);
+    SwitchArg *help = new SwitchArg(
+        "h", "help",
+        translateMessage("help_description",
+                         "Displays usage information and exits."),
+        false, v);
+    _helpArg = help;
+    _deleteOnExit(help);
+    _deleteOnExit(v);
 
-        v = new VersionVisitor(this, &_output);
-        SwitchArg *vers = new SwitchArg(
-            "", "version",
-            translateMessage("version_description",
-                             "Displays version information and exits."),
-            false, v);
-        _versionArg = vers;
-        _deleteOnExit(vers);
-        _deleteOnExit(v);
+    v = new VersionVisitor(this, &_output);
+    SwitchArg *vers = new SwitchArg(
+        "", "version",
+        translateMessage("version_description",
+                         "Displays version information and exits."),
+        false, v);
+    _versionArg = vers;
+    _deleteOnExit(vers);
+    _deleteOnExit(v);
 
-        // A bit of a hack on the order to make tests easier to fix,
-        // to be reverted
-        _autoArgs.add(vers);
-        CmdLine::addToArgList(vers);
-        _autoArgs.add(help);
-        CmdLine::addToArgList(help);
+    // Retain the established registration order used by help output.
+    _autoArgs.add(vers);
+    CmdLine::addToArgList(vers);
+    _autoArgs.add(help);
+    CmdLine::addToArgList(help);
+}
+
+inline void CmdLine::_refreshBuiltinDescriptions() {
+    if (_ignoreArg != NULL) {
+        _ignoreArg->setDescription(translateMessage(
+            "ignore_rest_description",
+            "Ignores the rest of the labeled arguments following this flag."));
+    }
+    if (_helpArg != NULL) {
+        _helpArg->setDescription(translateMessage(
+            "help_description",
+            "Displays usage information and exits."));
+    }
+    if (_versionArg != NULL) {
+        _versionArg->setDescription(translateMessage(
+            "version_description",
+            "Displays version information and exits."));
     }
 }
 
