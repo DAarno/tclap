@@ -669,33 +669,8 @@ public:
         _cmd.checkCommandArgument(arg, _scope);
         arg._validateAliases(_cmd._dialect.delimiter, _cmd._dialect.flagPrefix,
                              _cmd._dialect.namePrefix);
-        if (std::ranges::any_of(_args, [&arg, this](const Arg *existing) {
-                return arg.conflictsWith(*existing) ||
-                       arg._aliasConflictsWith(*existing,
-                                               _cmd._dialect.flagPrefix,
-                                               _cmd._dialect.namePrefix) ||
-                       existing->_aliasConflictsWith(arg,
-                                                     _cmd._dialect.flagPrefix,
-                                                     _cmd._dialect.namePrefix);
-            })) {
-            throw SpecificationException(
-                "Argument with same flag/name already exists!", arg.longID());
-        }
-
-        if (!arg.hasLabel()) {
-            if (_hasOptionalUnlabeledArg) {
-                throw SpecificationException(
-                    "You can't specify ANY Unlabeled Arg following an optional "
-                    "Unlabeled Arg",
-                    arg.longID());
-            }
-
-            // UnlabeledMultiArg consumes the remaining input but has never
-            // set this flag itself, regardless of whether it is required.
-            if (!arg.isRequired() && !arg.acceptsMultipleValues()) {
-                _hasOptionalUnlabeledArg = true;
-            }
-        }
+        validateConflicts(arg);
+        validatePositionalOrder(arg);
 
         // Record the previous binding before changing it; vector growth
         // can throw too. Keep all bindings until the whole batch succeeds.
@@ -719,6 +694,38 @@ public:
     }
 
 private:
+    void validateConflicts(const Arg &arg) const {
+        if (std::ranges::any_of(_args, [&arg, this](const Arg *existing) {
+                return arg.conflictsWith(*existing) ||
+                       arg._aliasConflictsWith(*existing,
+                                               _cmd._dialect.flagPrefix,
+                                               _cmd._dialect.namePrefix) ||
+                       existing->_aliasConflictsWith(arg,
+                                                     _cmd._dialect.flagPrefix,
+                                                     _cmd._dialect.namePrefix);
+            })) {
+            throw SpecificationException(
+                "Argument with same flag/name already exists!", arg.longID());
+        }
+    }
+
+    void validatePositionalOrder(Arg &arg) {
+        if (!arg.hasLabel()) {
+            if (_hasOptionalUnlabeledArg) {
+                throw SpecificationException(
+                    "You can't specify ANY Unlabeled Arg following an optional "
+                    "Unlabeled Arg",
+                    arg.longID());
+            }
+
+            // UnlabeledMultiArg consumes the remaining input but has never
+            // set this flag itself, regardless of whether it is required.
+            if (!arg.isRequired() && !arg.acceptsMultipleValues()) {
+                _hasOptionalUnlabeledArg = true;
+            }
+        }
+    }
+
     CmdLine &_cmd;
     Command *_scope;
     std::list<Arg *> _args;
@@ -747,7 +754,8 @@ inline ArgContainer &CmdLine::add(ArgGroup &group) {
 
 inline void CmdLine::registerGroupMember(ArgGroup &group, Arg &arg) {
     if (group._parser != this) {
-        throw SpecificationException("Arg group is not attached to this parser");
+        throw SpecificationException(
+            "Arg group is not attached to this parser");
     }
 
     std::list<Arg *> addedMember{&arg};
