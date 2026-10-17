@@ -118,6 +118,11 @@ class CmdLine : public CmdLineInterface {
                                 const std::list<Arg *> &arguments,
                                 const std::list<ArgGroup *> &groups,
                                 int numRequired, CmdLineInterface &view);
+    int parseArgumentTokens(std::vector<std::string> &args,
+                            const std::list<Arg *> &arguments);
+    void validateRequiredArguments(int requiredCount, int numRequired,
+                                   const std::list<Arg *> &arguments,
+                                   const std::list<ArgGroup *> &groups);
     void missingArgsException(const std::list<ArgGroup *> &missing,
                               const std::list<Arg *> &arguments);
     CmdLineInterface &outputView() {
@@ -829,66 +834,10 @@ inline ParseOutcome CmdLine::parseArguments(std::vector<std::string> &args,
                                             int numRequired,
                                             CmdLineInterface &view) {
     try {
-        int requiredCount = 0;
-        std::list<ArgGroup *> missingArgGroups;
-
-        for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
-            bool matched = false;
-            // Per-character consumed-position tracking for args[i],
-            // threaded through every Arg's processArg() call below --
-            // see Arg::processArg()'s doc comment. Fresh for each token.
-            std::vector<bool> consumed(args[i].size(), false);
-            for (Arg *argPtr : arguments) {
-                Arg &arg = *argPtr;
-                // We check if the argument was already set (e.g., for
-                // a Multi-Arg) since then we don't want to count it as
-                // required again -- this is what keeps isRequired()
-                // immutable (a pure reflection of the Arg's own spec),
-                // so it stays safe to use for help/usage display rather
-                // than something parse() mutates.
-                bool alreadySet = arg.isSet();
-                bool ignore = arg.isIgnoreable() && ignoreRest();
-                if (!ignore && arg.processArg(&i, args, consumed)) {
-                    requiredCount += (!alreadySet && arg.isRequired()) ? 1 : 0;
-                    matched = true;
-                    break;
-                }
-            }
-
-            // --help/--version's onMatch (above) already printed via
-            // _output by the time processArg() returns; this is an
-            // ordinary early return, not an unwind.
-            if (_pendingOutcome)
-                return ParseOutcome{.outcome = *_pendingOutcome};
-
-            // checks to see if the argument is an empty combined
-            // switch and if so, then we've actually matched it
-            if (!matched && _emptyCombined(args[i], consumed)) matched = true;
-
-            if (!matched && !ignoreRest() && !_ignoreUnmatched)
-                throw(
-                    CmdLineParseException("Couldn't find match "
-                                          "for argument",
-                                          args[i]));
-        }
-
-        // Once all arguments have been parsed, check that we don't
-        // violate any constraints.
-        for (ArgGroup *group : groups) {
-            bool missingRequired = group->validate();
-            if (missingRequired) {
-                missingArgGroups.push_back(group);
-            }
-        }
-
-        if (requiredCount < numRequired || !missingArgGroups.empty()) {
-            missingArgsException(missingArgGroups, arguments);
-        }
-
-        if (requiredCount > numRequired) {
-            throw(CmdLineParseException(
-                translateMessage("too_many_arguments", "Too many arguments!")));
-        }
+        const int requiredCount = parseArgumentTokens(args, arguments);
+        if (_pendingOutcome) return {.outcome = *_pendingOutcome};
+        validateRequiredArguments(requiredCount, numRequired, arguments,
+                                  groups);
     } catch (SpecificationException &) {
         // A programmer error (e.g. two Args sharing a flag), not a
         // user-input problem -- propagate rather than folding into a
@@ -906,6 +855,74 @@ inline ParseOutcome CmdLine::parseArguments(std::vector<std::string> &args,
     }
 
     return ParseOutcome{.outcome = Outcome::Success};
+}
+
+inline int CmdLine::parseArgumentTokens(std::vector<std::string> &args,
+                                        const std::list<Arg *> &arguments) {
+    int requiredCount = 0;
+    for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++) {
+        bool matched = false;
+        // Per-character consumed-position tracking for args[i],
+        // threaded through every Arg's processArg() call below --
+        // see Arg::processArg()'s doc comment. Fresh for each token.
+        std::vector<bool> consumed(args[i].size(), false);
+        for (Arg *argPtr : arguments) {
+            Arg &arg = *argPtr;
+            // We check if the argument was already set (e.g., for
+            // a Multi-Arg) since then we don't want to count it as
+            // required again -- this is what keeps isRequired()
+            // immutable (a pure reflection of the Arg's own spec),
+            // so it stays safe to use for help/usage display rather
+            // than something parse() mutates.
+            bool alreadySet = arg.isSet();
+            bool ignore = arg.isIgnoreable() && ignoreRest();
+            if (!ignore && arg.processArg(&i, args, consumed)) {
+                requiredCount += (!alreadySet && arg.isRequired()) ? 1 : 0;
+                matched = true;
+                break;
+            }
+        }
+
+        // --help/--version's onMatch (above) already printed via
+        // _output by the time processArg() returns; this is an
+        // ordinary early return, not an unwind.
+        if (_pendingOutcome) return requiredCount;
+
+        // checks to see if the argument is an empty combined
+        // switch and if so, then we've actually matched it
+        if (!matched && _emptyCombined(args[i], consumed)) matched = true;
+
+        if (!matched && !ignoreRest() && !_ignoreUnmatched)
+            throw(
+                CmdLineParseException("Couldn't find match "
+                                      "for argument",
+                                      args[i]));
+    }
+
+    return requiredCount;
+}
+
+inline void CmdLine::validateRequiredArguments(
+    int requiredCount, int numRequired, const std::list<Arg *> &arguments,
+    const std::list<ArgGroup *> &groups) {
+    std::list<ArgGroup *> missingArgGroups;
+    // Once all arguments have been parsed, check that we don't
+    // violate any constraints.
+    for (ArgGroup *group : groups) {
+        bool missingRequired = group->validate();
+        if (missingRequired) {
+            missingArgGroups.push_back(group);
+        }
+    }
+
+    if (requiredCount < numRequired || !missingArgGroups.empty()) {
+        missingArgsException(missingArgGroups, arguments);
+    }
+
+    if (requiredCount > numRequired) {
+        throw(CmdLineParseException(
+            translateMessage("too_many_arguments", "Too many arguments!")));
+    }
 }
 
 inline bool CmdLine::_emptyCombined(const std::string &s,
