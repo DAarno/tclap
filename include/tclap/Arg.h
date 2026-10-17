@@ -737,10 +737,7 @@ inline bool Arg::conflictsWith(const Arg &a) const {
 }
 
 inline bool Arg::operator==(const Arg &a) const {
-    if ((_flag != "" && _flag == a._flag) || _name == a._name)
-        return true;
-    else
-        return false;
+    return (_flag != "" && _flag == a._flag) || _name == a._name;
 }
 
 inline const std::string &Arg::getFlag() const { return _flag; }

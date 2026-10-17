@@ -232,10 +232,8 @@ bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
 
 template <class T>
 bool UnlabeledMultiArg<T>::operator==(const Arg &a) const {
-    if (_name == a.getName() || this->getDescription() == a.getDescription())
-        return true;
-    else
-        return false;
+    return _name == a.getName() ||
+           this->getDescription() == a.getDescription();
 }
 
 template <class T>
