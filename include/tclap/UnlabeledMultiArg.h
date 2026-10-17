@@ -221,18 +221,8 @@ template <class T>
 bool UnlabeledMultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
     if (_hasBlanks(args[*i])) return false;
 
-    // never ignore an unlabeled multi arg
-
     // always take the first value, regardless of the start string
     _extractValue(args[(*i)]);
-
-    /*
-    // continue taking args until we hit the end or a start string
-    while ( (unsigned int)(*i)+1 < args.size() &&
-            args[(*i)+1].find_first_of( Arg::flagStartString() ) != 0 &&
-            args[(*i)+1].find_first_of( Arg::nameStartString() ) != 0 )
-        _extractValue( args[++(*i)] );
-    */
 
     _alreadySet = true;
     _setBy = args[*i];

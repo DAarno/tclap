@@ -253,8 +253,6 @@ bool UnlabeledValueArg<T>::processArg(int *i, std::vector<std::string> &args) {
 
     if (_hasBlanks(args[*i])) return false;
 
-    // never ignore an unlabeled arg
-
     _extractValue(args[*i]);
     _alreadySet = true;
     _setBy = args[*i];

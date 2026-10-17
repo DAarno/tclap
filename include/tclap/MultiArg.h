@@ -202,6 +202,8 @@ public:
     virtual void reset();
 
 private:
+    void _extractNextValue(int *index, std::vector<std::string> &args);
+
 	/**
 	 * Prevent accidental copying
 	 */
@@ -274,31 +276,34 @@ bool MultiArg<T>::processArg(int *i, std::vector<std::string> &args) {
     trimFlag(flag, value);
     const bool hasAttachedValue = flag != args[*i];
 
-    if (argMatches(flag)) {
-        if (this->getDelimiter() != ' ' && !hasAttachedValue)
-            throw(ArgParseException(
-                "Couldn't find delimiter for this argument!", toString()));
+    if (!argMatches(flag)) return false;
 
-        // always take the first one, regardless of start string
-        if (!hasAttachedValue) {
-            (*i)++;
-            if (static_cast<unsigned int>(*i) < args.size())
-                _extractValue(args[*i]);
-            else
-                throw(ArgParseException("Missing a value for this argument!",
-                                        toString()));
-        } else {
-            _extractValue(value);
-        }
+    if (this->getDelimiter() != ' ' && !hasAttachedValue)
+        throw(ArgParseException(
+            "Couldn't find delimiter for this argument!", toString()));
 
-        _alreadySet = true;
-        _setBy = flag;
-        _checkWithVisitor();
-
-        return true;
+    if (!hasAttachedValue) {
+        _extractNextValue(i, args);
     } else {
-        return false;
+        _extractValue(value);
     }
+
+    _alreadySet = true;
+    _setBy = flag;
+    _checkWithVisitor();
+
+    return true;
+}
+
+template <class T>
+void MultiArg<T>::_extractNextValue(int *index,
+                                     std::vector<std::string> &args) {
+    (*index)++;
+    if (static_cast<unsigned int>(*index) < args.size())
+        _extractValue(args[*index]);
+    else
+        throw(ArgParseException("Missing a value for this argument!",
+                                toString()));
 }
 
 /**
@@ -329,12 +334,11 @@ void MultiArg<T>::_extractValue(const std::string &val) {
         throw ArgParseException(e.error(), toString());
     }
 
-    if (_constraint != NULL)
-        if (!_constraint->check(_values.back()))
-            throw(CmdLineParseException(
-                "Value '" + val +
-                    "' does not meet constraint: " + _constraint->description(),
-                toString()));
+    if (_constraint != NULL && !_constraint->check(_values.back()))
+        throw(CmdLineParseException(
+            "Value '" + val +
+                "' does not meet constraint: " + _constraint->description(),
+            toString()));
 }
 
 template <class T>
