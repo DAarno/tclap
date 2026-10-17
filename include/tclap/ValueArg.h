@@ -179,6 +179,9 @@ public:
      */
     ValueArg(const ValueArg<T> &rhs) = delete;
     ValueArg &operator=(const ValueArg<T> &rhs) = delete;
+
+private:
+    void _extractNextValue(int *index, std::vector<std::string> &args);
 };
 
 /**
@@ -213,33 +216,37 @@ bool ValueArg<T>::processArg(int *i, std::vector<std::string> &args,
     trimFlag(flag, value);
     const bool hasAttachedValue = flag != args[*i];
 
-    if (argMatches(flag)) {
-        if (_alreadySet) {
-            throw(CmdLineParseException("Argument already set!", toString()));
-        }
+    if (!argMatches(flag)) return false;
 
-        if (Arg::delimiter() != ' ' && !hasAttachedValue)
-            throw(ArgParseException(
-                "Couldn't find delimiter for this argument!", toString()));
-
-        if (!hasAttachedValue) {
-            (*i)++;
-            if (static_cast<unsigned int>(*i) < args.size())
-                _extractValue(args[*i]);
-            else
-                throw(ArgParseException("Missing a value for this argument!",
-                                        toString()));
-        } else {
-            _extractValue(value);
-        }
-
-        _alreadySet = true;
-        _setBy = flag;
-        _invokeOnMatch();
-        return true;
-    } else {
-        return false;
+    if (_alreadySet) {
+        throw(CmdLineParseException("Argument already set!", toString()));
     }
+
+    if (Arg::delimiter() != ' ' && !hasAttachedValue)
+        throw(ArgParseException(
+            "Couldn't find delimiter for this argument!", toString()));
+
+    if (!hasAttachedValue) {
+        _extractNextValue(i, args);
+    } else {
+        _extractValue(value);
+    }
+
+    _alreadySet = true;
+    _setBy = flag;
+    _invokeOnMatch();
+    return true;
+}
+
+template <class T>
+void ValueArg<T>::_extractNextValue(int *index,
+                                    std::vector<std::string> &args) {
+    (*index)++;
+    if (static_cast<unsigned int>(*index) < args.size())
+        _extractValue(args[*index]);
+    else
+        throw(ArgParseException("Missing a value for this argument!",
+                                toString()));
 }
 
 /**
@@ -277,12 +284,11 @@ void ValueArg<T>::_extractValue(const std::string &val)
         throw ArgParseException(e.error(), toString());
     }
 
-    if (_constraint != nullptr)
-        if (!_constraint->check(_value))
-            throw(CmdLineParseException("Value '" + val +
-                                            +"' does not meet constraint: " +
-                                            _constraint->description(),
-                                        toString()));
+    if (_constraint != nullptr && !_constraint->check(_value))
+        throw(CmdLineParseException("Value '" + val +
+                                        +"' does not meet constraint: " +
+                                        _constraint->description(),
+                                    toString()));
 }
 
 template <class T>
