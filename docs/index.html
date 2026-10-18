@@ -94,6 +94,34 @@ software.  It is licensed under the
 <a href="http://opensource.org/licenses/mit-license.php">MIT License</a>
 for worry free distribution.
 </p>
+<h2>Quick start</h2>
+<p>This example uses the TCLAP 1.4 API and requires C++98 or later.</p>
+<pre><code>int main(int argc, char **argv) {
+    try {
+        TCLAP::CmdLine cmd("Print a greeting.", ' ', "1.0");
+        TCLAP::ValueArg&lt;std::string&gt; name(
+            "n", "name", "Name to greet", false, "world", "string", cmd);
+        cmd.parse(argc, argv);
+        std::cout &lt;&lt; "Hello, " &lt;&lt; name.getValue() &lt;&lt; "!\n";
+    } catch (const TCLAP::ArgException &amp;e) {
+        std::cerr &lt;&lt; e.what() &lt;&lt; '\n';
+        return 1;
+    }
+    return 0;
+}
+</code></pre>
+<p>Add the <code>&lt;tclap/CmdLine.h&gt;</code>, <code>&lt;iostream&gt;</code>
+and <code>&lt;string&gt;</code> headers and save as <code>hello.cpp</code>.
+With TCLAP headers on your include path, compile and run:</p>
+<pre><code>c++ -std=c++98 hello.cpp -o hello
+./hello
+Hello, world!
+./hello --name Ada
+Hello, Ada!
+</code></pre>
+<p><code>-n Ada</code> also sets the name. Use <code>--help</code> to see
+all options. See the <a href="manual.html">manual</a> for more examples.</p>
+
 <p>
 <em>TCLAP</em> is now a mature, stable, and feature rich package.  
 Please don't let any apparent project inactivity discourage you
