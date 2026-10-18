@@ -93,6 +93,32 @@ software.  It is licensed under the
 <a href="http://opensource.org/licenses/mit-license.php">MIT License</a>
 for worry free distribution.
 </p>
+<h2>Quick start</h2>
+<p>This example uses the TCLAP 2.0 API and requires C++20 or later.</p>
+<pre><code>int main(int argc, char **argv) {
+    TCLAP::CmdLine cmd({.message = "Print a greeting.", .version = "1.0"});
+    auto &amp;name = cmd.addOwned&lt;TCLAP::ValueArg&lt;std::string&gt;&gt;({
+        .flag = "n",
+        .name = "name",
+        .description = "Name to greet",
+        .defaultValue = "world",
+    });
+    cmd.parseOrExit(argc, argv);
+    std::cout &lt;&lt; "Hello, " &lt;&lt; name.value() &lt;&lt; "!\n";
+}
+</code></pre>
+<p>Add the <code>&lt;tclap/CmdLine.h&gt;</code>, <code>&lt;iostream&gt;</code>
+and <code>&lt;string&gt;</code> headers and save as <code>hello.cpp</code>.
+With TCLAP headers on your include path, compile and run:</p>
+<pre><code>c++ -std=c++20 hello.cpp -o hello
+./hello
+Hello, world!
+./hello --name Ada
+Hello, Ada!
+</code></pre>
+<p><code>-n Ada</code> also sets the name. Use <code>--help</code> to see
+all options. See the <a href="manual.html">manual</a> for more examples.</p>
+
 <p>
 <em>TCLAP</em> is now a mature, stable, and feature rich package.  
 Please don't let any apparent project inactivity discourage you
