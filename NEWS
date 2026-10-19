@@ -1,8 +1,38 @@
-TCLAP 1.2 maintenance
-=====================
+TCLAP 1.2.6 - changes since 1.2.5
+================================
 
-See ChangeLog for detailed changes.
+This maintenance release compares against the v1.2.5 tag. TCLAP 1.2 retains
+its legacy API and behavior and supports C++98. Use 1.4 for the current C++98
+API or 1.6 for its C++20 alternative.
 
-Release archives include the optional CMake and Meson build integrations.
-Packaging supports long documentation filenames, and the test wrapper builds
-with C++98.
+Parsing and output
+------------------
+
+* Positional arguments invoke their visitors when matched. Counted switches
+  convert to bool using their count, and reset clears end-of-options state.
+* Custom failure output can exit after the parse exception is released.
+  The test wrapper correctly forwards help and version options.
+* DocBook output escapes XML data, preserves value type labels and renders
+  positional operands in parser order. Fixed a header-only link issue in
+  Zsh completion output and missing standalone-header includes.
+* Legacy process-wide parser state, XOR/reset bookkeeping and empty attached
+  value behavior are retained and documented for backwards compatibility.
+
+Build, packaging and documentation
+----------------------------------
+
+* VERSION supplies 1.2.6 consistently to Autotools, CMake, Meson and package
+  metadata. Autotools remains the complete build/test/install/release route.
+* Optional CMake integration requires 3.13 or later and builds examples;
+  optional Meson integration supports examples and tests.
+* Release archives include NEWS and optional build-system files, support long
+  documentation filenames, and build the test wrapper in C++98 mode.
+  Out-of-source release builds and pkg-config paths with spaces are supported.
+* GitHub Actions covers Linux GCC/Clang, macOS Clang and Windows MSVC. Unix
+  jobs run the Autotools suite; Windows runs example and header-link checks.
+* Documentation describes current installation routes, argument lifetimes,
+  constraints, parse failures and input reuse. Versioned pages include usage
+  examples and current CI badges and link back to the main 1.4 documentation.
+
+See ChangeLog for historical release entries through 1.2.5 and Git history
+for individual changes after that release.

@@ -1,3 +1,7 @@
+TCLAP 1.2.6
+	* See NEWS for the current release summary relative to v1.2.5.
+	  Historical entries follow unchanged.
+
 2021-11-01 macbishop
 	* Patch release for 1.2 (v1.2.5)
 	  - Fixes compilation issue with GCC 11 and later
