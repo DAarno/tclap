@@ -1,4 +1,41 @@
-Commands and subcommands (2.0)
+TCLAP 2.0.0 - Unreleased
+========================
+
+TCLAP 2.0 is a modern C++20 redesign under active development. It is not yet
+stable: expect API breakages. For stable integrations, use 1.4 (C++98) or
+1.6 (C++20 with an API mostly source compatible with 1.4).
+
+API and migration highlights
+----------------------------
+
+* Parsers and arguments use aggregate specs with named fields; argument names
+  are mandatory. Registration uses cmd.add() for borrowed arguments or
+  cmd.addOwned<ArgType>() for parser-owned arguments. Self-registering
+  constructors are removed. Borrowed arguments and constraints must outlive
+  their use by the parser.
+* Value access uses value(), and other getters use names such as name(),
+  description() and argList(). ValueArg no longer converts implicitly to T.
+* parse() returns ParseOutcome for success, help, version or a reported parse
+  error. Stop application work on non-success outcomes. parseOrExit() is the
+  command-line main() convenience. Invalid specifications still throw.
+* Synchronous onMatch callbacks replace the Visitor hierarchy. Each parser
+  owns its dialect and ignore-rest state; reset clears parsed state for reuse.
+* Argument registration validates conflicts transactionally and uses declared
+  metadata rather than virtual equality. OneOf/EitherOf/AnyOf provide grouping;
+  xorAdd and the old XOR customization API are removed. Group metadata and
+  command-tree snapshots are available for custom consumers.
+* parse_value<T>() returns Expected and uses from_chars for supported numeric
+  types, Unicode decoding for Unicode strings and stream extraction as a
+  fallback. Numeric parsing accepts leading but not trailing whitespace;
+  AutoBaseInt opts into C-style numeric bases.
+* Text and DocBook help support hidden arguments, aliases, positional ordering,
+  translated built-in messages and Unicode-aware wrapping.
+* CMake 3.13 or later is required and installed targets propagate C++20.
+  Release staging includes generated documentation, tests and fuzz sources;
+  GitHub Actions covers Linux, macOS and Windows.
+
+Commands and subcommands
+------------------------
 - Register nested commands with inherited global/parent options and local args.
 - Explicit dispatch invokes a command action after successful validation; parse
   remains action-free. Text and DocBook help follow the selected command path.
@@ -29,7 +66,8 @@ Callable constraints
   description and short ID strings supply error and usage text.
 * MakeRuleConstraint shares rule state with computed descriptions and short IDs.
 * C++20 MakeConstraint supports capturing lambdas, move-only callable
-  state and const invocation. Empty callable objects fail at construction.
+  state and const invocation. Null function/member pointers and empty
+  std::function objects are rejected.
 
 Argument aliases
 ----------------
