@@ -24,7 +24,7 @@ Choose the version that matches your project's C++ and API requirements.
 Quick start
 -----------
 
-This example uses the TCLAP 1.4 API. Add <tclap/CmdLine.h>, <iostream>
+This example uses the TCLAP 1.6 API. Add <tclap/CmdLine.h>, <iostream>
 and <string> to the includes and save as hello.cpp.
 
     int main(int argc, char **argv) {
@@ -43,7 +43,7 @@ and <string> to the includes and save as hello.cpp.
 
 With TCLAP headers on your include path, compile and run:
 
-    c++ -std=c++98 hello.cpp -o hello
+    c++ -std=c++20 hello.cpp -o hello
     ./hello
     Hello, world!
     ./hello --name Ada
