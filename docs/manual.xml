@@ -7,7 +7,7 @@
   -  file:  manual.xml
   - 
   -  Copyright (c) 2003-2012 Michael E. Smoot .
-  -  Copyright (c) 2017-2021 Google LLC.
+  -  Copyright (c) 2017-2026 Google LLC.
   -  All rights reserved.
   - 
   -  See the file COPYING in the top directory of this distribution for
@@ -37,7 +37,7 @@
     </author>
 
     <copyright>
-	<year>2017-2021</year>
+	<year>2017-2026</year>
 	<holder>Google LLC</holder>
     </copyright>
 
